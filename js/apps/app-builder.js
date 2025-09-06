@@ -24,6 +24,13 @@ class AppBuilder {
         // panel.
         this.selectedComponentRef = null;
         this.selectedIcon = 'fas fa-rocket';
+        // Define the valid component types per section.  These arrays are
+        // referenced when rendering the workflow so that each module can
+        // present dedicated drop zones for Input, Processing and Output
+        // categories.  The grouping mirrors the sidebar in the builder.
+        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text'];
+        this.processingTypes = ['ai-prompt', 'data-transform'];
+        this.outputTypes = ['display', 'chart', 'export'];
         this.init();
     }
 
@@ -97,21 +104,10 @@ class AppBuilder {
                 item.classList.remove('dragging');
             });
         });
-        workflowContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            workflowContainer.classList.add('drag-over');
-        });
-        workflowContainer.addEventListener('dragleave', () => {
-            workflowContainer.classList.remove('drag-over');
-        });
-        workflowContainer.addEventListener('drop', (e) => {
-            e.preventDefault();
-            workflowContainer.classList.remove('drag-over');
-            const componentType = e.dataTransfer.getData('component-type');
-            if (componentType) {
-                this.addComponent(componentType);
-            }
-        });
+        // Drop handlers are attached to the individual workflow zones when
+        // rendering the module.  The workflow container itself no longer
+        // processes drops because modules now have separate input, processing
+        // and output areas.
     }
 
     /**
@@ -248,7 +244,10 @@ class AppBuilder {
      * like in the original builder: clicking an item selects it for
      * editing and the remove icon deletes it.
      */
-    renderWorkflow() {
+    // Legacy renderer for flat workflows (no modules).  This method
+    // remains for backwards compatibility but is no longer invoked in
+    // the new modular builder.  It has been renamed to clarify its purpose.
+    renderFlatWorkflow() {
         const container = this.windowEl.querySelector('#workflow-container');
         if (!container) return;
         // Validate selected module index
@@ -406,6 +405,132 @@ class AppBuilder {
             this.renderProperties();
         }
         this.renderWorkflow();
+    }
+
+    /**
+     * Render the workflow for the selected module.  Each module is
+     * visualised with three drop zones corresponding to input,
+     * processing and output categories.  Components are grouped into
+     * these zones based on their type.  Dropping any component onto
+     * any zone will append it to the module; this approach emphasises
+     * but does not strictly enforce the grouping.  Clicking on a
+     * component selects it for editing and the remove button deletes it.
+     */
+    renderWorkflow() {
+        const container = this.windowEl.querySelector('#workflow-container');
+        if (!container) return;
+        const module = this.modules[this.selectedModuleIndex];
+        // Clear any existing content
+        container.innerHTML = '';
+        // Always render the three zones so drop targets are visible
+        this.renderWorkflowZones(container, module);
+        if (!module || module.components.length === 0) {
+            // Insert placeholder messages when module is empty
+            ['input', 'processing', 'output'].forEach(zone => {
+                const body = container.querySelector(`.workflow-group-body[data-zone='${zone}']`);
+                if (body) {
+                    const empty = document.createElement('div');
+                    empty.className = 'workflow-empty';
+                    empty.textContent = `Drag components here for the ${zone} phase`;
+                    body.appendChild(empty);
+                }
+            });
+            return;
+        }
+        // Distribute components into the appropriate zone bodies
+        module.components.forEach((component) => {
+            const zone = this.getZoneForComponent(component);
+            const groupBody = container.querySelector(`.workflow-group-body[data-zone='${zone}']`);
+            if (!groupBody) return;
+            // Compute position within its zone
+            const index = module.components.filter(c => this.getZoneForComponent(c) === zone).indexOf(component);
+            const item = document.createElement('div');
+            item.className = 'workflow-item';
+            item.dataset.componentId = component.id;
+            item.innerHTML = `<span class="workflow-index">${index + 1}</span><span class="workflow-label">${this.getComponentLabel(component)}</span><button class="workflow-item-delete btn-danger">Remove</button>`;
+            // Selecting a component
+            item.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('workflow-item-delete')) {
+                    this.selectComponent(module, component);
+                }
+            });
+            // Removing a component
+            item.querySelector('.workflow-item-delete').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const confirmed = await modalManager.confirm(
+                    `Remove "${this.getComponentLabel(component)}" from the module?`,
+                    'Remove Component'
+                );
+                if (confirmed) {
+                    this.removeComponent(module.id, component.id);
+                }
+            });
+            groupBody.appendChild(item);
+        });
+        // Insert placeholders for empty groups
+        ['input', 'processing', 'output'].forEach(zone => {
+            const body = container.querySelector(`.workflow-group-body[data-zone='${zone}']`);
+            if (body && body.children.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'workflow-empty';
+                empty.textContent = `Drag components here for the ${zone} phase`;
+                body.appendChild(empty);
+            }
+        });
+    }
+
+    /**
+     * Create three drop zones (Input, Processing, Output) inside the
+     * workflow container.  These zones serve as visual guides and drop
+     * targets for components.  Drop events on these zones call
+     * addComponent() regardless of type so that grouping is advisory.
+     */
+    renderWorkflowZones(container, module) {
+        const sections = [
+            { zone: 'input', title: 'Input' },
+            { zone: 'processing', title: 'Processing' },
+            { zone: 'output', title: 'Output' }
+        ];
+        sections.forEach(({ zone, title }) => {
+            const group = document.createElement('div');
+            group.className = `workflow-group workflow-group-${zone}`;
+            // Header
+            const header = document.createElement('div');
+            header.className = 'workflow-group-header';
+            header.textContent = title;
+            group.appendChild(header);
+            // Body (drop zone)
+            const body = document.createElement('div');
+            body.className = 'workflow-group-body';
+            body.dataset.zone = zone;
+            // Attach drop handlers
+            body.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                group.classList.add('drag-over');
+            });
+            body.addEventListener('dragleave', () => {
+                group.classList.remove('drag-over');
+            });
+            body.addEventListener('drop', (e) => {
+                e.preventDefault();
+                group.classList.remove('drag-over');
+                const componentType = e.dataTransfer.getData('component-type');
+                if (componentType) {
+                    this.addComponent(componentType);
+                }
+            });
+            group.appendChild(body);
+            container.appendChild(group);
+        });
+    }
+
+    /**
+     * Determine which zone a component belongs to based on its type.
+     */
+    getZoneForComponent(component) {
+        if (this.inputTypes.includes(component.type)) return 'input';
+        if (this.processingTypes.includes(component.type)) return 'processing';
+        return 'output';
     }
 
     /**
