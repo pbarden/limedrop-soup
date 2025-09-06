@@ -352,7 +352,22 @@ class AppBuilder {
      */
     getDefaultConfig(type) {
         const defaults = {
-            'text-input': { label: 'Text Input', placeholder: 'Enter text...', required: false },
+            // Text input now includes additional validation and customisation options:
+            // - inputType: HTML input type (text, email, number, password, etc.)
+            // - minLength / maxLength: minimum and maximum character length
+            // - pattern: a regular expression string the value must match
+            // - defaultValue: initial value shown to the user
+            // - required: whether the field must be filled
+            'text-input': {
+                label: 'Text Input',
+                placeholder: 'Enter text...',
+                required: false,
+                inputType: 'text',
+                minLength: 0,
+                maxLength: null,
+                pattern: '',
+                defaultValue: ''
+            },
             // File upload now supports choosing an existing file registered in the
             // file system.  The `source` field determines whether the user can
             // upload a new file or select an existing one.  When using
@@ -570,6 +585,13 @@ class AppBuilder {
             return;
         }
         const { component } = this.selectedComponentRef;
+        // Provide a custom property editor for text-input so additional
+        // configuration options (inputType, defaultValue, minLength, etc.)
+        // can be adjusted without relying on an external HTML template.
+        if (component.type === 'text-input') {
+            this.renderTextInputProperties(container);
+            return;
+        }
         const templateId = `${component.type}-config`;
         const template = document.getElementById(templateId);
         if (template) {
@@ -580,6 +602,64 @@ class AppBuilder {
         } else {
             container.innerHTML = `<div class="properties-empty">Configuration for ${this.getComponentLabel(component)}</div>`;
         }
+    }
+
+    /**
+     * Render custom properties UI for the text input component.  This
+     * includes fields for label, placeholder, default value, input type,
+     * required toggle, min/max length and a regex pattern.  After
+     * building the form the existing populateConfig and attachConfigListeners
+     * methods are invoked to bind the config values and listeners.
+     */
+    renderTextInputProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Placeholder</label>
+                <input type="text" class="config-placeholder" />
+            </div>
+            <div class="form-group">
+                <label>Default Value</label>
+                <input type="text" class="config-defaultValue" />
+            </div>
+            <div class="form-group">
+                <label>Input Type</label>
+                <select class="config-inputType">
+                    <option value="text">Text</option>
+                    <option value="email">Email</option>
+                    <option value="number">Number</option>
+                    <option value="password">Password</option>
+                    <option value="tel">Telephone</option>
+                    <option value="url">URL</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Required</label>
+                <input type="checkbox" class="config-required" />
+            </div>
+            <div class="form-group">
+                <label>Min Length</label>
+                <input type="number" min="0" class="config-minLength" />
+            </div>
+            <div class="form-group">
+                <label>Max Length</label>
+                <input type="number" min="0" class="config-maxLength" />
+            </div>
+            <div class="form-group">
+                <label>Pattern (Regex)</label>
+                <input type="text" class="config-pattern" />
+            </div>
+        `;
+        container.appendChild(form);
+        // Populate fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
     }
 
     /**

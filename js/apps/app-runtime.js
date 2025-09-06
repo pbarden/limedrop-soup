@@ -146,7 +146,7 @@ class AppRuntime {
                 return `
                     <label>${label}</label><br/>
                     <input type="${type}" id="runtime-text-input" placeholder="${placeholder}" ${requiredAttr} ${minAttr} ${maxAttr} ${patternAttr} ${valueAttr}/><br/>
-                    <div id="runtime-text-error" style="color:red;font-size:12px;margin-top:4px;"></div>
+                    <div id="runtime-text-error" style="color:rgba(255,67,54,0.8);font-size:12px;margin-top:4px;min-height:16px;"></div>
                     <button class="btn-primary" id="runtime-text-continue" onclick="__runtimeInstance.completeCurrentStep()" disabled>Continue</button>
                 `;
             }
