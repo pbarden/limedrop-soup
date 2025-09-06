@@ -97,6 +97,8 @@ class AppRuntime {
             this.setupTextInput(component);
         } else if (component.type === 'rich-text') {
             this.setupRichTextEditor(component);
+        } else if (component.type === 'table') {
+            this.setupTable(component);
         }
         // Update back and next button state and labels
         this.updateControlsState(false);
@@ -279,6 +281,40 @@ class AppRuntime {
                     <p>Export format: ${component.config.format}</p>
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
+            case 'table': {
+                const cfg = component.config || {};
+                const label = cfg.label || 'Table';
+                const cols = Array.isArray(cfg.columns) ? cfg.columns : (typeof cfg.columns === 'string' ? cfg.columns.split(',').map(c => c.trim()).filter(Boolean) : []);
+                const numRows = parseInt(cfg.rows, 10);
+                const rows = !isNaN(numRows) && numRows >= 0 ? numRows : 0;
+                const editable = cfg.editable !== false;
+                // Build table headers
+                const headerCells = cols.map(col => `<th style="padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.1); text-align:left;">${col}</th>`).join('');
+                // Build initial rows
+                let bodyHtml = '';
+                for (let r = 0; r < rows; r++) {
+                    const cells = cols.map((col, ci) => {
+                        return `<td style="padding:4px 6px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            ${editable ? `<input type="text" class="table-cell-input" data-col="${ci}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px 6px; border-radius:4px;" />` : `<span class="table-cell-display"></span>`}
+                        </td>`;
+                    }).join('');
+                    bodyHtml += `<tr>${cells}</tr>`;
+                }
+                const addRowBtn = editable ? `<button id="table-add-row" class="btn-secondary" style="margin-top:8px;">Add Row</button>` : '';
+                return `
+                    <label>${label}</label><br/>
+                    <div style="overflow-x:auto; border:1px solid rgba(255,255,255,0.2); border-radius:6px; background:rgba(255,255,255,0.05);">
+                        <table id="runtime-table" style="width:100%; border-collapse:collapse;">
+                            <thead><tr>${headerCells}</tr></thead>
+                            <tbody>
+                                ${bodyHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${addRowBtn}
+                    <button class="btn-primary" id="runtime-table-continue" onclick="__runtimeInstance.completeCurrentStep()" style="margin-top:8px;">Continue</button>
+                `;
+            }
             default:
                 return `
                     <p>Unknown component type: ${component.type}</p>
@@ -335,6 +371,30 @@ class AppRuntime {
             case 'rich-text': {
                 const richEditor = document.getElementById('runtime-rich-editor');
                 value = richEditor ? richEditor.innerHTML : null;
+                break;
+            }
+            case 'table': {
+                const cfg = component.config || {};
+                const table = document.getElementById('runtime-table');
+                const cols = Array.isArray(cfg.columns) ? cfg.columns : (typeof cfg.columns === 'string' ? cfg.columns.split(',').map(c => c.trim()).filter(Boolean) : []);
+                const dataRows = [];
+                if (table) {
+                    const trEls = table.querySelectorAll('tbody tr');
+                    trEls.forEach(tr => {
+                        const rowObj = {};
+                        cols.forEach((col, ci) => {
+                            const cellInput = tr.querySelector(`input.table-cell-input[data-col="${ci}"]`);
+                            if (cellInput) {
+                                rowObj[col] = cellInput.value;
+                            } else {
+                                const span = tr.querySelector('span.table-cell-display');
+                                rowObj[col] = span ? span.textContent : '';
+                            }
+                        });
+                        dataRows.push(rowObj);
+                    });
+                }
+                value = dataRows;
                 break;
             }
             default:
@@ -734,6 +794,32 @@ class AppRuntime {
         if (errorEl) {
             errorEl.textContent = '';
         }
+    }
+
+    /**
+     * Setup table behaviours such as adding new rows.  Only executed when
+     * the table is editable.  New rows replicate the configured columns.
+     */
+    setupTable(component) {
+        const cfg = component.config || {};
+        const editable = cfg.editable !== false;
+        if (!editable) return;
+        const addRowBtn = this.container.querySelector('#table-add-row');
+        const tableBody = this.container.querySelector('#runtime-table tbody');
+        if (!addRowBtn || !tableBody) return;
+        // Parse columns into array
+        const cols = Array.isArray(cfg.columns) ? cfg.columns : (typeof cfg.columns === 'string' ? cfg.columns.split(',').map(c => c.trim()).filter(Boolean) : []);
+        addRowBtn.addEventListener('click', () => {
+            // Build a new row with editable inputs
+            const rowCells = cols.map((col, ci) => {
+                return `<td style="padding:4px 6px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <input type="text" class="table-cell-input" data-col="${ci}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px 6px; border-radius:4px;" />
+                </td>`;
+            }).join('');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = rowCells;
+            tableBody.appendChild(newRow);
+        });
     }
 
     /**

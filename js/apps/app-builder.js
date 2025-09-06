@@ -28,7 +28,7 @@ class AppBuilder {
         // referenced when rendering the workflow so that each module can
         // present dedicated drop zones for Input, Processing and Output
         // categories.  The grouping mirrors the sidebar in the builder.
-        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text'];
+        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table'];
         this.processingTypes = ['ai-prompt', 'data-transform'];
         this.outputTypes = ['display', 'chart', 'export'];
         this.init();
@@ -48,10 +48,48 @@ class AppBuilder {
         this.setupDragAndDrop();
         this.setupEvents();
         this.initIconPicker();
+        // Dynamically insert a Table component item into the input list if it
+        // does not already exist in the HTML.  This enables dragging
+        // a table component without requiring manual HTML changes.
+        this.injectTableComponentItem();
         // Ensure at least one module exists
         if (this.modules.length === 0) {
             this.addModule();
         }
+    }
+
+    /**
+     * Insert a new component item for the table input into the input
+     * components list.  It clones the class names from the text input
+     * item to maintain visual consistency.  If a table item already
+     * exists (e.g. defined in the HTML), this method does nothing.
+     */
+    injectTableComponentItem() {
+        // Check if a table item already exists
+        if (this.windowEl.querySelector('.component-item[data-type="table"]')) {
+            return;
+        }
+        // Find an existing input component item to clone classes
+        const reference = this.windowEl.querySelector('.component-item[data-type="text-input"]');
+        if (!reference) return;
+        const parent = reference.parentElement;
+        if (!parent) return;
+        const item = document.createElement('div');
+        item.className = reference.className;
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'table';
+        // Use a table icon if font-awesome is available
+        item.innerHTML = `<i class="fas fa-table" style="margin-right:8px;"></i><span>Table</span>`;
+        parent.appendChild(item);
+        // Attach dragstart and dragend events to the new item
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('component-type', 'table');
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+        });
     }
 
     /**
@@ -410,6 +448,15 @@ class AppBuilder {
                 toolbarOptions: 'bold,italic,underline,bullet,numbered,link',
                 defaultValue: ''
             },
+            // Table input for tabular data.  Columns is a comma‑separated list of
+            // column names.  Rows defines the number of initial blank rows.
+            // Editable determines whether the user can modify cells.
+            'table': {
+                label: 'Table',
+                columns: 'Column 1,Column 2',
+                rows: 2,
+                editable: true
+            },
             'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
             'data-transform': { transformation: 'uppercase' },
             'display': { label: 'Output Display' },
@@ -564,6 +611,7 @@ class AppBuilder {
             'display': 'Display Output',
             'chart': 'Chart',
             'export': 'Export Data'
+            , 'table': 'Table'
         };
         return labels[component.type] || component.type;
     }
@@ -617,6 +665,11 @@ class AppBuilder {
         // Provide a custom property editor for canvas components
         if (component.type === 'canvas') {
             this.renderCanvasProperties(container);
+            return;
+        }
+        // Provide custom property editor for table components
+        if (component.type === 'table') {
+            this.renderTableProperties(container);
             return;
         }
         // Provide a custom property editor for rich text components
@@ -798,6 +851,38 @@ class AppBuilder {
         `;
         container.appendChild(form);
         // Populate fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+    }
+
+    /**
+     * Render custom properties UI for the table component.  This includes
+     * fields for label, columns (comma‑separated), number of rows and
+     * editable toggle.  These values are bound to the component config.
+     */
+    renderTableProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Columns (comma-separated)</label>
+                <input type="text" class="config-columns" />
+            </div>
+            <div class="form-group">
+                <label>Initial Rows</label>
+                <input type="number" min="0" class="config-rows" />
+            </div>
+            <div class="form-group">
+                <label>Editable</label>
+                <input type="checkbox" class="config-editable" />
+            </div>
+        `;
+        container.appendChild(form);
         this.populateConfig(container);
         this.attachConfigListeners(container);
     }
