@@ -17,7 +17,7 @@ python -m http.server 8000
 
 ---
 
-## 2) Project layout (after the JS split)
+## 2) Project layout
 ```
 index.html
 styles.css
