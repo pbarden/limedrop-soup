@@ -114,7 +114,6 @@ class IconPicker {
             toggle: this.container.querySelector('.icon-picker-toggle'),
             dropdown: this.container.querySelector('.icon-picker-dropdown'),
             preview: this.container.querySelector('.selected-icon-preview'),
-            name: this.container.querySelector('.selected-icon-name'),
             search: this.container.querySelector('.icon-search-input'),
             categories: this.container.querySelector('.icon-picker-categories'),
             grid: this.container.querySelector('.icon-picker-grid')
@@ -224,7 +223,6 @@ class IconPicker {
     
     updateSelectedIcon(iconClass) {
         this.elements.preview.innerHTML = `<i class="${iconClass}"></i>`;
-        this.elements.name.textContent = iconClass.split(' ').pop();
     }
     
     toggle() {
@@ -256,5 +254,3 @@ class IconPicker {
         this.renderIcons();
     }
 }
-
-// Modal Manager
