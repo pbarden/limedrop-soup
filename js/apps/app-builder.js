@@ -353,8 +353,32 @@ class AppBuilder {
     getDefaultConfig(type) {
         const defaults = {
             'text-input': { label: 'Text Input', placeholder: 'Enter text...', required: false },
-            'file-upload': { label: 'Upload File', accept: '*' },
-            'canvas': { label: 'Drawing Canvas', width: 400, height: 300, editable: true },
+            // File upload now supports choosing an existing file registered in the
+            // file system.  The `source` field determines whether the user can
+            // upload a new file or select an existing one.  When using
+            // "existing", the `fileId` or `fileName` should be set by the
+            // configuration UI (not yet implemented).  The `accept` field
+            // remains for filtering upload types.
+            'file-upload': { label: 'Upload File', accept: '*', source: 'upload', fileId: null },
+            // Canvas supports additional toggles to enable/disable drawing
+            // tools.  `editable` controls whether drawing is allowed.
+            // `showBrushControls` toggles brush size/color selectors, while
+            // `showTaskbar` toggles a toolbar with AI prompt buttons.  The
+            // `aiPrompts` array defines the names of prompts to be shown in
+            // the taskbar.  `brushSize` and `brushColor` initialise the
+            // drawing tool.  These values can later be customised via the
+            // properties panel when that UI is extended.
+            'canvas': {
+                label: 'Drawing Canvas',
+                width: 400,
+                height: 300,
+                editable: true,
+                showBrushControls: true,
+                showTaskbar: false,
+                aiPrompts: ['Watercolor', 'Sketch'],
+                brushSize: 5,
+                brushColor: '#000000'
+            },
             'rich-text': { label: 'Rich Text Editor' },
             'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
             'data-transform': { transformation: 'uppercase' },

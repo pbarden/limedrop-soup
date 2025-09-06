@@ -85,6 +85,15 @@ class AppRuntime {
         const entry = this.sequence[this.currentIndex];
         const { moduleIndex, component, componentIndex } = entry;
         content.innerHTML = this.renderComponent(component);
+        // After rendering, perform component-specific setup.  Some
+        // components require dynamic UI such as file selection or canvas
+        // drawing.  We call helper methods here to attach listeners and
+        // populate options.
+        if (component.type === 'file-upload') {
+            this.setupFileUpload(component);
+        } else if (component.type === 'canvas') {
+            this.setupCanvas(component);
+        }
         // Update back and next button state and labels
         this.updateControlsState(false);
         const backBtn = this.container.querySelector('#runtime-back');
@@ -128,16 +137,54 @@ class AppRuntime {
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
             case 'file-upload':
+                // Build a file upload UI that allows users to either upload
+                // a new file or select an existing file from the file system.
+                // The default source is determined by component.config.source.
+                const source = component.config && component.config.source ? component.config.source : 'upload';
                 return `
                     <label>${component.config.label || 'Upload File'}</label><br/>
-                    <input type="file" id="runtime-file-upload" accept="${component.config.accept || '*'}"/><br/><br/>
+                    <div class="file-upload-source">
+                        <label><input type="radio" name="fileSource" value="upload" ${source === 'upload' ? 'checked' : ''}/> Upload new</label>
+                        <label style="margin-left: 10px;"><input type="radio" name="fileSource" value="existing" ${source === 'existing' ? 'checked' : ''}/> Select existing</label>
+                    </div>
+                    <div id="file-upload-wrapper" style="margin-top:8px;">
+                        <input type="file" id="runtime-file-upload" accept="${component.config.accept || '*'}"/>
+                    </div>
+                    <div id="file-select-wrapper" style="margin-top:8px; display:none;">
+                        <select id="runtime-file-select"><option value="">-- Select file --</option></select>
+                    </div>
+                    <br/>
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
             case 'canvas':
+                // Build a canvas UI with optional brush controls and taskbar
+                const cfg = component.config || {};
+                const canvasLabel = cfg.label || 'Drawing Canvas';
+                const editable = cfg.editable !== false;
+                const controls = cfg.showBrushControls !== false;
+                const taskbar = cfg.showTaskbar === true;
+                const brushControls = controls ? `
+                    <div id="canvas-controls" style="margin:8px 0; display:flex; gap:10px; align-items:center;">
+                        <label style="font-size:12px;">Brush size: <input type="range" id="brush-size" min="1" max="20" value="${cfg.brushSize || 5}" style="vertical-align:middle; margin-left:4px;"/></label>
+                        <label style="font-size:12px;">Color: <input type="color" id="brush-color" value="${cfg.brushColor || '#000000'}" style="vertical-align:middle; margin-left:4px;"/></label>
+                    </div>
+                ` : '';
+                const promptButtons = Array.isArray(cfg.aiPrompts) && cfg.aiPrompts.length > 0
+                    ? cfg.aiPrompts.map((p, i) => `<button class="ai-filter-btn" data-filter-index="${i}" style="margin-right:4px;">${p}</button>`).join('')
+                    : '';
+                const taskbarHtml = taskbar ? `
+                    <div id="canvas-taskbar" style="margin:8px 0;">
+                        ${promptButtons}
+                        <button id="undo-btn" style="margin-left:4px;">Undo</button>
+                        <button id="redo-btn" style="margin-left:4px;">Redo</button>
+                    </div>
+                ` : '';
                 return `
-                    <label>${component.config.label || 'Drawing Canvas'}</label><br/>
-                    <canvas id="runtime-canvas" width="${component.config.width || 400}" height="${component.config.height || 300}" style="border:1px solid #ccc;"></canvas><br/>
-                    ${component.config.editable === false ? '' : '<small>Use your mouse to draw.</small><br/>'}
+                    <label>${canvasLabel}</label><br/>
+                    <canvas id="runtime-canvas" width="${cfg.width || 400}" height="${cfg.height || 300}" style="border:1px solid #ccc;"></canvas><br/>
+                    ${editable ? '<small>Use your mouse to draw.</small><br/>' : ''}
+                    ${brushControls}
+                    ${taskbarHtml}
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
             case 'rich-text':
@@ -197,8 +244,16 @@ class AppRuntime {
                 value = textEl ? textEl.value : null;
                 break;
             case 'file-upload':
-                const fileEl = document.getElementById('runtime-file-upload');
-                value = fileEl && fileEl.files && fileEl.files.length > 0 ? fileEl.files[0] : null;
+                // Determine whether the user chose to upload or select an existing file
+                const srcRadio = document.querySelector('input[name="fileSource"]:checked');
+                const selectedSource = srcRadio ? srcRadio.value : (component.config.source || 'upload');
+                if (selectedSource === 'upload') {
+                    const fileInput = document.getElementById('runtime-file-upload');
+                    value = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
+                } else {
+                    const selectEl = document.getElementById('runtime-file-select');
+                    value = selectEl ? selectEl.value : null;
+                }
                 break;
             case 'canvas':
                 const canvasEl = document.getElementById('runtime-canvas');
@@ -214,6 +269,220 @@ class AppRuntime {
         this.state[component.id] = value;
         this.currentIndex++;
         this.renderCurrentStep();
+    }
+
+    /**
+     * Setup the file upload UI.  This method populates the existing file
+     * dropdown and toggles between upload/select modes based on the
+     * selected radio button.  It reads available files from the global
+     * fileSystem if available; otherwise the select remains empty.  The
+     * component's config determines the initial mode.
+     */
+    setupFileUpload(component) {
+        const source = component.config && component.config.source ? component.config.source : 'upload';
+        const uploadWrapper = this.container.querySelector('#file-upload-wrapper');
+        const selectWrapper = this.container.querySelector('#file-select-wrapper');
+        const radios = this.container.querySelectorAll('input[name="fileSource"]');
+        const select = this.container.querySelector('#runtime-file-select');
+        if (!uploadWrapper || !selectWrapper || !radios || !select) return;
+        // Helper to show/hide wrappers based on selected source
+        const updateVisibility = () => {
+            const selected = Array.from(radios).find(r => r.checked)?.value || 'upload';
+            if (selected === 'upload') {
+                uploadWrapper.style.display = '';
+                selectWrapper.style.display = 'none';
+            } else {
+                uploadWrapper.style.display = 'none';
+                selectWrapper.style.display = '';
+            }
+        };
+        radios.forEach(r => {
+            r.addEventListener('change', updateVisibility);
+        });
+        // Populate select with files
+        const populateFiles = () => {
+            select.innerHTML = '<option value="">-- Select file --</option>';
+            let files = [];
+            try {
+                if (typeof fileSystem !== 'undefined') {
+                    // Attempt to call list or get methods; fallback to files array
+                    if (typeof fileSystem.listFiles === 'function') {
+                        files = fileSystem.listFiles();
+                    } else if (typeof fileSystem.getFiles === 'function') {
+                        files = fileSystem.getFiles();
+                    } else if (Array.isArray(fileSystem.files)) {
+                        files = fileSystem.files;
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to retrieve file list', err);
+            }
+            if (Array.isArray(files)) {
+                files.forEach(f => {
+                    const option = document.createElement('option');
+                    // Support both object and string formats
+                    if (typeof f === 'string') {
+                        option.value = f;
+                        option.textContent = f;
+                    } else {
+                        option.value = f.id || f.name || '';
+                        option.textContent = f.name || f.label || option.value;
+                    }
+                    select.appendChild(option);
+                });
+            }
+        };
+        populateFiles();
+        // Initialise visibility based on config
+        Array.from(radios).forEach(r => {
+            r.checked = r.value === source;
+        });
+        updateVisibility();
+    }
+
+    /**
+     * Setup the canvas for drawing, brush controls, AI filters and
+     * undo/redo functionality.  Drawing is enabled only when
+     * component.config.editable is true.  Brush size and color pickers
+     * update the drawing context.  AI filter buttons apply simple
+     * transformations to the image.  Undo and redo are implemented via
+     * an array of data URLs stored on the runtime instance.
+     */
+    setupCanvas(component) {
+        const cfg = component.config || {};
+        const canvas = this.container.querySelector('#runtime-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        // Initialise history stack for undo/redo
+        this.canvasHistory = [];
+        this.historyIndex = -1;
+        const saveState = () => {
+            try {
+                const dataURL = canvas.toDataURL();
+                // Trim any redo states
+                this.canvasHistory = this.canvasHistory.slice(0, this.historyIndex + 1);
+                this.canvasHistory.push(dataURL);
+                this.historyIndex = this.canvasHistory.length - 1;
+            } catch (err) {
+                console.warn('Failed to save canvas state', err);
+            }
+        };
+        const restoreState = (index) => {
+            if (index < 0 || index >= this.canvasHistory.length) return;
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = this.canvasHistory[index];
+        };
+        // Save initial blank state
+        saveState();
+        // Drawing variables
+        let drawing = false;
+        let brushSize = cfg.brushSize || 5;
+        let brushColor = cfg.brushColor || '#000000';
+        const startDrawing = (e) => {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        };
+        const draw = (e) => {
+            if (!drawing) return;
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        };
+        const stopDrawing = () => {
+            if (drawing) {
+                drawing = false;
+                ctx.closePath();
+                saveState();
+            }
+        };
+        if (cfg.editable !== false) {
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+        }
+        // Brush controls
+        if (cfg.showBrushControls !== false) {
+            const sizeInput = this.container.querySelector('#brush-size');
+            const colorInput = this.container.querySelector('#brush-color');
+            if (sizeInput) {
+                sizeInput.addEventListener('input', (e) => {
+                    brushSize = parseInt(e.target.value, 10) || 1;
+                });
+            }
+            if (colorInput) {
+                colorInput.addEventListener('input', (e) => {
+                    brushColor = e.target.value || '#000000';
+                });
+            }
+        }
+        // AI filter buttons and undo/redo
+        if (cfg.showTaskbar === true) {
+            // Undo
+            const undoBtn = this.container.querySelector('#undo-btn');
+            if (undoBtn) {
+                undoBtn.addEventListener('click', () => {
+                    if (this.historyIndex > 0) {
+                        this.historyIndex--;
+                        restoreState(this.historyIndex);
+                    }
+                });
+            }
+            // Redo
+            const redoBtn = this.container.querySelector('#redo-btn');
+            if (redoBtn) {
+                redoBtn.addEventListener('click', () => {
+                    if (this.historyIndex < this.canvasHistory.length - 1) {
+                        this.historyIndex++;
+                        restoreState(this.historyIndex);
+                    }
+                });
+            }
+            // AI filters
+            const filterButtons = this.container.querySelectorAll('.ai-filter-btn');
+            filterButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const filterName = btn.textContent.trim();
+                    // Apply filter
+                    try {
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            if (/watercolor/i.test(filterName)) {
+                                // Lighten colors slightly for watercolor effect
+                                data[i] = Math.min(255, r * 1.1);
+                                data[i + 1] = Math.min(255, g * 1.1);
+                                data[i + 2] = Math.min(255, b * 1.1);
+                            } else if (/sketch/i.test(filterName)) {
+                                // Convert to grayscale for sketch effect
+                                const avg = (r + g + b) / 3;
+                                data[i] = data[i + 1] = data[i + 2] = avg;
+                            } else {
+                                // Default effect: invert colors
+                                data[i] = 255 - r;
+                                data[i + 1] = 255 - g;
+                                data[i + 2] = 255 - b;
+                            }
+                        }
+                        ctx.putImageData(imageData, 0, 0);
+                        saveState();
+                    } catch (err) {
+                        console.warn('Failed to apply filter', err);
+                    }
+                });
+            });
+        }
     }
 
     /**
