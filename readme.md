@@ -48,7 +48,7 @@ The split preserves global scope and load order to avoid regressions.
 
 ---
 
-## 3) Script load order (already applied in `index.html`)
+## 3) Script load order
 The following tags are placed **just before** `</body>` in this exact order. Maintain this order when you add or move files.
 
 ```html
