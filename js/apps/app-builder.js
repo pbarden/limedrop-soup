@@ -39,6 +39,11 @@ class AppBuilder {
      * component event registration.
      */
     init() {
+        // Inject module workflow styles to ensure the drop zones match
+        // the look and feel of the application. This is done once per
+        // builder instance and only if the styles have not already
+        // been added to the document.
+        this.injectModuleStyles();
         this.setupModuleUI();
         this.setupDragAndDrop();
         this.setupEvents();
@@ -47,6 +52,56 @@ class AppBuilder {
         if (this.modules.length === 0) {
             this.addModule();
         }
+    }
+
+    /**
+     * Dynamically inject CSS rules for module workflow groups. Because
+     * the original Limedrop application loads its global styles from a
+     * separate file that we cannot modify directly in this environment,
+     * we embed the necessary styles here. The CSS mirrors the
+     * application’s translucent backgrounds, dashed borders and
+     * typography. It is added only once per page.
+     */
+    injectModuleStyles() {
+        const styleId = 'module-workflow-styles';
+        if (document.getElementById(styleId)) return;
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            /* Module Workflow Group Styles */
+            .workflow-group {
+                margin-bottom: 20px;
+            }
+            .workflow-group-header {
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                margin-bottom: 6px;
+                color: rgba(255, 255, 255, 0.7);
+            }
+            .workflow-group-body {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px dashed rgba(255, 255, 255, 0.2);
+                border-radius: 6px;
+                padding: 8px;
+                min-height: 60px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                transition: background 0.3s ease, border-color 0.3s ease;
+            }
+            .workflow-group-body.drag-over {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+            .workflow-empty {
+                color: rgba(255, 255, 255, 0.5);
+                font-size: 12px;
+                text-align: center;
+                padding: 10px 0;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
