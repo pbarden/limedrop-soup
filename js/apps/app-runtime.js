@@ -200,29 +200,41 @@ class AppRuntime {
                     <button class="btn-primary" id="runtime-file-continue" onclick="__runtimeInstance.completeCurrentStep()" disabled>Continue</button>
                 `;
             }
-            case 'canvas':
+            case 'canvas': {
                 // Build a canvas UI with optional brush controls and taskbar
                 const cfg = component.config || {};
                 const canvasLabel = cfg.label || 'Drawing Canvas';
                 const editable = cfg.editable !== false;
                 const controls = cfg.showBrushControls !== false;
-                const taskbar = cfg.showTaskbar === true;
+                // Determine AI options; support legacy aiPrompts string
+                let options = [];
+                if (Array.isArray(cfg.aiOptions)) {
+                    options = cfg.aiOptions;
+                } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+                    options = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+                }
+                const showBar = cfg.showTaskbar || (options.length > 0) || cfg.showFill || cfg.showErase;
                 const brushControls = controls ? `
                     <div id="canvas-controls" style="margin:8px 0; display:flex; gap:10px; align-items:center;">
                         <label style="font-size:12px;">Brush size: <input type="range" id="brush-size" min="1" max="20" value="${cfg.brushSize || 5}" style="vertical-align:middle; margin-left:4px;"/></label>
                         <label style="font-size:12px;">Color: <input type="color" id="brush-color" value="${cfg.brushColor || '#000000'}" style="vertical-align:middle; margin-left:4px;"/></label>
                     </div>
                 ` : '';
-                // Parse AI prompts: allow comma-separated string or array
-                const prompts = Array.isArray(cfg.aiPrompts)
-                    ? cfg.aiPrompts
-                    : (typeof cfg.aiPrompts === 'string' ? cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean) : []);
-                const promptButtons = prompts.length > 0
-                    ? prompts.map((p, i) => `<button class="ai-filter-btn" data-filter-index="${i}" style="margin-right:4px;">${p}</button>`).join('')
-                    : '';
-                const taskbarHtml = taskbar ? `
+                // Build AI option buttons
+                const aiButtons = options.map((opt, i) => {
+                    const icon = opt.icon || 'fas fa-magic';
+                    const label = opt.label || '';
+                    // Use icon and optional label
+                    return `<button class="ai-filter-btn" data-filter-index="${i}" title="${label}" style="margin-right:4px;"><i class="${icon}"></i> ${label}</button>`;
+                }).join('');
+                // Fill and erase buttons
+                const fillBtn = cfg.showFill ? `<button id="fill-btn" class="canvas-tool-btn" title="Fill" style="margin-right:4px;"><i class="fas fa-fill-drip"></i></button>` : '';
+                const eraseBtn = cfg.showErase ? `<button id="erase-btn" class="canvas-tool-btn" title="Erase" style="margin-right:4px;"><i class="fas fa-eraser"></i></button>` : '';
+                const taskbarHtml = showBar ? `
                     <div id="canvas-taskbar" style="margin:8px 0;">
-                        ${promptButtons}
+                        ${aiButtons}
+                        ${fillBtn}
+                        ${eraseBtn}
                         <button id="undo-btn" style="margin-left:4px;">Undo</button>
                         <button id="redo-btn" style="margin-left:4px;">Redo</button>
                     </div>
@@ -236,6 +248,7 @@ class AppRuntime {
                     ${taskbarHtml}
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
+            }
             case 'rich-text': {
                 // Build a rich text editor with configurable toolbar and dimensions
                 const cfg = component.config || {};
@@ -609,6 +622,8 @@ class AppRuntime {
         let drawing = false;
         let brushSize = cfg.brushSize || 5;
         let brushColor = cfg.brushColor || '#000000';
+        let eraseMode = false;
+        let fillMode = false;
         const startDrawing = (e) => {
             drawing = true;
             ctx.beginPath();
@@ -617,7 +632,9 @@ class AppRuntime {
         const draw = (e) => {
             if (!drawing) return;
             ctx.lineTo(e.offsetX, e.offsetY);
-            ctx.strokeStyle = brushColor;
+            // Set composite operation based on erase mode
+            ctx.globalCompositeOperation = eraseMode ? 'destination-out' : 'source-over';
+            ctx.strokeStyle = eraseMode ? 'rgba(0,0,0,1)' : brushColor;
             ctx.lineWidth = brushSize;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -651,52 +668,57 @@ class AppRuntime {
                 });
             }
         }
-        // AI filter buttons and undo/redo
-        if (cfg.showTaskbar === true) {
-            // Undo
-            const undoBtn = this.container.querySelector('#undo-btn');
-            if (undoBtn) {
-                undoBtn.addEventListener('click', () => {
-                    if (this.historyIndex > 0) {
-                        this.historyIndex--;
-                        restoreState(this.historyIndex);
-                    }
-                });
-            }
-            // Redo
-            const redoBtn = this.container.querySelector('#redo-btn');
-            if (redoBtn) {
-                redoBtn.addEventListener('click', () => {
-                    if (this.historyIndex < this.canvasHistory.length - 1) {
-                        this.historyIndex++;
-                        restoreState(this.historyIndex);
-                    }
-                });
-            }
-            // AI filters
-            const filterButtons = this.container.querySelectorAll('.ai-filter-btn');
-            filterButtons.forEach((btn) => {
+        // Canvas tool buttons and AI option handlers
+        // Undo and redo buttons exist whenever the taskbar is shown
+        const undoBtn = this.container.querySelector('#undo-btn');
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+                if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                    restoreState(this.historyIndex);
+                }
+            });
+        }
+        const redoBtn = this.container.querySelector('#redo-btn');
+        if (redoBtn) {
+            redoBtn.addEventListener('click', () => {
+                if (this.historyIndex < this.canvasHistory.length - 1) {
+                    this.historyIndex++;
+                    restoreState(this.historyIndex);
+                }
+            });
+        }
+        // AI option buttons
+        const aiButtons = this.container.querySelectorAll('.ai-filter-btn');
+        if (aiButtons && aiButtons.length > 0) {
+            aiButtons.forEach((btn) => {
+                const index = parseInt(btn.getAttribute('data-filter-index'), 10);
                 btn.addEventListener('click', () => {
-                    const filterName = btn.textContent.trim();
-                    // Apply filter
+                    // Determine options (support legacy aiPrompts)
+                    let options = [];
+                    if (Array.isArray(cfg.aiOptions)) {
+                        options = cfg.aiOptions;
+                    } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+                        options = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+                    }
+                    const opt = options[index];
+                    if (!opt) return;
                     try {
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         const data = imageData.data;
+                        const label = (opt.label || '') + ' ' + (opt.prompt || '');
                         for (let i = 0; i < data.length; i += 4) {
                             const r = data[i];
                             const g = data[i + 1];
                             const b = data[i + 2];
-                            if (/watercolor/i.test(filterName)) {
-                                // Lighten colors slightly for watercolor effect
+                            if (/watercolor/i.test(label)) {
                                 data[i] = Math.min(255, r * 1.1);
                                 data[i + 1] = Math.min(255, g * 1.1);
                                 data[i + 2] = Math.min(255, b * 1.1);
-                            } else if (/sketch/i.test(filterName)) {
-                                // Convert to grayscale for sketch effect
+                            } else if (/sketch|grayscale/i.test(label)) {
                                 const avg = (r + g + b) / 3;
                                 data[i] = data[i + 1] = data[i + 2] = avg;
                             } else {
-                                // Default effect: invert colors
                                 data[i] = 255 - r;
                                 data[i + 1] = 255 - g;
                                 data[i + 2] = 255 - b;
@@ -710,6 +732,131 @@ class AppRuntime {
                 });
             });
         }
+        // Fill button (toggle). When active, clicking on the canvas will flood fill
+        const fillBtn = this.container.querySelector('#fill-btn');
+        if (fillBtn) {
+            fillBtn.addEventListener('click', () => {
+                // toggle fill mode
+                fillMode = !fillMode;
+                // ensure erase mode off
+                if (fillMode && eraseMode) {
+                    eraseMode = false;
+                    const eb = this.container.querySelector('#erase-btn');
+                    if (eb) eb.classList.remove('active');
+                }
+                // update button states
+                if (fillMode) {
+                    fillBtn.classList.add('active');
+                } else {
+                    fillBtn.classList.remove('active');
+                }
+            });
+        }
+        // Erase button (toggle). When active, drawing acts as eraser
+        const eraseBtn = this.container.querySelector('#erase-btn');
+        if (eraseBtn) {
+            eraseBtn.addEventListener('click', () => {
+                eraseMode = !eraseMode;
+                // disable fill mode if toggling erase
+                if (eraseMode && fillMode) {
+                    fillMode = false;
+                    if (fillBtn) fillBtn.classList.remove('active');
+                }
+                // Visually indicate toggle state
+                if (eraseMode) {
+                    eraseBtn.classList.add('active');
+                } else {
+                    eraseBtn.classList.remove('active');
+                }
+            });
+        }
+
+        // Flood fill function used when fillMode is active and canvas clicked
+        function floodFill(x, y, fillColor) {
+            try {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                const width = canvas.width;
+                const height = canvas.height;
+                // Helper to get index in data array
+                const indexOf = (x, y) => (y * width + x) * 4;
+                // Convert fillColor to RGB
+                const hexToRgb = (hex) => {
+                    hex = hex.replace('#', '');
+                    if (hex.length === 3) {
+                        hex = hex.split('').map(c => c + c).join('');
+                    }
+                    const num = parseInt(hex, 16);
+                    return {
+                        r: (num >> 16) & 255,
+                        g: (num >> 8) & 255,
+                        b: num & 255
+                    };
+                };
+                const targetColor = {
+                    r: data[indexOf(x, y)],
+                    g: data[indexOf(x, y) + 1],
+                    b: data[indexOf(x, y) + 2]
+                };
+                const replacement = hexToRgb(fillColor);
+                // If target equals replacement, nothing to fill
+                if (targetColor.r === replacement.r && targetColor.g === replacement.g && targetColor.b === replacement.b) {
+                    return;
+                }
+                const matchColor = (i) => {
+                    return data[i] === targetColor.r && data[i + 1] === targetColor.g && data[i + 2] === targetColor.b;
+                };
+                const queue = [];
+                queue.push({ x, y });
+                while (queue.length > 0) {
+                    const { x: cx, y: cy } = queue.pop();
+                    let idx = indexOf(cx, cy);
+                    // Skip if not match
+                    if (!matchColor(idx)) continue;
+                    // Move west until color mismatch
+                    let west = cx;
+                    while (west >= 0 && matchColor(indexOf(west, cy))) {
+                        west--;
+                    }
+                        west++;
+                    // Move east until color mismatch
+                    let east = cx;
+                    while (east < width && matchColor(indexOf(east, cy))) {
+                        east++;
+                    }
+                    east--;
+                    // Fill span
+                    for (let i = west; i <= east; i++) {
+                        const pos = indexOf(i, cy);
+                        data[pos] = replacement.r;
+                        data[pos + 1] = replacement.g;
+                        data[pos + 2] = replacement.b;
+                    }
+                    // Check neighboring rows
+                    for (let nx = west; nx <= east; nx++) {
+                        if (cy > 0 && matchColor(indexOf(nx, cy - 1))) {
+                            queue.push({ x: nx, y: cy - 1 });
+                        }
+                        if (cy < height - 1 && matchColor(indexOf(nx, cy + 1))) {
+                            queue.push({ x: nx, y: cy + 1 });
+                        }
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            } catch (err) {
+                console.warn('Failed to perform flood fill', err);
+            }
+        }
+
+        // When fillMode is active, clicking on canvas triggers flood fill
+        canvas.addEventListener('click', (e) => {
+            if (!fillMode) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+            const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+            floodFill(x, y, brushColor);
+            saveState();
+        });
     }
 
     /**

@@ -473,11 +473,15 @@ class AppBuilder {
                 editable: true,
                 showBrushControls: true,
                 showTaskbar: false,
-                aiPrompts: 'Watercolor,Sketch',
+                // aiOptions is an array of objects: { label, prompt, icon }
+                aiOptions: [],
                 brushSize: 5,
                 brushColor: '#000000',
                 allowImport: true,
-                allowExport: true
+                allowExport: true,
+                // Additional tools
+                showFill: false,
+                showErase: false
             },
             // Rich text editor now supports height, placeholder, toolbar options
             // (comma-separated), and a default value.  Toolbar options can include
@@ -930,8 +934,18 @@ class AppBuilder {
                 <input type="checkbox" class="config-showTaskbar" />
             </div>
             <div class="form-group">
-                <label>AI Prompts (comma-separated)</label>
-                <input type="text" class="config-aiPrompts" />
+                <label>AI Options</label>
+                <div id="ai-options-list" style="margin-top:4px;"></div>
+                <button type="button" id="add-ai-option" class="btn-secondary" style="margin-top:6px;">+ Add AI Option</button>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Configure up to 10 AI actions. Each action includes a button label, a system prompt and an icon.</small>
+            </div>
+            <div class="form-group">
+                <label>Show Fill Tool</label>
+                <input type="checkbox" class="config-showFill" />
+            </div>
+            <div class="form-group">
+                <label>Show Erase Tool</label>
+                <input type="checkbox" class="config-showErase" />
             </div>
             <!-- Data source controls -->
             <div class="form-group">
@@ -944,9 +958,76 @@ class AppBuilder {
             </div>
         `;
         container.appendChild(form);
-        // Populate fields from config and attach listeners
+        // Populate fields from config and attach listeners for built-in canvas settings
         this.populateConfig(container);
         this.attachConfigListeners(container);
+        // Handle AI options list rendering and interactions
+        const { component } = this.selectedComponentRef;
+        // Ensure aiOptions is an array
+        if (!Array.isArray(component.config.aiOptions)) {
+            component.config.aiOptions = [];
+        }
+        const listContainer = form.querySelector('#ai-options-list');
+        const addBtn = form.querySelector('#add-ai-option');
+        const renderAiOptions = () => {
+            listContainer.innerHTML = '';
+            const options = component.config.aiOptions;
+            options.forEach((opt, index) => {
+                const row = document.createElement('div');
+                row.className = 'ai-option-row';
+                row.style.marginBottom = '8px';
+                row.innerHTML = `
+                    <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+                        <input type="text" class="ai-label" placeholder="Button label" value="${opt.label || ''}" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:4px; color:#fff; padding:4px;" />
+                        <button type="button" class="ai-icon-btn" title="Select icon" style="padding:4px 6px; background:rgba(255,255,255,0.1); border:none; border-radius:4px; color:#fff;"><i class="${opt.icon || 'fas fa-magic'}"></i></button>
+                        <button type="button" class="ai-remove-btn" title="Remove" style="padding:4px 6px; background:rgba(255,67,54,0.8); border:none; border-radius:4px; color:#fff;">&times;</button>
+                    </div>
+                    <textarea class="ai-prompt" placeholder="System prompt..." rows="2" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:4px; color:#fff; padding:4px;">${opt.prompt || ''}</textarea>
+                `;
+                listContainer.appendChild(row);
+                const iconBtn = row.querySelector('.ai-icon-btn');
+                const removeBtn = row.querySelector('.ai-remove-btn');
+                const labelInput = row.querySelector('.ai-label');
+                const promptInput = row.querySelector('.ai-prompt');
+                // Create a hidden container for the icon picker
+                const iconContainer = document.createElement('div');
+                iconContainer.style.display = 'none';
+                iconContainer.style.position = 'relative';
+                row.appendChild(iconContainer);
+                const picker = new IconPicker(iconContainer, opt.icon || 'fas fa-magic', (icon) => {
+                    opt.icon = icon;
+                    iconBtn.innerHTML = `<i class="${icon}"></i>`;
+                    iconContainer.style.display = 'none';
+                });
+                iconBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Toggle picker visibility
+                    iconContainer.style.display = iconContainer.style.display === 'none' ? 'block' : 'none';
+                });
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    component.config.aiOptions.splice(index, 1);
+                    renderAiOptions();
+                });
+                labelInput.addEventListener('input', () => {
+                    opt.label = labelInput.value;
+                });
+                promptInput.addEventListener('input', () => {
+                    opt.prompt = promptInput.value;
+                });
+            });
+        };
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (component.config.aiOptions.length >= 10) {
+                NotificationManager && NotificationManager.error && NotificationManager.error('Maximum of 10 AI options allowed');
+                return;
+            }
+            component.config.aiOptions.push({ label: '', prompt: '', icon: 'fas fa-magic' });
+            renderAiOptions();
+        });
+        // Initial render of AI options
+        renderAiOptions();
     }
 
     /**
