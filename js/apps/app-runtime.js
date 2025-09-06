@@ -104,6 +104,11 @@ class AppRuntime {
             this.setupTable(component);
             this.setupDataSource(component);
         }
+        // Automatically complete data source steps without user interaction
+        if (component.type === 'data-source') {
+            this.autoCompleteDataSource(component);
+            return;
+        }
         // Update back and next button state and labels
         this.updateControlsState(false);
         const backBtn = this.container.querySelector('#runtime-back');
@@ -322,6 +327,12 @@ class AppRuntime {
                     ${addRowBtn}
                     <button class="btn-primary" id="runtime-table-continue" onclick="__runtimeInstance.completeCurrentStep()" style="margin-top:8px;">Continue</button>
                 `;
+            }
+            case 'data-source': {
+                // Data source component is not shown to the end user.  The
+                // actual import occurs automatically in renderCurrentStep().
+                // Return an empty string so the runtime UI remains clean.
+                return '';
             }
             default:
                 return `
@@ -1162,6 +1173,128 @@ class AppRuntime {
                 }
             });
         }
+    }
+
+    /**
+     * Automatically import data from a selected JSON file for data source
+     * components.  This reads the file specified in component.config.fileId
+     * using the fileSystem API, applies heuristics based on dataType (auto,
+     * text, image, table) and stores the resulting value in the state.  Once
+     * complete, the runtime advances to the next step without user input.
+     */
+    autoCompleteDataSource(component) {
+        const cfg = component.config || {};
+        const fileId = cfg.fileId;
+        if (!fileId) {
+            // Nothing to import; skip step
+            this.state[component.id] = null;
+            this.currentIndex++;
+            this.renderCurrentStep();
+            return;
+        }
+        // Define heuristics similar to setupDataSource
+        const findString = (obj) => {
+            if (obj == null) return null;
+            if (typeof obj === 'string') return obj;
+            if (Array.isArray(obj)) {
+                for (const v of obj) {
+                    const found = findString(v);
+                    if (found) return found;
+                }
+            } else if (typeof obj === 'object') {
+                for (const key in obj) {
+                    const found = findString(obj[key]);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        const findImageData = (obj) => {
+            if (obj == null) return null;
+            if (typeof obj === 'string' && /^data:image\//i.test(obj)) return obj;
+            if (Array.isArray(obj)) {
+                for (const v of obj) {
+                    const found = findImageData(v);
+                    if (found) return found;
+                }
+            } else if (typeof obj === 'object') {
+                for (const key in obj) {
+                    const val = obj[key];
+                    if (typeof val === 'string' && /^data:image\//i.test(val)) return val;
+                    const found = findImageData(val);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        const findTableData = (obj) => {
+            if (Array.isArray(obj) && obj.length > 0 && (Array.isArray(obj[0]) || typeof obj[0] === 'object')) {
+                return obj;
+            }
+            if (typeof obj === 'object' && obj !== null) {
+                for (const key in obj) {
+                    const found = findTableData(obj[key]);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        // Read JSON file content similar to setupDataSource
+        const readJsonFile = (fileId) => {
+            if (!fileId) return null;
+            try {
+                let content;
+                if (typeof fileSystem !== 'undefined') {
+                    if (typeof fileSystem.readFile === 'function') {
+                        content = fileSystem.readFile(fileId);
+                    } else if (typeof fileSystem.getFileContent === 'function') {
+                        content = fileSystem.getFileContent(fileId);
+                    } else if (typeof fileSystem.getFile === 'function') {
+                        const f = fileSystem.getFile(fileId);
+                        content = f ? (f.content || f.data || f.body) : null;
+                    } else if (Array.isArray(fileSystem.files)) {
+                        const f = fileSystem.files.find(item => (typeof item === 'string' ? item === fileId : (item.id || item.name) === fileId));
+                        content = f && typeof f !== 'string' ? (f.content || f.data || f.body) : null;
+                    }
+                }
+                if (!content) return null;
+                if (typeof content === 'string') {
+                    try {
+                        return JSON.parse(content);
+                    } catch (err) {
+                        console.warn('Invalid JSON content');
+                        return null;
+                    }
+                }
+                return content;
+            } catch (err) {
+                console.warn('Failed to read file', err);
+                return null;
+            }
+        };
+        const data = readJsonFile(fileId);
+        let value = null;
+        if (data != null) {
+            const type = cfg.dataType || 'auto';
+            if (type === 'text') {
+                value = findString(data);
+            } else if (type === 'image') {
+                value = findImageData(data);
+            } else if (type === 'table') {
+                value = findTableData(data);
+            } else {
+                // auto: try string, then image, then table
+                value = findString(data);
+                if (!value) value = findImageData(data);
+                if (!value) value = findTableData(data);
+                if (!value) value = data;
+            }
+        }
+        // Store value in state
+        this.state[component.id] = value;
+        // Advance to next step
+        this.currentIndex++;
+        this.renderCurrentStep();
     }
 
     /**

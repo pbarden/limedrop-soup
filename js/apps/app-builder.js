@@ -28,7 +28,7 @@ class AppBuilder {
         // referenced when rendering the workflow so that each module can
         // present dedicated drop zones for Input, Processing and Output
         // categories.  The grouping mirrors the sidebar in the builder.
-        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table'];
+        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table', 'data-source'];
         this.processingTypes = ['ai-prompt', 'data-transform'];
         this.outputTypes = ['display', 'chart', 'export'];
         this.init();
@@ -52,6 +52,10 @@ class AppBuilder {
         // does not already exist in the HTML.  This enables dragging
         // a table component without requiring manual HTML changes.
         this.injectTableComponentItem();
+        // Dynamically insert a Data Source component item into the input list
+        // if it does not already exist.  This ensures the new component
+        // appears in the builder sidebar without manual HTML edits.
+        this.injectDataSourceComponentItem();
         // Ensure at least one module exists
         if (this.modules.length === 0) {
             this.addModule();
@@ -85,6 +89,40 @@ class AppBuilder {
         item.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'copy';
             e.dataTransfer.setData('component-type', 'table');
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+        });
+    }
+
+    /**
+     * Insert a new component item for the data source input into the input
+     * components list.  It clones the class names from the text input
+     * item to maintain visual consistency.  If a data source item already
+     * exists (e.g. defined in the HTML), this method does nothing.
+     */
+    injectDataSourceComponentItem() {
+        // Check if a data source item already exists
+        if (this.windowEl.querySelector('.component-item[data-type="data-source"]')) {
+            return;
+        }
+        // Find an existing input component item to clone classes
+        const reference = this.windowEl.querySelector('.component-item[data-type="text-input"]');
+        if (!reference) return;
+        const parent = reference.parentElement;
+        if (!parent) return;
+        const item = document.createElement('div');
+        item.className = reference.className;
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'data-source';
+        // Use a database/file import icon if font-awesome is available
+        item.innerHTML = `<i class="fas fa-database" style="margin-right:8px;"></i><span>Data Source</span>`;
+        parent.appendChild(item);
+        // Attach dragstart and dragend events to the new item
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('component-type', 'data-source');
             item.classList.add('dragging');
         });
         item.addEventListener('dragend', () => {
@@ -465,6 +503,16 @@ class AppBuilder {
                 allowImport: true,
                 allowExport: true
             },
+            // Data source component allows the app creator to select a JSON file
+            // from the file system as an input.  The dataType determines how
+            // the JSON should be interpreted at run time: auto (heuristic),
+            // text (first string), image (first data URL), or table (first
+            // array/object).  The fileId stores the selected file name or id.
+            'data-source': {
+                label: 'Data Source',
+                fileId: null,
+                dataType: 'auto'
+            },
             'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
             'data-transform': { transformation: 'uppercase' },
             'display': { label: 'Output Display' },
@@ -620,6 +668,7 @@ class AppBuilder {
             'chart': 'Chart',
             'export': 'Export Data'
             , 'table': 'Table'
+            , 'data-source': 'Data Source'
         };
         return labels[component.type] || component.type;
     }
@@ -683,6 +732,11 @@ class AppBuilder {
         // Provide a custom property editor for rich text components
         if (component.type === 'rich-text') {
             this.renderRichTextProperties(container);
+            return;
+        }
+        // Provide a custom property editor for data source components
+        if (component.type === 'data-source') {
+            this.renderDataSourceProperties(container);
             return;
         }
         const templateId = `${component.type}-config`;
@@ -966,6 +1020,114 @@ class AppBuilder {
         container.appendChild(form);
         this.populateConfig(container);
         this.attachConfigListeners(container);
+    }
+
+    /**
+     * Render custom properties UI for the data source component.  Allows
+     * selection of a JSON file from the file system and specification of
+     * how the data should be interpreted (auto, text, image, table).  If
+     * fileSystem is available, the file dropdown is populated automatically;
+     * otherwise users can manually enter the file identifier.
+     */
+    renderDataSourceProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Select File</label>
+                <select class="config-fileId">
+                    <option value="">-- Select file --</option>
+                </select>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:4px;">If no files appear, enter the file ID manually below.</small>
+            </div>
+            <div class="form-group">
+                <label>File ID (manual)</label>
+                <input type="text" class="config-fileId-manual" placeholder="Enter file ID" />
+            </div>
+            <div class="form-group">
+                <label>Data Type</label>
+                <select class="config-dataType">
+                    <option value="auto">Auto</option>
+                    <option value="text">Text</option>
+                    <option value="image">Image</option>
+                    <option value="table">Table</option>
+                </select>
+            </div>
+        `;
+        container.appendChild(form);
+        // Populate file dropdown if fileSystem is available
+        const fileSelect = form.querySelector('.config-fileId');
+        const manualInput = form.querySelector('.config-fileId-manual');
+        const populateFiles = () => {
+            let files = [];
+            try {
+                if (typeof fileSystem !== 'undefined') {
+                    if (typeof fileSystem.listFiles === 'function') {
+                        files = fileSystem.listFiles();
+                    } else if (typeof fileSystem.getFiles === 'function') {
+                        files = fileSystem.getFiles();
+                    } else if (Array.isArray(fileSystem.files)) {
+                        files = fileSystem.files;
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to list files', err);
+            }
+            if (!Array.isArray(files) || files.length === 0) return;
+            fileSelect.innerHTML = '<option value="">-- Select file --</option>';
+            files.forEach(f => {
+                const value = typeof f === 'string' ? f : (f.id || f.name || '');
+                const name = typeof f === 'string' ? f : (f.name || f.label || value);
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = name;
+                fileSelect.appendChild(option);
+            });
+        };
+        populateFiles();
+        // When file is selected from dropdown, update manual field to match
+        fileSelect.addEventListener('change', () => {
+            const val = fileSelect.value;
+            if (val) {
+                manualInput.value = val;
+            }
+        });
+        // When manual field is changed, also update select if matches
+        manualInput.addEventListener('input', () => {
+            const val = manualInput.value;
+            // Select matching option if exists
+            const opt = Array.from(fileSelect.options).find(o => o.value === val);
+            if (opt) {
+                fileSelect.value = val;
+            } else {
+                fileSelect.value = '';
+            }
+            // Update config-fileId value on the form (config-fileId) hidden behind two elements
+        });
+        // Use populateConfig and attachConfigListeners to bind values
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+        // We need custom binding for fileId because there are two inputs (dropdown + manual)
+        const { component } = this.selectedComponentRef;
+        // Set initial values: populate both fields from config
+        const cfg = component.config;
+        if (cfg.fileId) {
+            fileSelect.value = cfg.fileId;
+            manualInput.value = cfg.fileId;
+        }
+        // Listen for changes on both to update config
+        fileSelect.addEventListener('change', () => {
+            component.config.fileId = fileSelect.value;
+            manualInput.value = fileSelect.value;
+        });
+        manualInput.addEventListener('change', () => {
+            component.config.fileId = manualInput.value;
+        });
     }
 
     /**
