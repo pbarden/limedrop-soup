@@ -93,6 +93,8 @@ class AppRuntime {
             this.setupFileUpload(component);
         } else if (component.type === 'canvas') {
             this.setupCanvas(component);
+        } else if (component.type === 'text-input') {
+            this.setupTextInput(component);
         }
         // Update back and next button state and labels
         this.updateControlsState(false);
@@ -130,12 +132,24 @@ class AppRuntime {
      */
     renderComponent(component) {
         switch (component.type) {
-            case 'text-input':
+            case 'text-input': {
+                // Build a robust text input with validation based on config
+                const cfg = component.config || {};
+                const type = cfg.inputType || 'text';
+                const placeholder = cfg.placeholder || '';
+                const requiredAttr = cfg.required ? 'required' : '';
+                const minAttr = cfg.minLength && cfg.minLength > 0 ? `minlength="${cfg.minLength}"` : '';
+                const maxAttr = cfg.maxLength != null ? `maxlength="${cfg.maxLength}"` : '';
+                const patternAttr = cfg.pattern ? `pattern="${cfg.pattern}"` : '';
+                const valueAttr = cfg.defaultValue ? `value="${cfg.defaultValue}"` : '';
+                const label = cfg.label || 'Text Input';
                 return `
-                    <label>${component.config.label || 'Text Input'}</label><br/>
-                    <input type="text" id="runtime-text-input" placeholder="${component.config.placeholder || ''}"/><br/>
-                    <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
+                    <label>${label}</label><br/>
+                    <input type="${type}" id="runtime-text-input" placeholder="${placeholder}" ${requiredAttr} ${minAttr} ${maxAttr} ${patternAttr} ${valueAttr}/><br/>
+                    <div id="runtime-text-error" style="color:red;font-size:12px;margin-top:4px;"></div>
+                    <button class="btn-primary" id="runtime-text-continue" onclick="__runtimeInstance.completeCurrentStep()" disabled>Continue</button>
                 `;
+            }
             case 'file-upload':
                 // Build a file upload UI that allows users to either upload
                 // a new file or select an existing file from the file system.
@@ -483,6 +497,46 @@ class AppRuntime {
                 });
             });
         }
+    }
+
+    /**
+     * Setup validation for text input.  This method attaches an input
+     * handler to enforce required, minLength, maxLength and pattern rules
+     * defined in the component's configuration.  It also disables the
+     * continue button until the input is valid and displays an error
+     * message when validation fails.
+     */
+    setupTextInput(component) {
+        const inputEl = this.container.querySelector('#runtime-text-input');
+        const errorEl = this.container.querySelector('#runtime-text-error');
+        const continueBtn = this.container.querySelector('#runtime-text-continue');
+        if (!inputEl || !continueBtn || !errorEl) return;
+        const cfg = component.config || {};
+        const validate = () => {
+            let error = '';
+            const value = inputEl.value || '';
+            if (cfg.required && value.trim() === '') {
+                error = 'This field is required.';
+            } else if (cfg.minLength && value.length < cfg.minLength) {
+                error = `Please enter at least ${cfg.minLength} characters.`;
+            } else if (cfg.maxLength != null && cfg.maxLength >= 0 && value.length > cfg.maxLength) {
+                error = `Please enter no more than ${cfg.maxLength} characters.`;
+            } else if (cfg.pattern) {
+                try {
+                    const regex = new RegExp(cfg.pattern);
+                    if (value && !regex.test(value)) {
+                        error = 'Invalid format.';
+                    }
+                } catch (err) {
+                    console.warn('Invalid regex pattern', err);
+                }
+            }
+            errorEl.textContent = error;
+            continueBtn.disabled = error !== '';
+        };
+        inputEl.addEventListener('input', validate);
+        // Initial validation
+        validate();
     }
 
     /**
