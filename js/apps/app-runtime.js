@@ -150,26 +150,42 @@ class AppRuntime {
                     <button class="btn-primary" id="runtime-text-continue" onclick="__runtimeInstance.completeCurrentStep()" disabled>Continue</button>
                 `;
             }
-            case 'file-upload':
-                // Build a file upload UI that allows users to either upload
-                // a new file or select an existing file from the file system.
-                // The default source is determined by component.config.source.
-                const source = component.config && component.config.source ? component.config.source : 'upload';
+            case 'file-upload': {
+                // Build a file upload UI based on configuration.  Source can be
+                // 'upload', 'existing' or 'both'.  The accept and multiple
+                // attributes are applied to the file input.  Required fields
+                // will be validated before continuing.
+                const cfg = component.config || {};
+                const source = cfg.source || 'both';
+                const acceptAttr = cfg.accept ? cfg.accept : '*';
+                const multipleAttr = cfg.multiple ? 'multiple' : '';
+                const label = cfg.label || 'Upload File';
+                // Determine which sections to render
+                const showUpload = source === 'upload' || source === 'both';
+                const showExisting = source === 'existing' || source === 'both';
+                // Radio selection is needed only when both options are available
+                const radioHtml = source === 'both' ? `
+                    <div class="file-upload-source" style="margin-bottom:8px;">
+                        <label><input type="radio" name="fileSource" value="upload" checked/> Upload new</label>
+                        <label style="margin-left: 10px;"><input type="radio" name="fileSource" value="existing"/> Select existing</label>
+                    </div>
+                ` : '';
+                const uploadWrapperDisplay = source === 'upload' ? '' : 'display:none;';
+                const existingWrapperDisplay = source === 'existing' ? '' : 'display:none;';
+                // Build HTML
                 return `
-                    <label>${component.config.label || 'Upload File'}</label><br/>
-                    <div class="file-upload-source">
-                        <label><input type="radio" name="fileSource" value="upload" ${source === 'upload' ? 'checked' : ''}/> Upload new</label>
-                        <label style="margin-left: 10px;"><input type="radio" name="fileSource" value="existing" ${source === 'existing' ? 'checked' : ''}/> Select existing</label>
-                    </div>
-                    <div id="file-upload-wrapper" style="margin-top:8px;">
-                        <input type="file" id="runtime-file-upload" accept="${component.config.accept || '*'}"/>
-                    </div>
-                    <div id="file-select-wrapper" style="margin-top:8px; display:none;">
+                    <label>${label}</label><br/>
+                    ${radioHtml}
+                    ${showUpload ? `<div id="file-upload-wrapper" style="margin-bottom:8px; ${uploadWrapperDisplay}">
+                        <input type="file" id="runtime-file-upload" accept="${acceptAttr}" ${multipleAttr} />
+                    </div>` : ''}
+                    ${showExisting ? `<div id="file-select-wrapper" style="margin-bottom:8px; ${existingWrapperDisplay}">
                         <select id="runtime-file-select"><option value="">-- Select file --</option></select>
-                    </div>
-                    <br/>
-                    <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
+                    </div>` : ''}
+                    <ul id="file-preview-list" style="list-style:none; padding-left:0; margin:0 0 8px 0;"></ul>
+                    <button class="btn-primary" id="runtime-file-continue" onclick="__runtimeInstance.completeCurrentStep()" disabled>Continue</button>
                 `;
+            }
             case 'canvas':
                 // Build a canvas UI with optional brush controls and taskbar
                 const cfg = component.config || {};
@@ -259,16 +275,30 @@ class AppRuntime {
                 break;
             case 'file-upload':
                 // Determine whether the user chose to upload or select an existing file
-                const srcRadio = document.querySelector('input[name="fileSource"]:checked');
-                const selectedSource = srcRadio ? srcRadio.value : (component.config.source || 'upload');
-                if (selectedSource === 'upload') {
-                    const fileInput = document.getElementById('runtime-file-upload');
-                    value = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
-                } else {
-                    const selectEl = document.getElementById('runtime-file-select');
-                    value = selectEl ? selectEl.value : null;
+                {
+                    const cfg = component.config || {};
+                    const srcRadio = document.querySelector('input[name="fileSource"]:checked');
+                    let selectedSource = cfg.source || 'both';
+                    if (cfg.source === 'both' && srcRadio) {
+                        selectedSource = srcRadio.value;
+                    }
+                    if (selectedSource === 'upload' || (cfg.source === 'upload' && !srcRadio)) {
+                        const fileInput = document.getElementById('runtime-file-upload');
+                        if (fileInput && fileInput.files) {
+                            if (cfg.multiple) {
+                                value = Array.from(fileInput.files);
+                            } else {
+                                value = fileInput.files.length > 0 ? fileInput.files[0] : null;
+                            }
+                        } else {
+                            value = null;
+                        }
+                    } else {
+                        const selectEl = document.getElementById('runtime-file-select');
+                        value = selectEl ? selectEl.value : null;
+                    }
+                    break;
                 }
-                break;
             case 'canvas':
                 const canvasEl = document.getElementById('runtime-canvas');
                 value = canvasEl ? canvasEl.toDataURL() : null;
@@ -293,33 +323,32 @@ class AppRuntime {
      * component's config determines the initial mode.
      */
     setupFileUpload(component) {
-        const source = component.config && component.config.source ? component.config.source : 'upload';
+        const cfg = component.config || {};
+        const source = cfg.source || 'both';
         const uploadWrapper = this.container.querySelector('#file-upload-wrapper');
         const selectWrapper = this.container.querySelector('#file-select-wrapper');
         const radios = this.container.querySelectorAll('input[name="fileSource"]');
+        const fileInput = this.container.querySelector('#runtime-file-upload');
         const select = this.container.querySelector('#runtime-file-select');
-        if (!uploadWrapper || !selectWrapper || !radios || !select) return;
-        // Helper to show/hide wrappers based on selected source
-        const updateVisibility = () => {
-            const selected = Array.from(radios).find(r => r.checked)?.value || 'upload';
-            if (selected === 'upload') {
-                uploadWrapper.style.display = '';
-                selectWrapper.style.display = 'none';
+        const previewList = this.container.querySelector('#file-preview-list');
+        const continueBtn = this.container.querySelector('#runtime-file-continue');
+        if (!continueBtn) return;
+        // Apply attributes to file input if present
+        if (fileInput) {
+            fileInput.accept = cfg.accept || '*';
+            if (cfg.multiple) {
+                fileInput.setAttribute('multiple', 'multiple');
             } else {
-                uploadWrapper.style.display = 'none';
-                selectWrapper.style.display = '';
+                fileInput.removeAttribute('multiple');
             }
-        };
-        radios.forEach(r => {
-            r.addEventListener('change', updateVisibility);
-        });
-        // Populate select with files
+        }
+        // Populate existing files into select
         const populateFiles = () => {
+            if (!select) return;
             select.innerHTML = '<option value="">-- Select file --</option>';
             let files = [];
             try {
                 if (typeof fileSystem !== 'undefined') {
-                    // Attempt to call list or get methods; fallback to files array
                     if (typeof fileSystem.listFiles === 'function') {
                         files = fileSystem.listFiles();
                     } else if (typeof fileSystem.getFiles === 'function') {
@@ -334,7 +363,6 @@ class AppRuntime {
             if (Array.isArray(files)) {
                 files.forEach(f => {
                     const option = document.createElement('option');
-                    // Support both object and string formats
                     if (typeof f === 'string') {
                         option.value = f;
                         option.textContent = f;
@@ -345,13 +373,84 @@ class AppRuntime {
                     select.appendChild(option);
                 });
             }
+            // Preselect if config.fileId provided
+            if (cfg.fileId && select) {
+                select.value = cfg.fileId;
+            }
         };
         populateFiles();
-        // Initialise visibility based on config
-        Array.from(radios).forEach(r => {
-            r.checked = r.value === source;
-        });
+        // Helper to show/hide wrappers based on selected source in radio buttons (only for both)
+        const updateVisibility = () => {
+            if (!uploadWrapper || !selectWrapper) return;
+            let selected = source;
+            // When both options are available, read from radio
+            if (source === 'both' && radios && radios.length > 0) {
+                const checkedRadio = Array.from(radios).find(r => r.checked);
+                selected = checkedRadio ? checkedRadio.value : 'upload';
+            }
+            if (selected === 'upload') {
+                if (uploadWrapper) uploadWrapper.style.display = '';
+                if (selectWrapper) selectWrapper.style.display = 'none';
+            } else if (selected === 'existing') {
+                if (uploadWrapper) uploadWrapper.style.display = 'none';
+                if (selectWrapper) selectWrapper.style.display = '';
+            }
+            validate();
+        };
+        // File preview for upload
+        const updatePreview = () => {
+            if (!previewList || !fileInput) return;
+            previewList.innerHTML = '';
+            if (fileInput.files && fileInput.files.length > 0) {
+                Array.from(fileInput.files).forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = file.name;
+                    previewList.appendChild(li);
+                });
+            }
+        };
+        // Validation: enable continue only if required conditions are met
+        const validate = () => {
+            let valid = true;
+            // Determine current mode
+            let selected = source;
+            if (source === 'both' && radios && radios.length > 0) {
+                const checkedRadio = Array.from(radios).find(r => r.checked);
+                selected = checkedRadio ? checkedRadio.value : 'upload';
+            }
+            if (selected === 'upload') {
+                if (cfg.required) {
+                    valid = fileInput && fileInput.files && fileInput.files.length > 0;
+                }
+            } else {
+                // existing
+                if (cfg.required) {
+                    valid = select && select.value;
+                }
+            }
+            continueBtn.disabled = !valid;
+        };
+        // Attach listeners
+        if (radios && radios.length > 0) {
+            radios.forEach(r => {
+                r.addEventListener('change', () => {
+                    updateVisibility();
+                });
+            });
+        }
+        if (fileInput) {
+            fileInput.addEventListener('change', () => {
+                updatePreview();
+                validate();
+            });
+        }
+        if (select) {
+            select.addEventListener('change', validate);
+        }
+        // Initial visibility and validation
         updateVisibility();
+        updatePreview();
+        validate();
     }
 
     /**

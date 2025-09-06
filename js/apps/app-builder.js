@@ -370,11 +370,17 @@ class AppBuilder {
             },
             // File upload now supports choosing an existing file registered in the
             // file system.  The `source` field determines whether the user can
-            // upload a new file or select an existing one.  When using
-            // "existing", the `fileId` or `fileName` should be set by the
-            // configuration UI (not yet implemented).  The `accept` field
-            // remains for filtering upload types.
-            'file-upload': { label: 'Upload File', accept: '*', source: 'upload', fileId: null },
+            // upload a new file, select an existing one, or offer both options.
+            // `accept` restricts the allowed file types, `fileId` can preselect an
+            // existing file, and `multiple` allows selecting multiple files.
+            'file-upload': {
+                label: 'Upload File',
+                accept: '*',
+                source: 'both', // 'upload', 'existing', or 'both'
+                fileId: null,
+                multiple: false,
+                required: false
+            },
             // Canvas supports additional toggles to enable/disable drawing
             // tools.  `editable` controls whether drawing is allowed.
             // `showBrushControls` toggles brush size/color selectors, while
@@ -592,6 +598,13 @@ class AppBuilder {
             this.renderTextInputProperties(container);
             return;
         }
+        // Provide a custom property editor for file-upload so users can
+        // configure accept types, source mode, multiple selection and
+        // preselected file.  This overrides any static template.
+        if (component.type === 'file-upload') {
+            this.renderFileUploadProperties(container);
+            return;
+        }
         const templateId = `${component.type}-config`;
         const template = document.getElementById(templateId);
         if (template) {
@@ -654,6 +667,53 @@ class AppBuilder {
             <div class="form-group">
                 <label>Pattern (Regex)</label>
                 <input type="text" class="config-pattern" />
+            </div>
+        `;
+        container.appendChild(form);
+        // Populate fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+    }
+
+    /**
+     * Render custom properties UI for the file upload component.  This
+     * includes fields for label, accept types, source mode (upload, existing
+     * or both), multiple selection, required toggle and a preselected file
+     * identifier.  After building the form the existing populateConfig and
+     * attachConfigListeners methods are invoked to bind values.
+     */
+    renderFileUploadProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Accept (e.g. .png,.jpg,application/pdf)</label>
+                <input type="text" class="config-accept" />
+            </div>
+            <div class="form-group">
+                <label>Source Mode</label>
+                <select class="config-source">
+                    <option value="upload">Upload Only</option>
+                    <option value="existing">Existing Only</option>
+                    <option value="both">Both</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Allow Multiple</label>
+                <input type="checkbox" class="config-multiple" />
+            </div>
+            <div class="form-group">
+                <label>Required</label>
+                <input type="checkbox" class="config-required" />
+            </div>
+            <div class="form-group">
+                <label>Preselected File ID (optional)</label>
+                <input type="text" class="config-fileId" />
             </div>
         `;
         container.appendChild(form);
