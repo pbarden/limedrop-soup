@@ -99,9 +99,13 @@ class AppRuntime {
             this.setupDataSource(component);
         } else if (component.type === 'rich-text') {
             this.setupRichTextEditor(component);
+            // AI actions for rich text
+            this.setupRichTextAi(component);
             this.setupDataSource(component);
         } else if (component.type === 'table') {
             this.setupTable(component);
+            // AI actions for tables
+            this.setupTableAi(component);
             this.setupDataSource(component);
         }
         // Automatically complete data source steps without user interaction
@@ -269,12 +273,27 @@ class AppRuntime {
                     }
                     return `<button class="rich-btn btn-secondary" data-action="${opt}" title="${opt.charAt(0).toUpperCase() + opt.slice(1)}" style="margin-right:4px;">${display}</button>`;
                 }).join('');
+                // Build AI options buttons for rich text
+                let aiOptions = [];
+                if (Array.isArray(cfg.aiOptions)) {
+                    aiOptions = cfg.aiOptions;
+                } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+                    aiOptions = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+                }
+                const showAiBar = cfg.showTaskbar || (aiOptions.length > 0);
+                const aiButtons = aiOptions.map((opt, i) => {
+                    const icon = opt.icon || 'fas fa-magic';
+                    const lbl = opt.label || '';
+                    return `<button class="rich-ai-btn" data-ai-index="${i}" title="${lbl}" style="margin-right:4px;"><i class="${icon}"></i> ${lbl}</button>`;
+                }).join('');
+                const aiBarHtml = showAiBar ? `<div id="rich-ai-taskbar" style="margin:8px 0;">${aiButtons}</div>` : '';
                 // Placeholder styling: we'll rely on a data-placeholder attribute and CSS inserted once
                 return `
                     ${this.getDataSourceHtml(component)}
                     <label>${label}</label><br/>
                     <div id="rich-text-toolbar" style="margin-bottom:6px;">${buttonHtml}</div>
                     <div id="runtime-rich-editor" contenteditable="true" data-placeholder="${cfg.placeholder || ''}" style="min-height:${height}px; border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:8px; background: rgba(255,255,255,0.05); color:#fff; overflow-y:auto;"></div>
+                    ${aiBarHtml}
                     <div id="runtime-rich-error" style="color:rgba(255,67,54,0.8);font-size:12px;margin-top:4px;min-height:16px;"></div>
                     <button class="btn-primary" id="runtime-rich-continue" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
@@ -331,6 +350,20 @@ class AppRuntime {
                     bodyHtml += `<tr>${cells}</tr>`;
                 }
                 const addRowBtn = editable ? `<button id="table-add-row" class="btn-secondary" style="margin-top:8px;">Add Row</button>` : '';
+                // Build AI options for table
+                let aiOptions = [];
+                if (Array.isArray(cfg.aiOptions)) {
+                    aiOptions = cfg.aiOptions;
+                } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+                    aiOptions = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+                }
+                const showAiBar = cfg.showTaskbar || (aiOptions.length > 0);
+                const aiButtons = aiOptions.map((opt, i) => {
+                    const icon = opt.icon || 'fas fa-magic';
+                    const lbl = opt.label || '';
+                    return `<button class="table-ai-btn" data-ai-index="${i}" title="${lbl}" style="margin-right:4px;"><i class="${icon}"></i> ${lbl}</button>`;
+                }).join('');
+                const aiBarHtml = showAiBar ? `<div id="table-ai-taskbar" style="margin:8px 0;">${aiButtons}</div>` : '';
                 return `
                     ${this.getDataSourceHtml(component)}
                     <label>${label}</label><br/>
@@ -342,7 +375,8 @@ class AppRuntime {
                             </tbody>
                         </table>
                     </div>
-                    ${addRowBtn}
+                    ${editable ? addRowBtn : ''}
+                    ${aiBarHtml}
                     <button class="btn-primary" id="runtime-table-continue" onclick="__runtimeInstance.completeCurrentStep()" style="margin-top:8px;">Continue</button>
                 `;
             }
@@ -965,6 +999,81 @@ class AppRuntime {
         if (errorEl) {
             errorEl.textContent = '';
         }
+        // After basic rich text setup, configure AI option buttons if present
+        this.setupRichTextAi(component);
+    }
+
+    /**
+     * Setup AI buttons for rich text.  This attaches click handlers to AI
+     * buttons defined in the component configuration.  Each button applies
+     * a simple transformation to the editor's content based on keywords in
+     * the option's label or prompt.  Currently supported operations include
+     * uppercase, lowercase, bold, italic, underline, summarize, reverse, and
+     * invert case.  If no keyword matches, invert case is used as fallback.
+     */
+    setupRichTextAi(component) {
+        const cfg = component.config || {};
+        // Determine AI options
+        let options = [];
+        if (Array.isArray(cfg.aiOptions)) {
+            options = cfg.aiOptions;
+        } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+            options = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+        }
+        if (!options || options.length === 0) return;
+        const editor = this.container.querySelector('#runtime-rich-editor');
+        if (!editor) return;
+        const btns = this.container.querySelectorAll('.rich-ai-btn');
+        if (!btns || btns.length === 0) return;
+        btns.forEach(btn => {
+            const idx = parseInt(btn.getAttribute('data-ai-index'), 10);
+            const opt = options[idx];
+            if (!opt) return;
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Extract plain text (loses HTML formatting)
+                let content = editor.textContent || '';
+                const combined = `${opt.label || ''} ${opt.prompt || ''}`.toLowerCase();
+                let newContent = content;
+                if (/uppercase/.test(combined)) {
+                    newContent = content.toUpperCase();
+                } else if (/lowercase/.test(combined)) {
+                    newContent = content.toLowerCase();
+                } else if (/bold/.test(combined)) {
+                    // Bold: wrap entire content in <strong>
+                    newContent = `<strong>${content}</strong>`;
+                    editor.innerHTML = newContent;
+                    return;
+                } else if (/italic/.test(combined)) {
+                    newContent = `<em>${content}</em>`;
+                    editor.innerHTML = newContent;
+                    return;
+                } else if (/underline/.test(combined)) {
+                    newContent = `<u>${content}</u>`;
+                    editor.innerHTML = newContent;
+                    return;
+                } else if (/summarize|summary/.test(combined)) {
+                    const words = content.trim().split(/\s+/);
+                    const half = Math.max(1, Math.ceil(words.length * 0.5));
+                    newContent = words.slice(0, half).join(' ');
+                } else if (/reverse/.test(combined)) {
+                    newContent = content.split('').reverse().join('');
+                } else {
+                    // Invert case
+                    newContent = content.split('').map(ch => {
+                        const lower = ch.toLowerCase();
+                        const upper = ch.toUpperCase();
+                        if (ch === lower) {
+                            return upper;
+                        } else {
+                            return lower;
+                        }
+                    }).join('');
+                }
+                // Update content (strip formatting)
+                editor.textContent = newContent;
+            });
+        });
     }
 
     /**
@@ -990,6 +1099,101 @@ class AppRuntime {
             const newRow = document.createElement('tr');
             newRow.innerHTML = rowCells;
             tableBody.appendChild(newRow);
+        });
+    }
+
+    /**
+     * Setup AI buttons for the table component.  Attaches click handlers
+     * that perform simple transformations on the table data based on
+     * keywords found in the option's label or prompt.  Supported actions
+     * include sort (ascending), reverse row order, uppercase, lowercase,
+     * and invert case.  If a keyword is not recognised, invert case is used.
+     */
+    setupTableAi(component) {
+        const cfg = component.config || {};
+        let options = [];
+        if (Array.isArray(cfg.aiOptions)) {
+            options = cfg.aiOptions;
+        } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+            options = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+        }
+        if (!options || options.length === 0) return;
+        const tableBody = this.container.querySelector('#runtime-table tbody');
+        if (!tableBody) return;
+        const btns = this.container.querySelectorAll('.table-ai-btn');
+        if (!btns || btns.length === 0) return;
+        // Helper to get current table data as array of arrays
+        const getTableRows = () => {
+            const rows = [];
+            const trEls = tableBody.querySelectorAll('tr');
+            trEls.forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach((td, ci) => {
+                    const input = td.querySelector('input.table-cell-input');
+                    if (input) {
+                        row.push(input.value);
+                    } else {
+                        const span = td.querySelector('span.table-cell-display');
+                        row.push(span ? span.textContent : '');
+                    }
+                });
+                rows.push(row);
+            });
+            return rows;
+        };
+        const setTableRows = (rows) => {
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            const editable = cfg.editable !== false;
+            const cols = Array.isArray(cfg.columns) ? cfg.columns : (typeof cfg.columns === 'string' ? cfg.columns.split(',').map(c => c.trim()).filter(Boolean) : []);
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                const cells = cols.map((col, ci) => {
+                    const val = row[ci] != null ? row[ci] : '';
+                    return `<td style="padding:4px 6px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        ${editable ? `<input type="text" class="table-cell-input" data-col="${ci}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px 6px; border-radius:4px;" value="${val}" />` : `<span class="table-cell-display">${val}</span>`}
+                    </td>`;
+                }).join('');
+                tr.innerHTML = cells;
+                tableBody.appendChild(tr);
+            });
+        };
+        btns.forEach(btn => {
+            const idx = parseInt(btn.getAttribute('data-ai-index'), 10);
+            const opt = options[idx];
+            if (!opt) return;
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const combined = `${opt.label || ''} ${opt.prompt || ''}`.toLowerCase();
+                let rows = getTableRows();
+                if (/sort/.test(combined)) {
+                    // Sort ascending by first column
+                    rows.sort((a, b) => {
+                        const aVal = (a[0] || '').toString().toLowerCase();
+                        const bVal = (b[0] || '').toString().toLowerCase();
+                        if (aVal < bVal) return -1;
+                        if (aVal > bVal) return 1;
+                        return 0;
+                    });
+                } else if (/reverse/.test(combined)) {
+                    rows.reverse();
+                } else if (/uppercase/.test(combined)) {
+                    rows = rows.map(row => row.map(val => (val || '').toString().toUpperCase()));
+                } else if (/lowercase/.test(combined)) {
+                    rows = rows.map(row => row.map(val => (val || '').toString().toLowerCase()));
+                } else {
+                    // Invert case for all strings
+                    rows = rows.map(row => row.map(val => {
+                        const str = (val || '').toString();
+                        return str.split('').map(ch => {
+                            const lower = ch.toLowerCase();
+                            const upper = ch.toUpperCase();
+                            return ch === lower ? upper : lower;
+                        }).join('');
+                    }));
+                }
+                setTableRows(rows);
+            });
         });
     }
 
