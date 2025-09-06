@@ -100,15 +100,110 @@ class AppBuilder {
                 text-align: center;
                 padding: 10px 0;
             }
+
+            /* Module dropdown styles */
+            .module-dropdown {
+                position: relative;
+                display: inline-block;
+                width: 100%;
+            }
+            .module-dropdown-toggle {
+                width: 100%;
+                padding: 10px 12px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+                cursor: pointer;
+                text-align: left;
+            }
+            .module-dropdown-toggle:after {
+                content: '';
+            }
+            .module-dropdown-menu {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 100%;
+                margin-top: 5px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                backdrop-filter: blur(20px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+                max-height: 250px;
+                overflow-y: auto;
+            }
+            .module-dropdown-menu.hide {
+                display: none;
+            }
+            .module-option {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 12px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background 0.2s ease;
+            }
+            .module-option:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .module-option.selected {
+                background: rgba(255, 255, 255, 0.15);
+                border-left: 3px solid rgba(255, 255, 255, 0.4);
+            }
+            .module-option-actions {
+                display: flex;
+                gap: 4px;
+            }
+            .module-option-actions button {
+                background: none;
+                border: none;
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 12px;
+                padding: 2px 4px;
+                cursor: pointer;
+            }
+            .module-option-actions button:hover {
+                color: rgba(255, 255, 255, 0.9);
+            }
+            .module-add-option {
+                padding: 10px 12px;
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.8);
+                cursor: pointer;
+            }
+            .module-add-option:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .module-menu-divider {
+                height: 1px;
+                background: rgba(255, 255, 255, 0.1);
+                margin: 4px 0;
+            }
+            .module-option-count {
+                margin-left: 6px;
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 12px;
+            }
+            .module-option-name {
+                flex: 1;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
         `;
         document.head.appendChild(style);
     }
 
     /**
-     * Create the UI elements for managing modules.  This adds a module list
-     * section above the workflow container with controls to add/select/remove
-     * modules.  It does not depend on any markup in index.html; instead it
-     * injects the necessary elements into the window on the fly.
+     * Create the UI elements for managing modules.  This method replaces
+     * the previous list and standalone add button with a custom dropdown
+     * control.  The dropdown displays the currently selected module and
+     * allows users to select, rename, remove or add modules via a menu.
      */
     setupModuleUI() {
         // Locate the workflow container which exists in the original layout
@@ -119,14 +214,26 @@ class AppBuilder {
         moduleContainer.className = 'module-container';
         moduleContainer.innerHTML = `
             <div class="module-header">Modules</div>
-            <div id="module-list" class="module-list"></div>
-            <button class="btn-primary module-add" id="module-add">+ Add Module</button>
+            <div id="module-dropdown" class="module-dropdown">
+                <button class="module-dropdown-toggle"></button>
+                <div class="module-dropdown-menu hide"></div>
+            </div>
         `;
         // Insert the module container before the workflow container
         workflowContainer.parentNode.insertBefore(moduleContainer, workflowContainer);
-        // Bind the add module button
-        const addBtn = moduleContainer.querySelector('#module-add');
-        addBtn.addEventListener('click', () => this.addModule());
+        // Toggle dropdown visibility on click
+        const dropdown = moduleContainer.querySelector('#module-dropdown');
+        const toggle = dropdown.querySelector('.module-dropdown-toggle');
+        const menu = dropdown.querySelector('.module-dropdown-menu');
+        toggle.addEventListener('click', () => {
+            menu.classList.toggle('hide');
+        });
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                menu.classList.add('hide');
+            }
+        });
     }
 
     /**
@@ -264,33 +371,79 @@ class AppBuilder {
      * selects that module.  A remove button deletes the module.
      */
     renderModules() {
-        const list = this.windowEl.querySelector('#module-list');
-        if (!list) return;
-        list.innerHTML = '';
+        const dropdown = this.windowEl.querySelector('#module-dropdown');
+        if (!dropdown) return;
+        const toggle = dropdown.querySelector('.module-dropdown-toggle');
+        const menu = dropdown.querySelector('.module-dropdown-menu');
+        // Update toggle button text to show selected module name and count
+        const selected = this.modules[this.selectedModuleIndex];
+        if (selected) {
+            toggle.textContent = `${selected.name} (${selected.components.length}) \u25BC`;
+        } else {
+            toggle.textContent = 'No Module \u25BC';
+        }
+        // Clear menu
+        menu.innerHTML = '';
+        // Build module options
         this.modules.forEach((module, index) => {
-            const item = document.createElement('div');
-            item.className = 'module-item' + (index === this.selectedModuleIndex ? ' selected' : '');
-            item.dataset.moduleId = module.id;
-            item.innerHTML = `
-                <span class="module-name">${module.name}</span>
-                <span class="module-count">(${module.components.length})</span>
-                <button class="module-delete btn-danger">×</button>
+            const option = document.createElement('div');
+            option.className = 'module-option' + (index === this.selectedModuleIndex ? ' selected' : '');
+            option.dataset.index = index;
+            option.innerHTML = `
+                <span class="module-option-name">${module.name}</span>
+                <span class="module-option-count">(${module.components.length})</span>
+                <div class="module-option-actions">
+                    <button class="module-option-edit" title="Rename">✎</button>
+                    <button class="module-option-delete" title="Remove">×</button>
+                </div>
             `;
-            // Select module on click (except delete button)
-            item.addEventListener('click', (e) => {
-                if (e.target.classList.contains('module-delete')) return;
+            // Selecting a module
+            option.addEventListener('click', (e) => {
+                // If clicking on edit or delete, do not change selection here
+                if (e.target.closest('.module-option-edit') || e.target.closest('.module-option-delete')) {
+                    return;
+                }
                 this.selectModule(index);
+                menu.classList.add('hide');
+            });
+            // Rename module
+            const editBtn = option.querySelector('.module-option-edit');
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const newName = prompt('Enter module name', module.name);
+                if (newName && newName.trim()) {
+                    module.name = newName.trim();
+                    this.renderModules();
+                }
             });
             // Delete module
-            item.querySelector('.module-delete').addEventListener('click', async (e) => {
+            const deleteBtn = option.querySelector('.module-option-delete');
+            deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const confirmed = await modalManager.confirm(`Remove ${module.name}?`, 'Remove Module');
                 if (confirmed) {
                     this.removeModule(module.id);
+                    menu.classList.add('hide');
                 }
             });
-            list.appendChild(item);
+            menu.appendChild(option);
         });
+        // Add option to create a new module
+        const addOption = document.createElement('div');
+        addOption.className = 'module-add-option';
+        addOption.textContent = '+ Add Module';
+        addOption.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.addModule();
+            menu.classList.add('hide');
+        });
+        // Add a divider before the add option if there are existing modules
+        if (this.modules.length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'module-menu-divider';
+            menu.appendChild(divider);
+        }
+        menu.appendChild(addOption);
     }
 
     /**
