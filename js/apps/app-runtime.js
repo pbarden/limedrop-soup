@@ -93,12 +93,16 @@ class AppRuntime {
             this.setupFileUpload(component);
         } else if (component.type === 'canvas') {
             this.setupCanvas(component);
+            this.setupDataSource(component);
         } else if (component.type === 'text-input') {
             this.setupTextInput(component);
+            this.setupDataSource(component);
         } else if (component.type === 'rich-text') {
             this.setupRichTextEditor(component);
+            this.setupDataSource(component);
         } else if (component.type === 'table') {
             this.setupTable(component);
+            this.setupDataSource(component);
         }
         // Update back and next button state and labels
         this.updateControlsState(false);
@@ -148,6 +152,7 @@ class AppRuntime {
                 const valueAttr = cfg.defaultValue ? `value="${cfg.defaultValue}"` : '';
                 const label = cfg.label || 'Text Input';
                 return `
+                    ${this.getDataSourceHtml(component)}
                     <label>${label}</label><br/>
                     <input type="${type}" id="runtime-text-input" placeholder="${placeholder}" ${requiredAttr} ${minAttr} ${maxAttr} ${patternAttr} ${valueAttr}/><br/>
                     <div id="runtime-text-error" style="color:rgba(255,67,54,0.8);font-size:12px;margin-top:4px;min-height:16px;"></div>
@@ -218,6 +223,7 @@ class AppRuntime {
                     </div>
                 ` : '';
                 return `
+                    ${this.getDataSourceHtml(component)}
                     <label>${canvasLabel}</label><br/>
                     <canvas id="runtime-canvas" width="${cfg.width || 400}" height="${cfg.height || 300}" style="border:1px solid #ccc;"></canvas><br/>
                     ${editable ? '<small>Use your mouse to draw.</small><br/>' : ''}
@@ -247,6 +253,7 @@ class AppRuntime {
                 }).join('');
                 // Placeholder styling: we'll rely on a data-placeholder attribute and CSS inserted once
                 return `
+                    ${this.getDataSourceHtml(component)}
                     <label>${label}</label><br/>
                     <div id="rich-text-toolbar" style="margin-bottom:6px;">${buttonHtml}</div>
                     <div id="runtime-rich-editor" contenteditable="true" data-placeholder="${cfg.placeholder || ''}" style="min-height:${height}px; border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:8px; background: rgba(255,255,255,0.05); color:#fff; overflow-y:auto;"></div>
@@ -302,6 +309,7 @@ class AppRuntime {
                 }
                 const addRowBtn = editable ? `<button id="table-add-row" class="btn-secondary" style="margin-top:8px;">Add Row</button>` : '';
                 return `
+                    ${this.getDataSourceHtml(component)}
                     <label>${label}</label><br/>
                     <div style="overflow-x:auto; border:1px solid rgba(255,255,255,0.2); border-radius:6px; background:rgba(255,255,255,0.05);">
                         <table id="runtime-table" style="width:100%; border-collapse:collapse;">
@@ -838,6 +846,322 @@ class AppRuntime {
             }
         `;
         document.head.appendChild(style);
+    }
+
+    /**
+     * Generate HTML for the data source import/export interface for a component.
+     * The IDs include the component id to uniquely identify inputs.  This
+     * section allows selecting a JSON file to import data from and exporting
+     * the input back to a file.
+     */
+    getDataSourceHtml(component) {
+        const id = component.id;
+        const cfg = component.config || {};
+        const allowImport = cfg.allowImport !== false;
+        const allowExport = cfg.allowExport !== false;
+        // If neither import nor export is allowed, omit the data source UI entirely.
+        if (!allowImport && !allowExport) return '';
+        // Build import and export sections conditionally.
+        let importSection = '';
+        let exportSection = '';
+        if (allowImport) {
+            importSection = `
+                <select id="import-select-${id}" style="margin-right:4px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px;">
+                    <option value="">-- Select file --</option>
+                </select>
+                <button class="btn-secondary" id="import-btn-${id}" style="margin-right:4px;">Import</button><br/>
+            `;
+        }
+        if (allowExport) {
+            exportSection = `
+                <input type="text" id="export-name-${id}" placeholder="Export filename..." style="margin-top:4px; width:60%; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px;" />
+                <button class="btn-secondary" id="export-btn-${id}" style="margin-left:4px;">Export</button>
+            `;
+        }
+        return `
+            <div class="data-source" id="data-source-${id}" style="margin-bottom:8px; font-size:12px;">
+                <label style="color: rgba(255,255,255,0.8);">Data Source</label><br/>
+                ${importSection}
+                ${exportSection}
+            </div>
+        `;
+    }
+
+    /**
+     * Setup data import and export for input components.  This method
+     * populates the import dropdown with available JSON files, applies
+     * heuristics to import data into the component, and exports the
+     * component's data to a new JSON file when requested.  The heuristics
+     * attempt to extract appropriate data types from the JSON based on the
+     * component type.
+     */
+    setupDataSource(component) {
+        const id = component.id;
+        const importSelect = this.container.querySelector(`#import-select-${id}`);
+        const importBtn = this.container.querySelector(`#import-btn-${id}`);
+        const exportBtn = this.container.querySelector(`#export-btn-${id}`);
+        const exportName = this.container.querySelector(`#export-name-${id}`);
+        // If neither import nor export sections exist, do nothing
+        if (!importSelect && !exportBtn) return;
+        // Populate available JSON files into the import dropdown, if present
+        const populateFileList = () => {
+            if (!importSelect) return;
+            let files = [];
+            try {
+                if (typeof fileSystem !== 'undefined') {
+                    if (typeof fileSystem.listFiles === 'function') {
+                        files = fileSystem.listFiles();
+                    } else if (typeof fileSystem.getFiles === 'function') {
+                        files = fileSystem.getFiles();
+                    } else if (Array.isArray(fileSystem.files)) {
+                        files = fileSystem.files;
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to retrieve file list', err);
+            }
+            if (!Array.isArray(files)) return;
+            importSelect.innerHTML = '<option value="">-- Select file --</option>';
+            files.forEach(f => {
+                // Accept any file; rely on heuristics to parse
+                const value = typeof f === 'string' ? f : (f.id || f.name || '');
+                const name = typeof f === 'string' ? f : (f.name || f.label || value);
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = name;
+                importSelect.appendChild(option);
+            });
+        };
+        populateFileList();
+        // Helper functions for heuristics
+        const findString = (obj) => {
+            if (obj == null) return null;
+            if (typeof obj === 'string') return obj;
+            if (Array.isArray(obj)) {
+                for (const v of obj) {
+                    const found = findString(v);
+                    if (found) return found;
+                }
+            } else if (typeof obj === 'object') {
+                for (const key in obj) {
+                    const found = findString(obj[key]);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        const findImageData = (obj) => {
+            if (obj == null) return null;
+            if (typeof obj === 'string' && /^data:image\//i.test(obj)) return obj;
+            if (Array.isArray(obj)) {
+                for (const v of obj) {
+                    const found = findImageData(v);
+                    if (found) return found;
+                }
+            } else if (typeof obj === 'object') {
+                for (const key in obj) {
+                    const val = obj[key];
+                    if (typeof val === 'string' && /^data:image\//i.test(val)) return val;
+                    const found = findImageData(val);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        const findTableData = (obj) => {
+            if (Array.isArray(obj) && obj.length > 0 && (Array.isArray(obj[0]) || typeof obj[0] === 'object')) {
+                return obj;
+            }
+            if (typeof obj === 'object' && obj !== null) {
+                for (const key in obj) {
+                    const found = findTableData(obj[key]);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        // Load JSON file content by file id
+        const readJsonFile = (fileId) => {
+            if (!fileId) return null;
+            try {
+                let content;
+                if (typeof fileSystem.readFile === 'function') {
+                    content = fileSystem.readFile(fileId);
+                } else if (typeof fileSystem.getFileContent === 'function') {
+                    content = fileSystem.getFileContent(fileId);
+                } else if (typeof fileSystem.getFile === 'function') {
+                    const f = fileSystem.getFile(fileId);
+                    content = f ? (f.content || f.data || f.body) : null;
+                } else if (Array.isArray(fileSystem.files)) {
+                    const f = fileSystem.files.find(item => (typeof item === 'string' ? item === fileId : (item.id || item.name) === fileId));
+                    content = f && typeof f !== 'string' ? (f.content || f.data || f.body) : null;
+                }
+                if (!content) return null;
+                if (typeof content === 'string') {
+                    try {
+                        return JSON.parse(content);
+                    } catch (err) {
+                        console.warn('Invalid JSON content');
+                        return null;
+                    }
+                }
+                return content;
+            } catch (err) {
+                console.warn('Failed to read file', err);
+                return null;
+            }
+        };
+        // Import handler
+        if (importBtn && importSelect) {
+            importBtn.addEventListener('click', () => {
+                const fileId = importSelect.value;
+                if (!fileId) return;
+                const data = readJsonFile(fileId);
+                if (!data) return;
+                // Determine target element and apply data based on type
+                switch (component.type) {
+                    case 'text-input': {
+                        const value = findString(data);
+                        const inputEl = this.container.querySelector('#runtime-text-input');
+                        if (value && inputEl) inputEl.value = value;
+                        break;
+                    }
+                    case 'rich-text': {
+                        const value = findString(data);
+                        const editor = this.container.querySelector('#runtime-rich-editor');
+                        if (editor && value) editor.innerHTML = value;
+                        break;
+                    }
+                    case 'canvas': {
+                        const imgData = findImageData(data);
+                        const canvas = this.container.querySelector('#runtime-canvas');
+                        if (imgData && canvas) {
+                            const ctx = canvas.getContext('2d');
+                            const img = new Image();
+                            img.onload = () => {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                // Save state for undo/redo if available
+                                if (typeof this.canvasHistory !== 'undefined') {
+                                    try {
+                                        const dataURL = canvas.toDataURL();
+                                        this.canvasHistory = [dataURL];
+                                        this.historyIndex = 0;
+                                    } catch {}
+                                }
+                            };
+                            img.src = imgData;
+                        }
+                        break;
+                    }
+                    case 'table': {
+                        const tableData = findTableData(data);
+                        const tableBody = this.container.querySelector('#runtime-table tbody');
+                        if (tableData && tableBody) {
+                            // Clear existing rows
+                            tableBody.innerHTML = '';
+                            const cols = Array.isArray(component.config.columns) ? component.config.columns : (typeof component.config.columns === 'string' ? component.config.columns.split(',').map(c => c.trim()).filter(Boolean) : []);
+                            tableData.forEach(row => {
+                                const tr = document.createElement('tr');
+                                // Determine if row is an array or object
+                                if (Array.isArray(row)) {
+                                    cols.forEach((col, ci) => {
+                                        const cell = document.createElement('td');
+                                        cell.style.padding = '4px 6px';
+                                        cell.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                                        const value = row[ci] != null ? row[ci] : '';
+                                        if (component.config.editable !== false) {
+                                            cell.innerHTML = `<input type="text" class="table-cell-input" data-col="${ci}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px 6px; border-radius:4px;" value="${value}" />`;
+                                        } else {
+                                            cell.textContent = value;
+                                        }
+                                        tr.appendChild(cell);
+                                    });
+                                } else if (typeof row === 'object') {
+                                    cols.forEach((col, ci) => {
+                                        const cell = document.createElement('td');
+                                        cell.style.padding = '4px 6px';
+                                        cell.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                                        const value = row[col] != null ? row[col] : '';
+                                        if (component.config.editable !== false) {
+                                            cell.innerHTML = `<input type="text" class="table-cell-input" data-col="${ci}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px 6px; border-radius:4px;" value="${value}" />`;
+                                        } else {
+                                            cell.textContent = value;
+                                        }
+                                        tr.appendChild(cell);
+                                    });
+                                }
+                                tableBody.appendChild(tr);
+                            });
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+        // Export handler
+        if (exportBtn && exportName) {
+            exportBtn.addEventListener('click', () => {
+                const filename = exportName.value.trim();
+                if (!filename) {
+                    NotificationManager && NotificationManager.error && NotificationManager.error('Please enter a filename for export');
+                    return;
+                }
+                let data = null;
+                switch (component.type) {
+                    case 'text-input': {
+                        const inputEl = this.container.querySelector('#runtime-text-input');
+                        data = { text: inputEl ? inputEl.value : '' };
+                        break;
+                    }
+                    case 'rich-text': {
+                        const editor = this.container.querySelector('#runtime-rich-editor');
+                        data = { html: editor ? editor.innerHTML : '' };
+                        break;
+                    }
+                    case 'canvas': {
+                        const canvas = this.container.querySelector('#runtime-canvas');
+                        data = { image: canvas ? canvas.toDataURL() : '' };
+                        break;
+                    }
+                    case 'table': {
+                        const cfg = component.config || {};
+                        const table = this.container.querySelector('#runtime-table');
+                        const cols = Array.isArray(cfg.columns) ? cfg.columns : (typeof cfg.columns === 'string' ? cfg.columns.split(',').map(c => c.trim()).filter(Boolean) : []);
+                        const rows = [];
+                        if (table) {
+                            const trEls = table.querySelectorAll('tbody tr');
+                            trEls.forEach(tr => {
+                                const rowObj = {};
+                                cols.forEach((col, ci) => {
+                                    const cellInput = tr.querySelector(`input.table-cell-input[data-col="${ci}"]`);
+                                    if (cellInput) {
+                                        rowObj[col] = cellInput.value;
+                                    } else {
+                                        const span = tr.querySelector('span.table-cell-display');
+                                        rowObj[col] = span ? span.textContent : '';
+                                    }
+                                });
+                                rows.push(rowObj);
+                            });
+                        }
+                        data = rows;
+                        break;
+                    }
+                }
+                if (data == null) return;
+                try {
+                    const fileContent = JSON.stringify(data);
+                    if (typeof fileSystem !== 'undefined' && typeof fileSystem.createFile === 'function') {
+                        fileSystem.createFile(filename, 'json', fileContent);
+                        NotificationManager && NotificationManager.success && NotificationManager.success(`Exported data to ${filename}`);
+                    }
+                } catch (err) {
+                    console.warn('Failed to export file', err);
+                    NotificationManager && NotificationManager.error && NotificationManager.error('Failed to export data');
+                }
+            });
+        }
     }
 
     /**

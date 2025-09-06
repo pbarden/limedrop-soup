@@ -404,7 +404,9 @@ class AppBuilder {
                 minLength: 0,
                 maxLength: null,
                 pattern: '',
-                defaultValue: ''
+                defaultValue: '',
+                allowImport: true,
+                allowExport: true
             },
             // File upload now supports choosing an existing file registered in the
             // file system.  The `source` field determines whether the user can
@@ -435,7 +437,9 @@ class AppBuilder {
                 showTaskbar: false,
                 aiPrompts: 'Watercolor,Sketch',
                 brushSize: 5,
-                brushColor: '#000000'
+                brushColor: '#000000',
+                allowImport: true,
+                allowExport: true
             },
             // Rich text editor now supports height, placeholder, toolbar options
             // (comma-separated), and a default value.  Toolbar options can include
@@ -446,7 +450,9 @@ class AppBuilder {
                 height: 200,
                 placeholder: '',
                 toolbarOptions: 'bold,italic,underline,bullet,numbered,link',
-                defaultValue: ''
+                defaultValue: '',
+                allowImport: true,
+                allowExport: true
             },
             // Table input for tabular data.  Columns is a comma‑separated list of
             // column names.  Rows defines the number of initial blank rows.
@@ -455,7 +461,9 @@ class AppBuilder {
                 label: 'Table',
                 columns: 'Column 1,Column 2',
                 rows: 2,
-                editable: true
+                editable: true,
+                allowImport: true,
+                allowExport: true
             },
             'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
             'data-transform': { transformation: 'uppercase' },
@@ -740,6 +748,15 @@ class AppBuilder {
                 <label>Pattern (Regex)</label>
                 <input type="text" class="config-pattern" />
             </div>
+            <!-- Data source controls -->
+            <div class="form-group">
+                <label>Allow Import</label>
+                <input type="checkbox" class="config-allowImport" />
+            </div>
+            <div class="form-group">
+                <label>Allow Export</label>
+                <input type="checkbox" class="config-allowExport" />
+            </div>
         `;
         container.appendChild(form);
         // Populate fields from config and attach listeners
@@ -848,6 +865,15 @@ class AppBuilder {
                 <label>AI Prompts (comma-separated)</label>
                 <input type="text" class="config-aiPrompts" />
             </div>
+            <!-- Data source controls -->
+            <div class="form-group">
+                <label>Allow Import</label>
+                <input type="checkbox" class="config-allowImport" />
+            </div>
+            <div class="form-group">
+                <label>Allow Export</label>
+                <input type="checkbox" class="config-allowExport" />
+            </div>
         `;
         container.appendChild(form);
         // Populate fields from config and attach listeners
@@ -880,6 +906,15 @@ class AppBuilder {
             <div class="form-group">
                 <label>Editable</label>
                 <input type="checkbox" class="config-editable" />
+            </div>
+            <!-- Data source controls -->
+            <div class="form-group">
+                <label>Allow Import</label>
+                <input type="checkbox" class="config-allowImport" />
+            </div>
+            <div class="form-group">
+                <label>Allow Export</label>
+                <input type="checkbox" class="config-allowExport" />
             </div>
         `;
         container.appendChild(form);
@@ -917,6 +952,15 @@ class AppBuilder {
             <div class="form-group">
                 <label>Default Value (HTML)</label>
                 <textarea rows="4" class="config-defaultValue"></textarea>
+            </div>
+            <!-- Data source controls -->
+            <div class="form-group">
+                <label>Allow Import</label>
+                <input type="checkbox" class="config-allowImport" />
+            </div>
+            <div class="form-group">
+                <label>Allow Export</label>
+                <input type="checkbox" class="config-allowExport" />
             </div>
         `;
         container.appendChild(form);
