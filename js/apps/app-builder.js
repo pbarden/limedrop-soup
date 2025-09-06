@@ -399,7 +399,17 @@ class AppBuilder {
                 brushSize: 5,
                 brushColor: '#000000'
             },
-            'rich-text': { label: 'Rich Text Editor' },
+            // Rich text editor now supports height, placeholder, toolbar options
+            // (comma-separated), and a default value.  Toolbar options can include
+            // bold, italic, underline, bullet, numbered, link.  These will be
+            // parsed at runtime to build the editor toolbar.
+            'rich-text': {
+                label: 'Rich Text Editor',
+                height: 200,
+                placeholder: '',
+                toolbarOptions: 'bold,italic,underline,bullet,numbered,link',
+                defaultValue: ''
+            },
             'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
             'data-transform': { transformation: 'uppercase' },
             'display': { label: 'Output Display' },
@@ -609,6 +619,11 @@ class AppBuilder {
             this.renderCanvasProperties(container);
             return;
         }
+        // Provide a custom property editor for rich text components
+        if (component.type === 'rich-text') {
+            this.renderRichTextProperties(container);
+            return;
+        }
         const templateId = `${component.type}-config`;
         const template = document.getElementById(templateId);
         if (template) {
@@ -783,6 +798,43 @@ class AppBuilder {
         `;
         container.appendChild(form);
         // Populate fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+    }
+
+    /**
+     * Render custom properties UI for the rich text component.  This includes
+     * fields for label, placeholder, height, toolbar options and default
+     * value.  Toolbar options are entered as a comma-separated list.
+     */
+    renderRichTextProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Placeholder</label>
+                <input type="text" class="config-placeholder" />
+            </div>
+            <div class="form-group">
+                <label>Height (px)</label>
+                <input type="number" min="50" class="config-height" />
+            </div>
+            <div class="form-group">
+                <label>Toolbar Options (comma-separated)</label>
+                <input type="text" class="config-toolbarOptions" />
+                <small style="font-size:11px; color: rgba(255,255,255,0.6);">e.g. bold,italic,underline,bullet,numbered,link</small>
+            </div>
+            <div class="form-group">
+                <label>Default Value (HTML)</label>
+                <textarea rows="4" class="config-defaultValue"></textarea>
+            </div>
+        `;
+        container.appendChild(form);
         this.populateConfig(container);
         this.attachConfigListeners(container);
     }

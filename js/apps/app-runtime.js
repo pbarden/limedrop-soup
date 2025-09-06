@@ -95,6 +95,8 @@ class AppRuntime {
             this.setupCanvas(component);
         } else if (component.type === 'text-input') {
             this.setupTextInput(component);
+        } else if (component.type === 'rich-text') {
+            this.setupRichTextEditor(component);
         }
         // Update back and next button state and labels
         this.updateControlsState(false);
@@ -221,12 +223,35 @@ class AppRuntime {
                     ${taskbarHtml}
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
-            case 'rich-text':
+            case 'rich-text': {
+                // Build a rich text editor with configurable toolbar and dimensions
+                const cfg = component.config || {};
+                const label = cfg.label || 'Rich Text Editor';
+                const height = cfg.height || 200;
+                // Parse toolbar options: allow comma-separated string or array
+                const options = Array.isArray(cfg.toolbarOptions) ? cfg.toolbarOptions : (typeof cfg.toolbarOptions === 'string' ? cfg.toolbarOptions.split(',').map(o => o.trim()).filter(Boolean) : []);
+                // Build toolbar buttons
+                const buttonHtml = options.map(opt => {
+                    let display = opt;
+                    switch (opt) {
+                        case 'bold': display = '<b>B</b>'; break;
+                        case 'italic': display = '<i>I</i>'; break;
+                        case 'underline': display = '<u>U</u>'; break;
+                        case 'bullet': display = '•'; break;
+                        case 'numbered': display = '1.'; break;
+                        case 'link': display = '🔗'; break;
+                    }
+                    return `<button class="rich-btn btn-secondary" data-action="${opt}" title="${opt.charAt(0).toUpperCase() + opt.slice(1)}" style="margin-right:4px;">${display}</button>`;
+                }).join('');
+                // Placeholder styling: we'll rely on a data-placeholder attribute and CSS inserted once
                 return `
-                    <label>${component.config.label || 'Rich Text Editor'}</label><br/>
-                    <textarea id="runtime-rich-text" rows="6"></textarea><br/>
-                    <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
+                    <label>${label}</label><br/>
+                    <div id="rich-text-toolbar" style="margin-bottom:6px;">${buttonHtml}</div>
+                    <div id="runtime-rich-editor" contenteditable="true" data-placeholder="${cfg.placeholder || ''}" style="min-height:${height}px; border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:8px; background: rgba(255,255,255,0.05); color:#fff; overflow-y:auto;"></div>
+                    <div id="runtime-rich-error" style="color:rgba(255,67,54,0.8);font-size:12px;margin-top:4px;min-height:16px;"></div>
+                    <button class="btn-primary" id="runtime-rich-continue" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
+            }
             case 'ai-prompt':
                 return `
                     <p>Processing...</p>
@@ -307,10 +332,11 @@ class AppRuntime {
                 const canvasEl = document.getElementById('runtime-canvas');
                 value = canvasEl ? canvasEl.toDataURL() : null;
                 break;
-            case 'rich-text':
-                const richEl = document.getElementById('runtime-rich-text');
-                value = richEl ? richEl.value : null;
+            case 'rich-text': {
+                const richEditor = document.getElementById('runtime-rich-editor');
+                value = richEditor ? richEditor.innerHTML : null;
                 break;
+            }
             default:
                 value = null;
         }
@@ -640,6 +666,92 @@ class AppRuntime {
         inputEl.addEventListener('input', validate);
         // Initial validation
         validate();
+    }
+
+    /**
+     * Initialise the rich text editor.  This method populates the editor
+     * with the default content, attaches toolbar actions to formatting
+     * commands and optionally handles placeholder styling.  The editor
+     * content is stored as HTML when the step is completed.
+     */
+    setupRichTextEditor(component) {
+        const cfg = component.config || {};
+        // Inject placeholder styles once per page
+        this.injectRichTextStyles();
+        const editor = this.container.querySelector('#runtime-rich-editor');
+        const toolbar = this.container.querySelector('#rich-text-toolbar');
+        const continueBtn = this.container.querySelector('#runtime-rich-continue');
+        const errorEl = this.container.querySelector('#runtime-rich-error');
+        if (!editor) return;
+        // Initialise content
+        editor.innerHTML = cfg.defaultValue || '';
+        // Set placeholder attribute if provided
+        if (cfg.placeholder) {
+            editor.setAttribute('data-placeholder', cfg.placeholder);
+        }
+        // Attach click handlers to toolbar buttons
+        if (toolbar) {
+            const buttons = toolbar.querySelectorAll('button.rich-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const action = btn.getAttribute('data-action');
+                    editor.focus();
+                    try {
+                        switch (action) {
+                            case 'bold':
+                            case 'italic':
+                            case 'underline':
+                                document.execCommand(action);
+                                break;
+                            case 'bullet':
+                                document.execCommand('insertUnorderedList');
+                                break;
+                            case 'numbered':
+                                document.execCommand('insertOrderedList');
+                                break;
+                            case 'link': {
+                                const url = prompt('Enter URL', '');
+                                if (url) {
+                                    document.execCommand('createLink', false, url);
+                                }
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    } catch (err) {
+                        console.warn('Rich text command failed', err);
+                    }
+                });
+            });
+        }
+        // Always enable continue for rich text
+        if (continueBtn) {
+            continueBtn.disabled = false;
+        }
+        // Clear any previous error
+        if (errorEl) {
+            errorEl.textContent = '';
+        }
+    }
+
+    /**
+     * Inject CSS for the rich text placeholder if not already present.
+     */
+    injectRichTextStyles() {
+        const styleId = 'rich-text-placeholder-style';
+        if (document.getElementById(styleId)) return;
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            #runtime-rich-editor[data-placeholder]:empty:before {
+                content: attr(data-placeholder);
+                color: rgba(255, 255, 255, 0.5);
+                pointer-events: none;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
