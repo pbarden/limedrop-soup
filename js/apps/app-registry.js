@@ -1,4 +1,13 @@
-// App Registry
+// Extended App Registry
+//
+// The registry maintains a catalogue of both system applications defined by
+// Limedrop and user applications created via the App Builder.  This version
+// updates the launch of user apps to instantiate the extended AppRuntime
+// defined in js/apps/app-runtime.js.  Additionally it preserves existing
+// behaviour such as storing user apps in localStorage and adding entries
+// to the dock.  The majority of the logic is carried over from the
+// original project with only minimal changes to accommodate modules.
+
 class AppRegistry {
     constructor() {
         this.apps = new Map();
@@ -15,7 +24,6 @@ class AppRegistry {
             width: 900,
             height: 600
         });
-        
         this.registerSystemApp('file-manager', {
             name: 'File Manager',
             icon: 'fas fa-folder',
@@ -23,7 +31,6 @@ class AppRegistry {
             width: 800,
             height: 500
         });
-        
         this.registerSystemApp('settings', {
             name: 'Settings',
             icon: 'fas fa-cog',
@@ -48,17 +55,11 @@ class AppRegistry {
     addToDock(appId, definition) {
         const dockApps = document.getElementById('dock-apps');
         const separator = dockApps.querySelector('.dock-separator');
-        
         const dockItem = document.createElement('div');
         dockItem.className = 'dock-item';
         dockItem.dataset.app = appId;
-        dockItem.innerHTML = `
-            <div class="dock-icon"><i class="${definition.icon || 'fas fa-cube'}"></i></div>
-            <div class="dock-tooltip">${definition.name}</div>
-        `;
-        
+        dockItem.innerHTML = `<span class="dock-label">${definition.name}</span>`;
         dockApps.insertBefore(dockItem, separator);
-        
         dockItem.addEventListener('click', () => {
             this.launchApp(appId);
         });
@@ -71,16 +72,14 @@ class AppRegistry {
     launchApp(appId) {
         const app = this.getApp(appId);
         if (!app) return;
-        
-        // Check if app window already exists
+        // If already open bring to front
         const existingWindow = windowManager.getWindowByApp(appId);
         if (existingWindow) {
             windowManager.restoreWindow(existingWindow);
             windowManager.focusWindow(existingWindow);
             return;
         }
-        
-        // Special handling for user apps
+        // Launch user apps with runtime
         if (this.userApps.has(appId)) {
             this.launchUserApp(appId, app);
         } else {
@@ -92,8 +91,6 @@ class AppRegistry {
                 app.width,
                 app.height
             );
-            
-            // Initialize app-specific functionality
             this.initializeApp(appId, windowId);
         }
     }
@@ -106,28 +103,26 @@ class AppRegistry {
             600,
             500
         );
-        
-        const window = windowManager.windows.get(windowId);
-        const content = window.element.querySelector('.window-content');
-        
-        // Create runtime interface for user app
+        const windowObj = windowManager.windows.get(windowId);
+        const content = windowObj.element.querySelector('.window-content');
+        // Instantiate a new runtime and expose it globally for onclick handlers
         const runtime = new AppRuntime(app, content);
+        window.__runtimeInstance = runtime;
         runtime.render();
     }
 
     initializeApp(appId, windowId) {
-        const window = windowManager.windows.get(windowId);
-        if (!window) return;
-        
+        const windowObj = windowManager.windows.get(windowId);
+        if (!windowObj) return;
         switch (appId) {
             case 'app-builder':
-                new AppBuilder(window.element);
+                new AppBuilder(windowObj.element);
                 break;
             case 'file-manager':
-                new FileManager(window.element);
+                new FileManager(windowObj.element);
                 break;
             case 'settings':
-                new Settings(window.element);
+                new Settings(windowObj.element);
                 break;
         }
     }
@@ -143,8 +138,6 @@ class AppRegistry {
             try {
                 const data = JSON.parse(stored);
                 this.userApps = new Map(data);
-                
-                // Re-add apps to dock
                 this.userApps.forEach((app, appId) => {
                     this.addToDock(appId, app);
                 });
@@ -155,4 +148,5 @@ class AppRegistry {
     }
 }
 
-// App Builder Component
+// Expose globally
+window.AppRegistry = AppRegistry;

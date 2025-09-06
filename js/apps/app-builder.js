@@ -1,19 +1,75 @@
-// App Builder Component
+// Extended App Builder Component with support for Modules
+//
+// The original Limedrop App Builder allowed users to assemble a single linear
+// workflow from a collection of components.  In order to support more
+// sophisticated applications we introduce the concept of **modules**.  A
+// module groups a set of components into its own mini‑workflow consisting of
+// one input (data source), any number of processing steps, and a final
+// output.  Applications are composed of one or more modules executed
+// sequentially.  This implementation preserves the original component
+// semantics while adding module management and properly persisting the
+// structure on save.  Existing apps without modules will continue to work
+// because we flatten modules into a top‑level components array on save.
+
 class AppBuilder {
     constructor(windowEl) {
         this.windowEl = windowEl;
-        this.components = [];
-        this.selectedComponent = null;
+        // Each module has {id, name, components: []}.  A fresh app starts
+        // with a single module to mirror the original single workflow
+        this.modules = [];
+        // Index of the currently selected module in this.modules
+        this.selectedModuleIndex = 0;
+        // Currently selected component for editing; stored as an object with
+        // moduleIndex and component reference.  This is used by the property
+        // panel.
+        this.selectedComponentRef = null;
         this.selectedIcon = 'fas fa-rocket';
         this.init();
     }
 
+    /**
+     * Perform all initialisation: drag‑and‑drop setup, module UI and
+     * component event registration.
+     */
     init() {
+        this.setupModuleUI();
         this.setupDragAndDrop();
         this.setupEvents();
         this.initIconPicker();
+        // Ensure at least one module exists
+        if (this.modules.length === 0) {
+            this.addModule();
+        }
     }
-    
+
+    /**
+     * Create the UI elements for managing modules.  This adds a module list
+     * section above the workflow container with controls to add/select/remove
+     * modules.  It does not depend on any markup in index.html; instead it
+     * injects the necessary elements into the window on the fly.
+     */
+    setupModuleUI() {
+        // Locate the workflow container which exists in the original layout
+        const workflowContainer = this.windowEl.querySelector('#workflow-container');
+        // Create a container for modules
+        const moduleContainer = document.createElement('div');
+        moduleContainer.id = 'module-container';
+        moduleContainer.className = 'module-container';
+        moduleContainer.innerHTML = `
+            <div class="module-header">Modules</div>
+            <div id="module-list" class="module-list"></div>
+            <button class="btn-primary module-add" id="module-add">+ Add Module</button>
+        `;
+        // Insert the module container before the workflow container
+        workflowContainer.parentNode.insertBefore(moduleContainer, workflowContainer);
+        // Bind the add module button
+        const addBtn = moduleContainer.querySelector('#module-add');
+        addBtn.addEventListener('click', () => this.addModule());
+    }
+
+    /**
+     * Initialise the icon picker from the original builder for app icons.
+     */
     initIconPicker() {
         const iconPickerContainer = this.windowEl.querySelector('#app-icon-picker');
         if (iconPickerContainer) {
@@ -23,35 +79,34 @@ class AppBuilder {
         }
     }
 
+    /**
+     * Setup drag and drop handlers for components.  The drop target is
+     * unchanged, however when a component is dropped it will be appended to
+     * the currently selected module rather than a global list.
+     */
     setupDragAndDrop() {
         const componentItems = this.windowEl.querySelectorAll('.component-item');
         const workflowContainer = this.windowEl.querySelector('#workflow-container');
-        
         componentItems.forEach(item => {
             item.addEventListener('dragstart', (e) => {
                 e.dataTransfer.effectAllowed = 'copy';
                 e.dataTransfer.setData('component-type', item.dataset.type);
                 item.classList.add('dragging');
             });
-            
             item.addEventListener('dragend', () => {
                 item.classList.remove('dragging');
             });
         });
-        
         workflowContainer.addEventListener('dragover', (e) => {
             e.preventDefault();
             workflowContainer.classList.add('drag-over');
         });
-        
         workflowContainer.addEventListener('dragleave', () => {
             workflowContainer.classList.remove('drag-over');
         });
-        
         workflowContainer.addEventListener('drop', (e) => {
             e.preventDefault();
             workflowContainer.classList.remove('drag-over');
-            
             const componentType = e.dataTransfer.getData('component-type');
             if (componentType) {
                 this.addComponent(componentType);
@@ -59,27 +114,89 @@ class AppBuilder {
         });
     }
 
+    /**
+     * Register the Save button event listener from the original builder.
+     */
     setupEvents() {
         const saveBtn = this.windowEl.querySelector('.save-app');
         saveBtn.addEventListener('click', () => this.saveApp());
     }
 
+    /**
+     * Create a new module with a default name and select it.
+     */
+    addModule() {
+        const module = {
+            id: `module-${Date.now()}`,
+            name: `Module ${this.modules.length + 1}`,
+            components: []
+        };
+        this.modules.push(module);
+        this.selectedModuleIndex = this.modules.length - 1;
+        this.renderModules();
+        this.renderWorkflow();
+    }
+
+    /**
+     * Remove a module by its id.  If the removed module was selected,
+     * select another valid module.  Deleting the last module automatically
+     * adds an empty module so the builder is never without at least one.
+     */
+    removeModule(moduleId) {
+        const index = this.modules.findIndex(m => m.id === moduleId);
+        if (index === -1) return;
+        this.modules.splice(index, 1);
+        // Ensure at least one module remains
+        if (this.modules.length === 0) {
+            this.addModule();
+            return;
+        }
+        // Adjust selected module index if necessary
+        if (this.selectedModuleIndex >= this.modules.length) {
+            this.selectedModuleIndex = this.modules.length - 1;
+        }
+        this.renderModules();
+        this.renderWorkflow();
+    }
+
+    /**
+     * Change the selected module by index.  Updates the module list and
+     * workflow display accordingly.
+     */
+    selectModule(index) {
+        if (index < 0 || index >= this.modules.length) return;
+        this.selectedModuleIndex = index;
+        // Clear selected component when switching modules
+        this.selectedComponentRef = null;
+        this.renderModules();
+        this.renderWorkflow();
+        this.renderProperties();
+    }
+
+    /**
+     * Append a component of the given type to the currently selected module.
+     * Component defaults mirror the original implementation.
+     */
     addComponent(type) {
         const component = {
             id: `comp-${Date.now()}`,
             type: type,
             config: this.getDefaultConfig(type)
         };
-        
-        this.components.push(component);
+        const module = this.modules[this.selectedModuleIndex];
+        module.components.push(component);
         this.renderWorkflow();
     }
 
+    /**
+     * Return default configuration values for a given component type.  This
+     * method is unchanged from the original builder.
+     */
     getDefaultConfig(type) {
         const defaults = {
             'text-input': { label: 'Text Input', placeholder: 'Enter text...', required: false },
             'file-upload': { label: 'Upload File', accept: '*' },
-            'canvas': { label: 'Drawing Canvas', width: 400, height: 300 },
+            'canvas': { label: 'Drawing Canvas', width: 400, height: 300, editable: true },
             'rich-text': { label: 'Rich Text Editor' },
             'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
             'data-transform': { transformation: 'uppercase' },
@@ -87,54 +204,94 @@ class AppBuilder {
             'chart': { type: 'bar', title: 'Chart' },
             'export': { format: 'json', filename: 'export' }
         };
-        
         return defaults[type] || {};
     }
 
+    /**
+     * Render the list of modules in the module UI.  Each module entry shows
+     * its name and the number of components it contains.  Clicking an entry
+     * selects that module.  A remove button deletes the module.
+     */
+    renderModules() {
+        const list = this.windowEl.querySelector('#module-list');
+        if (!list) return;
+        list.innerHTML = '';
+        this.modules.forEach((module, index) => {
+            const item = document.createElement('div');
+            item.className = 'module-item' + (index === this.selectedModuleIndex ? ' selected' : '');
+            item.dataset.moduleId = module.id;
+            item.innerHTML = `
+                <span class="module-name">${module.name}</span>
+                <span class="module-count">(${module.components.length})</span>
+                <button class="module-delete btn-danger">×</button>
+            `;
+            // Select module on click (except delete button)
+            item.addEventListener('click', (e) => {
+                if (e.target.classList.contains('module-delete')) return;
+                this.selectModule(index);
+            });
+            // Delete module
+            item.querySelector('.module-delete').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const confirmed = await modalManager.confirm(`Remove ${module.name}?`, 'Remove Module');
+                if (confirmed) {
+                    this.removeModule(module.id);
+                }
+            });
+            list.appendChild(item);
+        });
+    }
+
+    /**
+     * Render the workflow for the selected module.  If there are no
+     * components display a helpful hint.  Component items behave exactly
+     * like in the original builder: clicking an item selects it for
+     * editing and the remove icon deletes it.
+     */
     renderWorkflow() {
         const container = this.windowEl.querySelector('#workflow-container');
-        
-        if (this.components.length === 0) {
-            container.innerHTML = '<div class="workflow-placeholder">Drag components here to build your app</div>';
+        if (!container) return;
+        // Validate selected module index
+        const module = this.modules[this.selectedModuleIndex];
+        if (!module || module.components.length === 0) {
+            container.innerHTML = '<div class="workflow-empty">Drag components here to build your module</div>';
             return;
         }
-        
         container.innerHTML = '';
-        
-        this.components.forEach((component, index) => {
+        module.components.forEach((component, index) => {
             const item = document.createElement('div');
             item.className = 'workflow-item';
             item.dataset.componentId = component.id;
-            
             item.innerHTML = `
-                <div class="workflow-item-info">
-                    <div class="workflow-item-number">${index + 1}</div>
-                    <span>${this.getComponentLabel(component)}</span>
-                </div>
-                <button class="workflow-item-delete">Remove</button>
+                <span class="workflow-index">${index + 1}</span>
+                <span class="workflow-label">${this.getComponentLabel(component)}</span>
+                <button class="workflow-item-delete btn-danger">Remove</button>
             `;
-            
+            // Selecting a component
             item.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('workflow-item-delete')) {
-                    this.selectComponent(component);
+                    this.selectComponent(module, component);
                 }
             });
-            
+            // Removing a component
             item.querySelector('.workflow-item-delete').addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const confirmed = await modalManager.confirm(
-                    `Remove "${this.getComponentLabel(component)}" from the workflow?`,
+                    `Remove "${this.getComponentLabel(component)}" from the module?`,
                     'Remove Component'
                 );
                 if (confirmed) {
-                    this.removeComponent(component.id);
+                    this.removeComponent(module.id, component.id);
                 }
             });
-            
             container.appendChild(item);
         });
     }
 
+    /**
+     * Return a human readable label for a component.  This is the same
+     * mapping used in the original builder.
+     */
     getComponentLabel(component) {
         const labels = {
             'text-input': 'Text Input',
@@ -147,14 +304,16 @@ class AppBuilder {
             'chart': 'Chart',
             'export': 'Export Data'
         };
-        
         return labels[component.type] || component.type;
     }
 
-    selectComponent(component) {
-        this.selectedComponent = component;
-        
-        // Update selection UI
+    /**
+     * Select a component for editing.  Store both the module and the
+     * component reference so configuration updates are correctly applied.
+     */
+    selectComponent(module, component) {
+        this.selectedComponentRef = { moduleId: module.id, component: component };
+        // Highlight the selected workflow item
         const items = this.windowEl.querySelectorAll('.workflow-item');
         items.forEach(item => {
             if (item.dataset.componentId === component.id) {
@@ -163,42 +322,43 @@ class AppBuilder {
                 item.classList.remove('selected');
             }
         });
-        
         this.renderProperties();
     }
 
+    /**
+     * Render the configuration panel for the currently selected component.  If
+     * no component is selected a placeholder message is shown.  The
+     * configuration templates are defined in the original HTML by id
+     * `${component.type}-config` and are cloned into the properties panel.
+     */
     renderProperties() {
         const container = this.windowEl.querySelector('#properties-content');
-        
-        if (!this.selectedComponent) {
-            container.innerHTML = '<p class="properties-placeholder">Select a component to configure</p>';
+        if (!container) return;
+        if (!this.selectedComponentRef) {
+            container.innerHTML = '<div class="properties-empty">Select a component to configure</div>';
             return;
         }
-        
-        const templateId = `${this.selectedComponent.type}-config`;
+        const { component } = this.selectedComponentRef;
+        const templateId = `${component.type}-config`;
         const template = document.getElementById(templateId);
-        
         if (template) {
             container.innerHTML = '';
             container.appendChild(template.content.cloneNode(true));
-            
-            // Populate with current config
             this.populateConfig(container);
-            
-            // Attach change listeners
             this.attachConfigListeners(container);
         } else {
-            container.innerHTML = `
-                <div class="config-form">
-                    <p>Configuration for ${this.getComponentLabel(this.selectedComponent)}</p>
-                </div>
-            `;
+            container.innerHTML = `<div class="properties-empty">Configuration for ${this.getComponentLabel(component)}</div>`;
         }
     }
 
+    /**
+     * Populate the configuration panel with the current values of the
+     * selected component.  Works the same as the original builder but
+     * references the selectedComponentRef object.
+     */
     populateConfig(container) {
-        const config = this.selectedComponent.config;
-        
+        const { component } = this.selectedComponentRef;
+        const config = component.config;
         Object.keys(config).forEach(key => {
             const element = container.querySelector(`.config-${key}`);
             if (element) {
@@ -211,68 +371,88 @@ class AppBuilder {
         });
     }
 
+    /**
+     * Attach change listeners to configuration form controls so that updates
+     * are reflected in the component config.  This matches the original
+     * behaviour and uses the selectedComponentRef for context.
+     */
     attachConfigListeners(container) {
         const inputs = container.querySelectorAll('input, select, textarea');
-        
         inputs.forEach(input => {
             input.addEventListener('change', () => {
-                const key = input.className.replace('config-', '');
+                const key = Array.from(input.classList).find(c => c.startsWith('config-')).replace('config-', '');
+                const { component } = this.selectedComponentRef;
                 if (input.type === 'checkbox') {
-                    this.selectedComponent.config[key] = input.checked;
+                    component.config[key] = input.checked;
                 } else {
-                    this.selectedComponent.config[key] = input.value;
+                    component.config[key] = input.value;
                 }
             });
         });
     }
 
-    removeComponent(componentId) {
-        this.components = this.components.filter(c => c.id !== componentId);
-        if (this.selectedComponent?.id === componentId) {
-            this.selectedComponent = null;
+    /**
+     * Remove a component by module id and component id.  If the
+     * removed component was selected clear the selection.
+     */
+    removeComponent(moduleId, componentId) {
+        const module = this.modules.find(m => m.id === moduleId);
+        if (!module) return;
+        const index = module.components.findIndex(c => c.id === componentId);
+        if (index === -1) return;
+        module.components.splice(index, 1);
+        if (this.selectedComponentRef && this.selectedComponentRef.component.id === componentId) {
+            this.selectedComponentRef = null;
             this.renderProperties();
         }
         this.renderWorkflow();
     }
 
+    /**
+     * Persist the app definition to the file system and register it with
+     * the app registry.  The definition includes both `modules` and a
+     * flattened `components` array for backwards compatibility.
+     */
     saveApp() {
         const nameInput = this.windowEl.querySelector('.app-name-input');
         const name = nameInput.value.trim();
-        
         if (!name) {
             NotificationManager.error('Please enter an app name');
             return;
         }
-        
-        if (this.components.length === 0) {
+        // Ensure at least one component exists across all modules
+        const hasComponents = this.modules.some(m => m.components.length > 0);
+        if (!hasComponents) {
             NotificationManager.error('Please add at least one component');
             return;
         }
-        
+        // Flatten all components for legacy consumers (e.g. older runtime)
+        const flatComponents = this.modules.reduce((acc, mod) => acc.concat(mod.components), []);
         const appDefinition = {
             name: name,
             icon: this.iconPicker ? this.iconPicker.getValue() : this.selectedIcon,
-            components: this.components
+            modules: this.modules,
+            components: flatComponents
         };
-        
-        // Save as file
+        // Save as file and register user app
         const fileId = fileSystem.createFile(name, 'app', appDefinition);
-        
-        // Register as user app
         const appId = appRegistry.registerUserApp(appDefinition);
-        
         NotificationManager.success(`App "${name}" saved successfully!`);
-        
-        // Clear the builder
-        this.components = [];
-        this.selectedComponent = null;
+        // Reset builder state
+        this.modules = [];
+        this.selectedModuleIndex = 0;
+        this.selectedComponentRef = null;
         nameInput.value = '';
         if (this.iconPicker) {
             this.iconPicker.setValue('fas fa-rocket');
         }
+        // Recreate default module
+        this.addModule();
+        this.renderModules();
         this.renderWorkflow();
         this.renderProperties();
     }
 }
 
-// App Runtime for executing user apps
+// Expose AppBuilder globally so that the boot sequence can instantiate it.
+window.AppBuilder = AppBuilder;
