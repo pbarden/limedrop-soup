@@ -66,7 +66,7 @@ The following tags are placed **just before** `</body>` in this exact order. Mai
 <script src="js/boot.js"></script>
 ```
 
-**Rule:** no `type="module"`. Each file defines globals (classes/singletons) relied upon by later files.
+Each file defines globals (classes/singletons).
 
 ---
 
