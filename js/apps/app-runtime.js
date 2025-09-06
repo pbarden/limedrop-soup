@@ -199,8 +199,12 @@ class AppRuntime {
                         <label style="font-size:12px;">Color: <input type="color" id="brush-color" value="${cfg.brushColor || '#000000'}" style="vertical-align:middle; margin-left:4px;"/></label>
                     </div>
                 ` : '';
-                const promptButtons = Array.isArray(cfg.aiPrompts) && cfg.aiPrompts.length > 0
-                    ? cfg.aiPrompts.map((p, i) => `<button class="ai-filter-btn" data-filter-index="${i}" style="margin-right:4px;">${p}</button>`).join('')
+                // Parse AI prompts: allow comma-separated string or array
+                const prompts = Array.isArray(cfg.aiPrompts)
+                    ? cfg.aiPrompts
+                    : (typeof cfg.aiPrompts === 'string' ? cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean) : []);
+                const promptButtons = prompts.length > 0
+                    ? prompts.map((p, i) => `<button class="ai-filter-btn" data-filter-index="${i}" style="margin-right:4px;">${p}</button>`).join('')
                     : '';
                 const taskbarHtml = taskbar ? `
                     <div id="canvas-taskbar" style="margin:8px 0;">

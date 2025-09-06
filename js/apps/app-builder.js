@@ -385,10 +385,9 @@ class AppBuilder {
             // tools.  `editable` controls whether drawing is allowed.
             // `showBrushControls` toggles brush size/color selectors, while
             // `showTaskbar` toggles a toolbar with AI prompt buttons.  The
-            // `aiPrompts` array defines the names of prompts to be shown in
-            // the taskbar.  `brushSize` and `brushColor` initialise the
-            // drawing tool.  These values can later be customised via the
-            // properties panel when that UI is extended.
+            // `aiPrompts` field can be a comma-separated string (e.g. "Watercolor,Sketch")
+            // or an array of prompt names.  `brushSize` and `brushColor` initialise the
+            // drawing tool.  These values can be customised via the properties panel.
             'canvas': {
                 label: 'Drawing Canvas',
                 width: 400,
@@ -396,7 +395,7 @@ class AppBuilder {
                 editable: true,
                 showBrushControls: true,
                 showTaskbar: false,
-                aiPrompts: ['Watercolor', 'Sketch'],
+                aiPrompts: 'Watercolor,Sketch',
                 brushSize: 5,
                 brushColor: '#000000'
             },
@@ -605,6 +604,11 @@ class AppBuilder {
             this.renderFileUploadProperties(container);
             return;
         }
+        // Provide a custom property editor for canvas components
+        if (component.type === 'canvas') {
+            this.renderCanvasProperties(container);
+            return;
+        }
         const templateId = `${component.type}-config`;
         const template = document.getElementById(templateId);
         if (template) {
@@ -714,6 +718,67 @@ class AppBuilder {
             <div class="form-group">
                 <label>Preselected File ID (optional)</label>
                 <input type="text" class="config-fileId" />
+            </div>
+        `;
+        container.appendChild(form);
+        // Populate fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+    }
+
+    /**
+     * Render custom properties UI for the canvas component.  This includes
+     * fields for label, dimensions, editable toggle, brush controls, brush
+     * size and color, taskbar toggle and AI prompt list.  The AI prompts
+     * field accepts a comma-separated string which is stored directly on
+     * the component config (it will be parsed at runtime).  After building
+     * the form the existing populateConfig and attachConfigListeners
+     * methods are invoked to bind values.
+     */
+    renderCanvasProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group" style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>Width</label>
+                    <input type="number" min="50" class="config-width" />
+                </div>
+                <div style="flex:1;">
+                    <label>Height</label>
+                    <input type="number" min="50" class="config-height" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Editable</label>
+                <input type="checkbox" class="config-editable" />
+            </div>
+            <div class="form-group">
+                <label>Show Brush Controls</label>
+                <input type="checkbox" class="config-showBrushControls" />
+            </div>
+            <div class="form-group" style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>Brush Size (default)</label>
+                    <input type="number" min="1" max="50" class="config-brushSize" />
+                </div>
+                <div style="flex:1;">
+                    <label>Brush Color (default)</label>
+                    <input type="color" class="config-brushColor" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Show Taskbar</label>
+                <input type="checkbox" class="config-showTaskbar" />
+            </div>
+            <div class="form-group">
+                <label>AI Prompts (comma-separated)</label>
+                <input type="text" class="config-aiPrompts" />
             </div>
         `;
         container.appendChild(form);
