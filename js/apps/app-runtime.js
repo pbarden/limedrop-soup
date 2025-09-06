@@ -266,11 +266,16 @@ class AppRuntime {
                     <button class="btn-primary" id="runtime-rich-continue" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
             }
-            case 'ai-prompt':
+            case 'ai-prompt': {
+                const cfg = component.config || {};
+                const displayText = cfg.displayText || '';
+                const displayHtml = displayText ? `<p style="margin-bottom:8px;">${displayText}</p>` : '';
                 return `
+                    ${displayHtml}
                     <p>Processing...</p>
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
+            }
             case 'data-transform':
                 return `
                     <p>Data Transformation: ${component.config.transformation}</p>

@@ -513,7 +513,16 @@ class AppBuilder {
                 fileId: null,
                 dataType: 'auto'
             },
-            'ai-prompt': { prompt: 'Process the following: {{input}}', model: 'gpt-3.5' },
+            // AI prompt component allows setting a system prompt for an AI model
+            // along with the target model and optional display text to show
+            // to the end user.  The displayText field is not sent to the model;
+            // it is purely for user guidance during runtime.
+            'ai-prompt': {
+                label: 'AI Prompt',
+                prompt: 'Process the following: {{input}}',
+                model: 'gpt-3.5',
+                displayText: ''
+            },
             'data-transform': { transformation: 'uppercase' },
             'display': { label: 'Output Display' },
             'chart': { type: 'bar', title: 'Chart' },
@@ -737,6 +746,11 @@ class AppBuilder {
         // Provide a custom property editor for data source components
         if (component.type === 'data-source') {
             this.renderDataSourceProperties(container);
+            return;
+        }
+        // Provide a custom property editor for AI prompt components
+        if (component.type === 'ai-prompt') {
+            this.renderAiPromptProperties(container);
             return;
         }
         const templateId = `${component.type}-config`;
@@ -1128,6 +1142,84 @@ class AppBuilder {
         manualInput.addEventListener('change', () => {
             component.config.fileId = manualInput.value;
         });
+    }
+
+    /**
+     * Render custom properties UI for the AI prompt component.  Allows
+     * editing of the label, system prompt, target model and optional
+     * display text for the end user.  Uses existing form-group styling
+     * for consistency.  After building the form the existing populateConfig
+     * and attachConfigListeners are invoked to bind values.
+     */
+    renderAiPromptProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>System Prompt</label>
+                <textarea rows="4" class="config-prompt" placeholder="Enter system prompt..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Model</label>
+                <select class="config-model">
+                    <option value="gpt-3.5">gpt-3.5</option>
+                    <option value="gpt-4">gpt-4</option>
+                    <option value="custom">Custom (enter manually)</option>
+                </select>
+                <input type="text" class="config-model-custom" placeholder="Custom model name" style="display:none; margin-top:4px;" />
+            </div>
+            <div class="form-group">
+                <label>Display Text (shown to user)</label>
+                <textarea rows="3" class="config-displayText" placeholder="Optional text to display during this step..."></textarea>
+            </div>
+        `;
+        container.appendChild(form);
+        // Show/hide custom model input based on selection
+        const modelSelect = form.querySelector('.config-model');
+        const modelCustom = form.querySelector('.config-model-custom');
+        const updateModelVisibility = () => {
+            if (modelSelect.value === 'custom') {
+                modelCustom.style.display = 'block';
+                // When entering custom model, update config-model
+            } else {
+                modelCustom.style.display = 'none';
+            }
+        };
+        modelSelect.addEventListener('change', () => {
+            updateModelVisibility();
+            const { component } = this.selectedComponentRef;
+            if (modelSelect.value === 'custom') {
+                // Use custom field value
+                component.config.model = modelCustom.value || '';
+            } else {
+                component.config.model = modelSelect.value;
+            }
+        });
+        modelCustom.addEventListener('input', () => {
+            const { component } = this.selectedComponentRef;
+            if (modelSelect.value === 'custom') {
+                component.config.model = modelCustom.value;
+            }
+        });
+        // Populate form values from config and attach default listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+        // After populating config, adjust model input for custom values
+        const { component } = this.selectedComponentRef;
+        // If the config.model is not one of the predefined options, treat it as custom
+        if (component.config.model && !['gpt-3.5','gpt-4'].includes(component.config.model)) {
+            modelSelect.value = 'custom';
+            modelCustom.style.display = 'block';
+            modelCustom.value = component.config.model;
+        } else {
+            modelSelect.value = component.config.model || 'gpt-3.5';
+            modelCustom.style.display = 'none';
+        }
     }
 
     /**
