@@ -546,6 +546,7 @@ class Settings {
                 const selected = picker.querySelector('.icon-picker-item.selected');
                 if (selected) {
                     settings[`${controlType}Icon`] = selected.dataset.iconClass;
+                    settings[`${controlType}IconName`] = selected.dataset.iconName;
                 }
             }
         });        
@@ -1064,6 +1065,12 @@ updateControlIcon(control, iconClass, controlType) {
 
     if (iconClass === 'default') {
         // Use default symbol
+        const defaultSymbols = {
+            minimize: '−',
+            maximize: '□',
+            close: '×'
+        };
+        control.textContent = defaultSymbols[controlType] || '';
         control.classList.remove('has-icon');
     } else {
         // Use Font Awesome icon
@@ -1161,19 +1168,52 @@ getDefaultSymbol(controlType) {
 loadWindowControlSettings() {
     const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
     
-    // Apply saved icons directly to windows
+    // Apply saved icons to existing windows and update picker displays
     ['minimize', 'maximize', 'close'].forEach(controlType => {
         const iconClass = settings[`${controlType}Icon`];
         if (iconClass) {
+            // Apply to all existing windows
             const windows = document.querySelectorAll('.window');
             windows.forEach(window => {
                 const control = window.querySelector(`.window-control.${controlType}`);
                 if (control) {
-                    control.innerHTML = `<i class="${iconClass}"></i>`;
+                    this.updateControlIcon(control, iconClass, controlType);
                 }
             });
+            
+            // Update the picker display to show the saved selection
+            const pickerId = `${controlType}-icon-picker`;
+            const picker = this.windowEl.querySelector(`#${pickerId}`);
+            if (picker) {
+                const selectedPreview = picker.querySelector('.selected-icon-preview');
+                const selectedName = picker.querySelector('.selected-icon-name');
+                
+                if (selectedPreview && selectedName) {
+                    if (iconClass === 'default') {
+                        selectedPreview.innerHTML = `<span class="default-icon">${this.getDefaultSymbol(controlType)}</span>`;
+                        selectedName.textContent = 'Default';
+                    } else {
+                        selectedPreview.innerHTML = `<i class="fas ${iconClass}"></i>`;
+                        selectedName.textContent = settings[`${controlType}IconName`] || 'Custom Icon';
+                    }
+                }
+                
+                // Update the selected state in the picker grid
+                picker.querySelectorAll('.icon-picker-item').forEach(item => {
+                    item.classList.remove('selected');
+                    if (item.dataset.iconClass === iconClass) {
+                        item.classList.add('selected');
+                    }
+                });
+            }
         }
     });
+
+    // Load window control style if saved
+    if (settings.windowControlStyle && this.dropdowns.windowControlStyle) {
+        this.dropdowns.windowControlStyle.setValue(settings.windowControlStyle);
+        this.changeWindowControlStyle(settings.windowControlStyle);
+    }
 }
 
 // Save window control settings (update existing saveSettings method)

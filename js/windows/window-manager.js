@@ -5,6 +5,9 @@ class WindowManager {
         this.activeWindow = null;
         this.zIndex = 100;
         this.container = document.getElementById('windows-container');
+        
+        // Apply saved window control settings on startup
+        this.applyGlobalWindowSettings();
     }
 
     createWindow(appId, title, contentTemplate, width = 800, height = 600) {
@@ -56,6 +59,9 @@ class WindowManager {
                 console.warn(`Content template '${contentTemplate}' not found for app '${appId}'`);
             }
         }
+        
+        // Apply saved window control settings
+        this.applyWindowControlSettings(windowEl);
         
         if (!this.container) {
             console.error('Windows container not found');
@@ -359,5 +365,67 @@ class WindowManager {
             }
         }
         return null;
+    }
+
+    applyWindowControlSettings(windowEl) {
+        try {
+            const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
+            
+            // Apply minimize icon
+            if (settings.minimizeIcon) {
+                const minimizeBtn = windowEl.querySelector('.window-control.minimize');
+                if (minimizeBtn) {
+                    this.updateWindowControlIcon(minimizeBtn, settings.minimizeIcon, 'minimize');
+                }
+            }
+            
+            // Apply maximize icon
+            if (settings.maximizeIcon) {
+                const maximizeBtn = windowEl.querySelector('.window-control.maximize');
+                if (maximizeBtn) {
+                    this.updateWindowControlIcon(maximizeBtn, settings.maximizeIcon, 'maximize');
+                }
+            }
+            
+            // Apply close icon
+            if (settings.closeIcon) {
+                const closeBtn = windowEl.querySelector('.window-control.close');
+                if (closeBtn) {
+                    this.updateWindowControlIcon(closeBtn, settings.closeIcon, 'close');
+                }
+            }
+        } catch (error) {
+            console.warn('Error applying window control settings:', error);
+        }
+    }
+
+    updateWindowControlIcon(control, iconClass, controlType) {
+        if (!control) return;
+        
+        // Clear existing content
+        control.innerHTML = '';
+        control.classList.remove('has-icon');
+
+        if (iconClass === 'default') {
+            // Use default symbols
+            const defaultSymbols = {
+                minimize: '−',
+                maximize: '□',
+                close: '×'
+            };
+            control.textContent = defaultSymbols[controlType] || '';
+        } else {
+            // Use Font Awesome icon
+            control.innerHTML = `<i class="${iconClass}"></i>`;
+            control.classList.add('has-icon');
+        }
+    }
+
+    applyGlobalWindowSettings() {
+        // Apply saved settings to any existing windows
+        const existingWindows = document.querySelectorAll('.window');
+        existingWindows.forEach(windowEl => {
+            this.applyWindowControlSettings(windowEl);
+        });
     }
 }
