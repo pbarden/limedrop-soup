@@ -440,30 +440,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="setting-item">
-                        <label>Background Animation</label>
-                        <input type="checkbox" id="background-animation" checked>
-                    </div>
-                    <div class="setting-item" id="animation-style-controls">
-                        <label>Animation Style</label>
-                        <div class="module-dropdown" id="animation-style-dropdown">
-                            <button class="module-dropdown-toggle" type="button">
-                                <span class="dropdown-selected-text">Gradient Flow</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="module-dropdown-menu hide">
-                                <div class="module-option" data-value="gradient-flow">
-                                    <span class="module-option-name">Gradient Flow</span>
-                                </div>
-                                <div class="module-option" data-value="floating-orbs">
-                                    <span class="module-option-name">Floating Orbs</span>
-                                </div>
-                                <div class="module-option" data-value="breathing">
-                                    <span class="module-option-name">Breathing</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="settings-section">
@@ -475,7 +451,298 @@
                             <button class="color-reset" data-target="font-color" data-default="#ffffff">Reset</button>
                         </div>
                     </div>
-                    
+                    <!-- Enhanced Animation Settings Section - Replace the existing animation section in your settings template -->
+                    <div class="settings-section">
+                        <h3>✨ Background Animations</h3>
+                        
+                        <div class="setting-item">
+                            <label>Enable Animations</label>
+                            <input type="checkbox" id="background-animation" checked>
+                        </div>
+                        
+                        <div class="setting-item" id="animation-style-controls">
+                            <label>Animation Style</label>
+                            <div class="animation-controls">
+                                <div class="module-dropdown" id="animation-style-dropdown">
+                                    <button class="module-dropdown-toggle" type="button">
+                                        <span class="dropdown-selected-text">Gradient Flow</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <div class="module-dropdown-menu hide">
+                                        <div class="module-option" data-value="gradient-flow">
+                                            <span class="module-option-name">🌊 Gradient Flow</span>
+                                            <span class="module-option-desc">Smooth color transitions</span>
+                                        </div>
+                                        <div class="module-option" data-value="floating-orbs">
+                                            <span class="module-option-name">🔮 Floating Orbs</span>
+                                            <span class="module-option-desc">Glowing spheres drift across</span>
+                                        </div>
+                                        <div class="module-option" data-value="breathing">
+                                            <span class="module-option-name">💨 Breathing</span>
+                                            <span class="module-option-desc">Gentle pulsing effect</span>
+                                        </div>
+                                        <div class="module-option" data-value="pulse-waves">
+                                            <span class="module-option-name">〰️ Pulse Waves</span>
+                                            <span class="module-option-desc">Ripples from center</span>
+                                        </div>
+                                        <div class="module-option" data-value="color-shift">
+                                            <span class="module-option-name">🌈 Color Shift</span>
+                                            <span class="module-option-desc">Cycles through color spectrum</span>
+                                        </div>
+                                        <div class="module-option" data-value="shimmer">
+                                            <span class="module-option-name">✨ Shimmer</span>
+                                            <span class="module-option-desc">Light waves sweep across</span>
+                                        </div>
+                                        <div class="module-option" data-value="particle-flow">
+                                            <span class="module-option-name">⭐ Particle Flow</span>
+                                            <span class="module-option-desc">Moving light particles</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn-secondary preview-animation" id="preview-current-animation">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <label>Animation Intensity</label>
+                            <div class="intensity-controls">
+                                <input type="range" id="animation-intensity" min="50" max="150" value="100" step="10">
+                                <span class="intensity-value">100%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="animation-info">
+                            <p class="info-text">
+                                <i class="fas fa-info-circle"></i>
+                                Animations add visual interest to your desktop. You can preview each style before applying it.
+                            </p>
+                        </div>
+                    </div>
+
+                    <style>
+                    /* Enhanced animation controls styling */
+                    .animation-controls {
+                        display: flex;
+                        gap: 10px;
+                        align-items: center;
+                        flex: 1;
+                    }
+
+                    .animation-controls .module-dropdown {
+                        flex: 1;
+                        max-width: 200px;
+                    }
+
+                    .preview-animation {
+                        padding: 8px 12px;
+                        font-size: 12px;
+                        white-space: nowrap;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+
+                    .preview-animation:hover {
+                        background: rgba(255, 255, 255, 0.2) !important;
+                        transform: translateY(-1px);
+                    }
+
+                    .intensity-controls {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        flex: 1;
+                        max-width: 200px;
+                    }
+
+                    .intensity-controls input[type="range"] {
+                        flex: 1;
+                        height: 6px;
+                        background: rgba(255, 255, 255, 0.2);
+                        border-radius: 3px;
+                        outline: none;
+                        cursor: pointer;
+                    }
+
+                    .intensity-controls input[type="range"]::-webkit-slider-thumb {
+                        appearance: none;
+                        width: 18px;
+                        height: 18px;
+                        background: var(--primary-button-color);
+                        border-radius: 50%;
+                        border: 2px solid white;
+                        cursor: pointer;
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+                    }
+
+                    .intensity-controls input[type="range"]::-moz-range-thumb {
+                        width: 18px;
+                        height: 18px;
+                        background: var(--primary-button-color);
+                        border-radius: 50%;
+                        border: 2px solid white;
+                        cursor: pointer;
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+                    }
+
+                    .intensity-value {
+                        font-size: 12px;
+                        color: var(--font-color);
+                        min-width: 40px;
+                        text-align: center;
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                    }
+
+                    .module-option-desc {
+                        font-size: 10px;
+                        color: rgba(255, 255, 255, 0.6);
+                        display: block;
+                        margin-top: 2px;
+                    }
+
+                    .module-option {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        padding: 12px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    }
+
+                    .module-option:last-child {
+                        border-bottom: none;
+                    }
+
+                    .module-option-name {
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: var(--font-color);
+                    }
+
+                    .animation-info {
+                        margin-top: 15px;
+                        padding: 12px;
+                        background: rgba(255, 255, 255, 0.03);
+                        border-radius: 6px;
+                        border-left: 3px solid var(--primary-button-color);
+                    }
+
+                    .info-text {
+                        margin: 0;
+                        font-size: 12px;
+                        color: rgba(255, 255, 255, 0.8);
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        line-height: 1.4;
+                    }
+
+                    .info-text i {
+                        color: var(--primary-button-color);
+                        font-size: 14px;
+                        flex-shrink: 0;
+                    }
+
+                    /* Animation preview button animation */
+                    .preview-animation.previewing {
+                        background: var(--primary-button-color) !important;
+                        color: var(--primary-button-text) !important;
+                        pointer-events: none;
+                    }
+
+                    .preview-animation.previewing::after {
+                        content: '';
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        width: 12px;
+                        height: 12px;
+                        margin: -6px 0 0 -6px;
+                        border: 2px solid transparent;
+                        border-top-color: currentColor;
+                        border-radius: 50%;
+                        animation: spin 0.8s linear infinite;
+                    }
+
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+
+                    </style>
+
+                    <script>
+                    // Enhanced animation controls JavaScript - Add this to your settings initialization
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Animation intensity control
+                        const intensitySlider = document.getElementById('animation-intensity');
+                        const intensityValue = document.querySelector('.intensity-value');
+                        const previewBtn = document.getElementById('preview-current-animation');
+                        
+                        if (intensitySlider && intensityValue) {
+                            intensitySlider.addEventListener('input', function() {
+                                const value = this.value;
+                                intensityValue.textContent = value + '%';
+                                
+                                // Apply intensity scaling to animations
+                                const desktop = document.querySelector('.desktop-background');
+                                if (desktop) {
+                                    const intensity = value / 100;
+                                    desktop.style.setProperty('--animation-intensity', intensity);
+                                    desktop.style.animationDuration = `${Math.max(2, 15 / intensity)}s`;
+                                }
+                            });
+                        }
+                        
+                        // Preview button functionality
+                        if (previewBtn) {
+                            previewBtn.addEventListener('click', function() {
+                                const dropdown = document.getElementById('animation-style-dropdown');
+                                const selectedOption = dropdown.querySelector('.module-option.selected');
+                                const currentStyle = selectedOption ? selectedOption.dataset.value : 'gradient-flow';
+                                
+                                // Add previewing state
+                                this.classList.add('previewing');
+                                this.innerHTML = '<i class="fas fa-spinner"></i> Previewing...';
+                                
+                                // Enable animation temporarily
+                                const desktop = document.querySelector('.desktop-background');
+                                const wasAnimated = desktop.classList.contains('animated');
+                                
+                                if (!wasAnimated) {
+                                    desktop.classList.add('animated');
+                                }
+                                
+                                // Apply the style
+                                desktop.className = desktop.className.replace(/\b(gradient-flow|floating-orbs|breathing|pulse-waves|color-shift|shimmer|particle-flow)\b/g, '');
+                                desktop.classList.add(currentStyle);
+                                
+                                // Show notification
+                                if (window.notificationManager) {
+                                    window.notificationManager.show({
+                                        title: 'Animation Preview',
+                                        message: `Previewing ${currentStyle.replace('-', ' ')} animation...`,
+                                        type: 'info',
+                                        duration: 3000
+                                    });
+                                }
+                                
+                                // Reset after 3 seconds
+                                setTimeout(() => {
+                                    this.classList.remove('previewing');
+                                    this.innerHTML = '<i class="fas fa-eye"></i> Preview';
+                                    
+                                    // Restore original state if animations were disabled
+                                    const animationCheckbox = document.getElementById('background-animation');
+                                    if (!animationCheckbox.checked && !wasAnimated) {
+                                        desktop.classList.remove('animated', currentStyle);
+                                    }
+                                }, 3000);
+                            });
+                        }
+                    });
+                    </script>
                     <!-- Primary Button Settings -->
                     <div class="setting-item">
                         <label>Primary Button Style</label>
@@ -556,6 +823,248 @@
                         </div>
                     </div>
                 </div>
+                <!-- Window Control Icons Settings Section - Add this to your settings template -->
+                <div class="settings-section">
+                    <h3>Window Controls</h3>
+                    
+                    <div class="setting-item window-control-setting">
+                        <label>Minimize Button Icon</label>
+                        <div class="window-control-icon-picker" id="minimize-icon-picker">
+                            <div class="icon-picker">
+                                <div class="icon-picker-header">
+                                    <div class="icon-picker-selected">
+                                        <div class="selected-icon-preview">
+                                            <span class="default-icon">−</span>
+                                        </div>
+                                        <span class="selected-icon-name">Default</span>
+                                    </div>
+                                    <button class="icon-picker-toggle" type="button">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="icon-picker-dropdown">
+                                    <div class="icon-picker-search">
+                                        <input type="text" class="icon-search-input" placeholder="Search minimize icons...">
+                                    </div>
+                                    <div class="icon-picker-grid" id="minimize-icon-grid">
+                                        <!-- Icons will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item window-control-setting">
+                        <label>Maximize Button Icon</label>
+                        <div class="window-control-icon-picker" id="maximize-icon-picker">
+                            <div class="icon-picker">
+                                <div class="icon-picker-header">
+                                    <div class="icon-picker-selected">
+                                        <div class="selected-icon-preview">
+                                            <span class="default-icon">□</span>
+                                        </div>
+                                        <span class="selected-icon-name">Default</span>
+                                    </div>
+                                    <button class="icon-picker-toggle" type="button">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="icon-picker-dropdown">
+                                    <div class="icon-picker-search">
+                                        <input type="text" class="icon-search-input" placeholder="Search maximize icons...">
+                                    </div>
+                                    <div class="icon-picker-grid" id="maximize-icon-grid">
+                                        <!-- Icons will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item window-control-setting">
+                        <label>Close Button Icon</label>
+                        <div class="window-control-icon-picker" id="close-icon-picker">
+                            <div class="icon-picker">
+                                <div class="icon-picker-header">
+                                    <div class="icon-picker-selected">
+                                        <div class="selected-icon-preview">
+                                            <span class="default-icon">×</span>
+                                        </div>
+                                        <span class="selected-icon-name">Default</span>
+                                    </div>
+                                    <button class="icon-picker-toggle" type="button">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                                <div class="icon-picker-dropdown">
+                                    <div class="icon-picker-search">
+                                        <input type="text" class="icon-search-input" placeholder="Search close icons...">
+                                    </div>
+                                    <div class="icon-picker-grid" id="close-icon-grid">
+                                        <!-- Icons will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label>Window Control Style</label>
+                        <div class="module-dropdown" id="window-control-style-dropdown">
+                            <button class="module-dropdown-toggle" type="button">
+                                <span class="dropdown-selected-text">Circle</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="module-dropdown-menu hide">
+                                <div class="module-option" data-value="circle">
+                                    <span class="module-option-name">Circle</span>
+                                </div>
+                                <div class="module-option" data-value="square">
+                                    <span class="module-option-name">Square</span>
+                                </div>
+                                <div class="module-option" data-value="rounded">
+                                    <span class="module-option-name">Rounded Square</span>
+                                </div>
+                                <div class="module-option" data-value="minimal">
+                                    <span class="module-option-name">Minimal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="window-controls-preview">
+                            <span class="preview-label">Preview:</span>
+                            <div class="preview-controls">
+                                <button class="window-control minimize preview-btn">
+                                    <span class="default-icon">−</span>
+                                </button>
+                                <button class="window-control maximize preview-btn">
+                                    <span class="default-icon">□</span>
+                                </button>
+                                <button class="window-control close preview-btn">
+                                    <span class="default-icon">×</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <button class="btn-secondary reset-window-controls">Reset to Default</button>
+                    </div>
+                </div>
+
+                <style>
+                /* Window Control Settings Styling */
+                .window-control-setting {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 8px;
+                }
+
+                .window-control-setting label {
+                    font-size: 13px;
+                    color: var(--font-color);
+                    margin-bottom: 0;
+                }
+
+                .window-control-icon-picker {
+                    width: 100%;
+                }
+
+                .window-control-icon-picker .icon-picker {
+                    width: 100%;
+                }
+
+                .window-control-icon-picker .icon-picker-header {
+                    min-width: auto;
+                    width: 100%;
+                }
+
+                .window-control-icon-picker .selected-icon-preview {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .window-control-icon-picker .default-icon {
+                    font-size: 16px;
+                    color: white;
+                    line-height: 1;
+                }
+
+                .window-controls-preview {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    padding: 12px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 6px;
+                    width: 100%;
+                }
+
+                .preview-label {
+                    font-size: 13px;
+                    color: var(--font-color);
+                    font-weight: 500;
+                }
+
+                .preview-controls {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                }
+
+                .preview-btn {
+                    pointer-events: none;
+                    opacity: 0.8;
+                }
+
+                .reset-window-controls {
+                    align-self: flex-start;
+                    padding: 8px 16px;
+                    font-size: 13px;
+                }
+
+                /* Window control style variations */
+                .window-control.style-square {
+                    border-radius: 4px;
+                }
+
+                .window-control.style-rounded {
+                    border-radius: 8px;
+                }
+
+                .window-control.style-minimal {
+                    border-radius: 0;
+                    background: transparent;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+
+                .window-control.style-minimal:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                }
+
+                /* Icon picker dropdown specific to window controls */
+                .window-control-icon-picker .icon-picker-dropdown {
+                    max-height: 300px;
+                }
+
+                .window-control-icon-picker .icon-picker-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+                    max-height: 200px;
+                }
+
+                .window-control-icon-picker .icon-picker-item {
+                    width: 40px;
+                    height: 40px;
+                    font-size: 16px;
+                }
+                </style>
                 
                 <div class="settings-section">
                     <h3>System</h3>

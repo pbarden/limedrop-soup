@@ -47,7 +47,7 @@ class AppManager {
                     <h3 style="color: white; margin-bottom: 8px;">No Apps Found</h3>
                     <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">Create your first app with the App Builder</p>
                     <button onclick="appRegistry.launchApp('app-builder')" 
-                            style="padding: 10px 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            style="padding: 10px 20px; color: white; border: none; border-radius: 6px; cursor: pointer;">
                         <i class="fas fa-hammer"></i> Open App Builder
                     </button>
                 </div>

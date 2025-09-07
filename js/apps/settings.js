@@ -12,6 +12,7 @@ class Settings {
         this.initializeDropdowns();
         this.attachColorEvents();
         this.loadSettings();
+        this.initializeWindowControlSettings(); 
     }
 
     initializeColorTheme() {
@@ -426,7 +427,19 @@ class Settings {
             backgroundAnimation: this.windowEl.querySelector('#background-animation').checked,
             animationStyle: this.dropdowns.animationStyle.getValue() || 'gradient-flow',
         };
-        
+
+        settings.windowControlStyle = this.dropdowns.windowControlStyle.getValue() || 'circle';
+        // Save individual icons
+        ['minimize', 'maximize', 'close'].forEach(controlType => {
+            const picker = this.windowEl.querySelector(`#${controlType}-icon-picker`);
+            if (picker) {
+                const selectedItem = picker.querySelector('.icon-picker-item.selected');
+                if (selectedItem) {
+                    settings[`${controlType}Icon`] = selectedItem.dataset.iconClass;
+                    settings[`${controlType}IconName`] = selectedItem.dataset.iconName;
+                }
+            }
+        });
         localStorage.setItem('limedrop-settings', JSON.stringify(settings));
         
         // Debug log to verify saving
@@ -601,6 +614,7 @@ class Settings {
         this.saveSettings();
     }
 
+    // Enhanced animation methods for Settings class
     toggleBackgroundAnimation(enabled) {
         const desktop = document.querySelector('.desktop-background');
         if (enabled) {
@@ -609,23 +623,463 @@ class Settings {
             // Apply current animation style
             const currentStyle = this.dropdowns.animationStyle.getValue() || 'gradient-flow';
             this.changeAnimationStyle(currentStyle);
+            
+            // Show a brief notification that animations are enabled
+            if (window.notificationManager) {
+                window.notificationManager.show({
+                    title: 'Animations Enabled',
+                    message: 'Background animations are now active. Watch the background!',
+                    type: 'info',
+                    duration: 3000
+                });
+            }
         } else {
-            desktop.classList.remove('animated', 'gradient-flow', 'floating-orbs', 'breathing');
+            desktop.classList.remove('animated', 'gradient-flow', 'floating-orbs', 'breathing', 
+                                    'pulse-waves', 'color-shift', 'shimmer', 'particle-flow');
             this.windowEl.querySelector('#animation-style-controls').style.display = 'none';
+            
+            if (window.notificationManager) {
+                window.notificationManager.show({
+                    title: 'Animations Disabled',
+                    message: 'Background animations are now turned off.',
+                    type: 'info',
+                    duration: 2000
+                });
+            }
         }
         this.saveSettings();
     }
 
     changeAnimationStyle(style) {
         const desktop = document.querySelector('.desktop-background');
+        
         // Remove all animation classes
-        desktop.classList.remove('gradient-flow', 'floating-orbs', 'breathing');
+        desktop.classList.remove('gradient-flow', 'floating-orbs', 'breathing', 
+                                'pulse-waves', 'color-shift', 'shimmer', 'particle-flow');
         
         // Add the selected animation class if animations are enabled
         if (desktop.classList.contains('animated')) {
             desktop.classList.add(style);
+            
+            // Show notification about the animation change
+            const animationNames = {
+                'gradient-flow': 'Gradient Flow',
+                'floating-orbs': 'Floating Orbs',
+                'breathing': 'Breathing',
+                'pulse-waves': 'Pulse Waves',
+                'color-shift': 'Color Shift',
+                'shimmer': 'Shimmer',
+                'particle-flow': 'Particle Flow'
+            };
+            
+            if (window.notificationManager) {
+                window.notificationManager.show({
+                    title: 'Animation Changed',
+                    message: `Now showing: ${animationNames[style] || style}`,
+                    type: 'info',
+                    duration: 2500
+                });
+            }
         }
         
         this.saveSettings();
     }
+
+    // Enhanced animation preview method
+    previewAnimation(style) {
+        const desktop = document.querySelector('.desktop-background');
+        
+        // Temporarily apply the animation for preview
+        desktop.classList.add('animated', style);
+        
+        // Remove preview after 3 seconds
+        setTimeout(() => {
+            if (!this.windowEl.querySelector('#background-animation').checked) {
+                desktop.classList.remove('animated', style);
+            }
+        }, 3000);
+        
+        if (window.notificationManager) {
+            window.notificationManager.show({
+                title: 'Animation Preview',
+                message: `Previewing ${style} for 3 seconds...`,
+                type: 'info',
+                duration: 3000
+            });
+        }
+    }
+
+    // Window Controls Settings - Add these methods to your Settings class
+
+initializeWindowControlSettings() {
+    // Initialize window control style dropdown
+    this.dropdowns.windowControlStyle = this.initializeModuleDropdown('window-control-style-dropdown', (value) => {
+        this.changeWindowControlStyle(value);
+    });
+
+    // Initialize icon pickers for each control
+    this.initializeWindowControlIconPickers();
+    
+    // Attach reset button event
+    const resetBtn = this.windowEl.querySelector('.reset-window-controls');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            this.resetWindowControlsToDefault();
+        });
+    }
 }
+
+initializeWindowControlIconPickers() {
+    const iconSets = {
+        minimize: [
+            { icon: 'fa-minus', name: 'Minus' },
+            { icon: 'fa-window-minimize', name: 'Window Minimize' },
+            { icon: 'fa-chevron-down', name: 'Chevron Down' },
+            { icon: 'fa-angle-down', name: 'Angle Down' },
+            { icon: 'fa-compress', name: 'Compress' },
+            { icon: 'fa-compress-alt', name: 'Compress Alt' },
+            { icon: 'fa-caret-down', name: 'Caret Down' },
+            { icon: 'fa-underscore', name: 'Underscore' }
+        ],
+        maximize: [
+            { icon: 'fa-square', name: 'Square' },
+            { icon: 'fa-window-maximize', name: 'Window Maximize' },
+            { icon: 'fa-expand', name: 'Expand' },
+            { icon: 'fa-expand-alt', name: 'Expand Alt' },
+            { icon: 'fa-external-link-alt', name: 'External Link' },
+            { icon: 'fa-arrows-alt', name: 'Arrows Alt' },
+            { icon: 'fa-plus', name: 'Plus' },
+            { icon: 'fa-clone', name: 'Clone' }
+        ],
+        close: [
+            { icon: 'fa-times', name: 'Times' },
+            { icon: 'fa-window-close', name: 'Window Close' },
+            { icon: 'fa-times-circle', name: 'Times Circle' },
+            { icon: 'fa-ban', name: 'Ban' },
+            { icon: 'fa-stop', name: 'Stop' },
+            { icon: 'fa-power-off', name: 'Power Off' },
+            { icon: 'fa-trash', name: 'Trash' },
+            { icon: 'fa-door-open', name: 'Door Open' }
+        ]
+    };
+
+    Object.keys(iconSets).forEach(controlType => {
+        this.initializeControlIconPicker(controlType, iconSets[controlType]);
+    });
+}
+
+initializeControlIconPicker(controlType, icons) {
+    const pickerId = `${controlType}-icon-picker`;
+    const picker = this.windowEl.querySelector(`#${pickerId}`);
+    if (!picker) return;
+
+    const toggle = picker.querySelector('.icon-picker-toggle');
+    const dropdown = picker.querySelector('.icon-picker-dropdown');
+    const grid = picker.querySelector('.icon-picker-grid');
+    const selectedPreview = picker.querySelector('.selected-icon-preview');
+    const selectedName = picker.querySelector('.selected-icon-name');
+    const searchInput = picker.querySelector('.icon-search-input');
+
+    // Populate icon grid
+    this.populateIconGrid(grid, icons, controlType);
+
+    // Toggle dropdown
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !dropdown.classList.contains('hide');
+        
+        // Close all icon picker dropdowns
+        this.windowEl.querySelectorAll('.icon-picker-dropdown').forEach(d => {
+            d.classList.add('hide');
+        });
+        
+        // Toggle this dropdown
+        if (!isOpen) {
+            dropdown.classList.remove('hide');
+        }
+    });
+
+    // Search functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            this.filterIcons(grid, e.target.value, icons, controlType);
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!picker.contains(e.target)) {
+            dropdown.classList.add('hide');
+        }
+    });
+}
+
+populateIconGrid(grid, icons, controlType) {
+    grid.innerHTML = '';
+    
+    // Add default option
+    const defaultItem = document.createElement('div');
+    defaultItem.className = 'icon-picker-item default-option';
+    defaultItem.dataset.iconClass = 'default';
+    defaultItem.dataset.iconName = 'Default';
+    defaultItem.innerHTML = `<span class="default-icon">${this.getDefaultSymbol(controlType)}</span>`;
+    defaultItem.addEventListener('click', () => {
+        this.selectControlIcon(controlType, 'default', 'Default', defaultItem);
+    });
+    grid.appendChild(defaultItem);
+
+    // Add icon options
+    icons.forEach(iconData => {
+        const item = document.createElement('div');
+        item.className = 'icon-picker-item';
+        item.dataset.iconClass = iconData.icon;
+        item.dataset.iconName = iconData.name;
+        item.innerHTML = `<i class="fas ${iconData.icon}"></i>`;
+        item.addEventListener('click', () => {
+            this.selectControlIcon(controlType, iconData.icon, iconData.name, item);
+        });
+        grid.appendChild(item);
+    });
+}
+
+filterIcons(grid, query, icons, controlType) {
+    const items = grid.querySelectorAll('.icon-picker-item');
+    const searchTerm = query.toLowerCase();
+    
+    items.forEach(item => {
+        const iconName = item.dataset.iconName.toLowerCase();
+        const iconClass = item.dataset.iconClass.toLowerCase();
+        const matches = iconName.includes(searchTerm) || iconClass.includes(searchTerm);
+        item.style.display = matches ? 'flex' : 'none';
+    });
+}
+
+selectControlIcon(controlType, iconClass, iconName, itemElement) {
+    const pickerId = `${controlType}-icon-picker`;
+    const picker = this.windowEl.querySelector(`#${pickerId}`);
+    if (!picker) return;
+
+    const selectedPreview = picker.querySelector('.selected-icon-preview');
+    const selectedName = picker.querySelector('.selected-icon-name');
+    const dropdown = picker.querySelector('.icon-picker-dropdown');
+
+    // Update picker display
+    if (iconClass === 'default') {
+        selectedPreview.innerHTML = `<span class="default-icon">${this.getDefaultSymbol(controlType)}</span>`;
+    } else {
+        selectedPreview.innerHTML = `<i class="fas ${iconClass}"></i>`;
+    }
+    selectedName.textContent = iconName;
+
+    // Update selected state in grid
+    picker.querySelectorAll('.icon-picker-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    itemElement.classList.add('selected');
+
+    // Close dropdown
+    dropdown.classList.add('hide');
+
+    // Apply to all windows and preview
+    this.applyControlIcon(controlType, iconClass);
+    this.updatePreview();
+    this.saveSettings();
+}
+
+applyControlIcon(controlType, iconClass) {
+    // Apply to all existing windows
+    const windows = document.querySelectorAll('.window');
+    windows.forEach(window => {
+        const control = window.querySelector(`.window-control.${controlType}`);
+        if (control) {
+            this.updateControlIcon(control, iconClass, controlType);
+        }
+    });
+
+    // Update window template for future windows
+    this.updateWindowTemplate(controlType, iconClass);
+}
+
+updateControlIcon(control, iconClass, controlType) {
+    // Clear existing content
+    control.innerHTML = '';
+    control.classList.remove('has-icon');
+
+    if (iconClass === 'default') {
+        // Use default symbol
+        control.classList.remove('has-icon');
+    } else {
+        // Use Font Awesome icon
+        control.innerHTML = `<i class="fas ${iconClass}"></i>`;
+        control.classList.add('has-icon');
+    }
+}
+
+updateWindowTemplate(controlType, iconClass) {
+    const template = document.querySelector('#window-template');
+    if (!template) return;
+
+    const control = template.content.querySelector(`.window-control.${controlType}`);
+    if (control) {
+        this.updateControlIcon(control, iconClass, controlType);
+    }
+}
+
+changeWindowControlStyle(style) {
+    // Apply style to all existing windows
+    const windows = document.querySelectorAll('.window');
+    windows.forEach(window => {
+        const controls = window.querySelectorAll('.window-control');
+        controls.forEach(control => {
+            // Remove existing style classes
+            control.classList.remove('style-circle', 'style-square', 'style-rounded', 'style-minimal');
+            // Add new style class
+            if (style !== 'circle') {
+                control.classList.add(`style-${style}`);
+            }
+        });
+    });
+
+    // Update preview
+    this.updatePreview();
+    this.saveSettings();
+}
+
+updatePreview() {
+    const preview = this.windowEl.querySelector('.preview-controls');
+    if (!preview) return;
+
+    const controls = preview.querySelectorAll('.window-control');
+    const style = this.dropdowns.windowControlStyle.getValue() || 'circle';
+
+    controls.forEach(control => {
+        // Apply style
+        control.classList.remove('style-circle', 'style-square', 'style-rounded', 'style-minimal');
+        if (style !== 'circle') {
+            control.classList.add(`style-${style}`);
+        }
+
+        // Apply custom icons
+        const controlType = control.classList.contains('minimize') ? 'minimize' :
+                          control.classList.contains('maximize') ? 'maximize' : 'close';
+        
+        const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
+        const iconClass = settings[`${controlType}Icon`] || 'default';
+        
+        this.updateControlIcon(control, iconClass, controlType);
+    });
+}
+
+resetWindowControlsToDefault() {
+    // Reset all icon pickers
+    ['minimize', 'maximize', 'close'].forEach(controlType => {
+        this.selectControlIcon(controlType, 'default', 'Default', 
+            this.windowEl.querySelector(`#${controlType}-icon-picker .default-option`));
+    });
+
+    // Reset style
+    this.dropdowns.windowControlStyle.setValue('circle');
+    this.changeWindowControlStyle('circle');
+
+    // Show notification
+    if (window.notificationManager) {
+        window.notificationManager.show({
+            title: 'Window Controls Reset',
+            message: 'All window controls have been reset to default.',
+            type: 'info',
+            duration: 2000
+        });
+    }
+}
+
+getDefaultSymbol(controlType) {
+    const symbols = {
+        minimize: '−',
+        maximize: '□',
+        close: '×'
+    };
+    return symbols[controlType] || '?';
+}
+
+// Load window control settings
+loadWindowControlSettings() {
+    const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
+    
+    // Load control style
+    const controlStyle = settings.windowControlStyle || 'circle';
+    this.dropdowns.windowControlStyle.setValue(controlStyle);
+    
+    // Load individual icons
+    ['minimize', 'maximize', 'close'].forEach(controlType => {
+        const iconClass = settings[`${controlType}Icon`] || 'default';
+        const iconName = settings[`${controlType}IconName`] || 'Default';
+        
+        // Find the picker and update it
+        const picker = this.windowEl.querySelector(`#${controlType}-icon-picker`);
+        if (picker) {
+            const selectedPreview = picker.querySelector('.selected-icon-preview');
+            const selectedName = picker.querySelector('.selected-icon-name');
+            
+            if (iconClass === 'default') {
+                selectedPreview.innerHTML = `<span class="default-icon">${this.getDefaultSymbol(controlType)}</span>`;
+            } else {
+                selectedPreview.innerHTML = `<i class="fas ${iconClass}"></i>`;
+            }
+            selectedName.textContent = iconName;
+
+            // Apply to windows
+            this.applyControlIcon(controlType, iconClass);
+        }
+    });
+
+    this.updatePreview();
+}
+
+// Save window control settings (update existing saveSettings method)
+saveWindowControlSettings() {
+    const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
+    
+    // Save control style
+    settings.windowControlStyle = this.dropdowns.windowControlStyle.getValue() || 'circle';
+    
+    // Save individual icons
+    ['minimize', 'maximize', 'close'].forEach(controlType => {
+        const picker = this.windowEl.querySelector(`#${controlType}-icon-picker`);
+        if (picker) {
+            const selectedItem = picker.querySelector('.icon-picker-item.selected');
+            if (selectedItem) {
+                settings[`${controlType}Icon`] = selectedItem.dataset.iconClass;
+                settings[`${controlType}IconName`] = selectedItem.dataset.iconName;
+            }
+        }
+    });
+    
+    localStorage.setItem('limedrop-settings', JSON.stringify(settings));
+}
+}
+
+function applyWindowControlSettings(windowElement) {
+    const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
+    
+    // Apply styles and icons
+    const style = settings.windowControlStyle || 'circle';
+    const controls = windowElement.querySelectorAll('.window-control');
+    
+    controls.forEach(control => {
+        control.className = control.className.replace(/style-\w+/g, '');
+        if (style !== 'circle') {
+            control.classList.add(`style-${style}`);
+        }
+    });
+}
+
+// Watch for new windows and auto-apply settings
+new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.classList && node.classList.contains('window')) {
+                applyWindowControlSettings(node);
+            }
+        });
+    });
+}).observe(document.body, { childList: true, subtree: true });
