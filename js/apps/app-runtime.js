@@ -488,6 +488,22 @@ class AppRuntime {
                 // Helper functions to detect value types
                 const isImage = (val) => typeof val === 'string' && /^data:image\//i.test(val);
                 const isTable = (val) => Array.isArray(val);
+                // If the value is an object with a type field, extract data accordingly
+                const extractTypedData = (val) => {
+                    if (val && typeof val === 'object' && val.type) {
+                        const t = val.type.toLowerCase();
+                        if (t === 'canvas' || t === 'image') {
+                            return val.data || val.image || val.value;
+                        }
+                        if (t === 'table') {
+                            return val.data || val.rows || val.table || val.value;
+                        }
+                        if (t === 'text' || t === 'rich-text') {
+                            return val.data || val.text || val.value;
+                        }
+                    }
+                    return val;
+                };
                 const toCSV = (rows) => {
                     if (!Array.isArray(rows)) return '';
                     // Determine if rows are array of objects or arrays
@@ -503,24 +519,26 @@ class AppRuntime {
                     }
                     return '';
                 };
+                // Extract data if value has type property
+                const rawPrev = extractTypedData(prevValue);
                 // Transformations
-                let newValue = prevValue;
+                let newValue = rawPrev;
                 if (target === 'text') {
-                    if (isTable(prevValue)) {
-                        newValue = toCSV(prevValue);
-                    } else if (isImage(prevValue)) {
+                    if (isTable(rawPrev)) {
+                        newValue = toCSV(rawPrev);
+                    } else if (isImage(rawPrev)) {
                         // For images, we cannot convert to text easily; embed as notice
-                        newValue = `[Image data: ${prevValue.slice(0, 20)}...]`;
+                        newValue = `[Image data: ${rawPrev.slice(0, 20)}...]`;
                     } else {
                         // Default: stringify
-                        if (typeof prevValue === 'object') {
-                            try { newValue = JSON.stringify(prevValue); } catch { newValue = String(prevValue); }
+                        if (typeof rawPrev === 'object') {
+                            try { newValue = JSON.stringify(rawPrev); } catch { newValue = String(rawPrev); }
                         }
                     }
                 } else if (target === 'table') {
-                    if (isTable(prevValue)) {
-                        newValue = prevValue;
-                    } else if (typeof prevValue === 'string') {
+                    if (isTable(rawPrev)) {
+                        newValue = rawPrev;
+                    } else if (typeof rawPrev === 'string') {
                         // Try to parse JSON or CSV
                         let tableRows = [];
                         try {
@@ -532,7 +550,7 @@ class AppRuntime {
                             }
                         } catch {
                             // Try CSV: split lines by newline and commas
-                            const lines = prevValue.split(/\r?\n/).filter(l => l.trim().length > 0);
+                            const lines = rawPrev.split(/\r?\n/).filter(l => l.trim().length > 0);
                             if (lines.length > 0) {
                                 tableRows = lines.map(line => line.split(','));
                             }
@@ -555,14 +573,14 @@ class AppRuntime {
                             }
                         } else {
                             // Fallback: create table with single column 'Value'
-                            newValue = [{ Value: prevValue }];
+                            newValue = [{ Value: rawPrev }];
                         }
-                    } else if (isImage(prevValue)) {
-                        newValue = [{ Image: prevValue }];
+                    } else if (isImage(rawPrev)) {
+                        newValue = [{ Image: rawPrev }];
                     }
                 } else if (target === 'image') {
-                    if (isImage(prevValue)) {
-                        newValue = prevValue;
+                    if (isImage(rawPrev)) {
+                        newValue = rawPrev;
                     } else {
                         // Create an image with text/table content drawn onto a canvas
                         try {
@@ -576,12 +594,12 @@ class AppRuntime {
                             ctx.font = '14px sans-serif';
                             ctx.textBaseline = 'top';
                             let text = '';
-                            if (isTable(prevValue)) {
-                                text = toCSV(prevValue);
-                            } else if (typeof prevValue === 'object') {
-                                try { text = JSON.stringify(prevValue, null, 2); } catch { text = String(prevValue); }
+                            if (isTable(rawPrev)) {
+                                text = toCSV(rawPrev);
+                            } else if (typeof rawPrev === 'object') {
+                                try { text = JSON.stringify(rawPrev, null, 2); } catch { text = String(rawPrev); }
                             } else {
-                                text = String(prevValue || '');
+                                text = String(rawPrev || '');
                             }
                             // Split text into lines to avoid overflow
                             const lines = text.split(/\r?\n/);
@@ -609,6 +627,10 @@ class AppRuntime {
                             newValue = prevValue;
                         }
                     }
+                }
+                // If target is a custom pseudo‑type, wrap previous value into an object
+                if (!['text','table','image'].includes(target)) {
+                    newValue = { type: target, data: prevValue };
                 }
                 value = newValue;
                 break;

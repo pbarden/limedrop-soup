@@ -1430,6 +1430,64 @@ class AppBuilder {
         // Bind values to config
         this.populateConfig(container);
         this.attachConfigListeners(container);
+        // Populate additional user‑defined types from files app
+        const select = form.querySelector('.config-targetType');
+        if (select) {
+            const builtIn = new Set(['text', 'table', 'image']);
+            const addOption = (typeName) => {
+                if (!typeName || builtIn.has(typeName)) return;
+                // Avoid duplicates
+                if (Array.from(select.options).some(opt => opt.value === typeName)) return;
+                const opt = document.createElement('option');
+                opt.value = typeName;
+                opt.textContent = typeName.charAt(0).toUpperCase() + typeName.slice(1);
+                select.appendChild(opt);
+            };
+            try {
+                let files = [];
+                if (typeof fileSystem !== 'undefined') {
+                    if (typeof fileSystem.listFiles === 'function') {
+                        files = fileSystem.listFiles();
+                    } else if (typeof fileSystem.getFiles === 'function') {
+                        files = fileSystem.getFiles();
+                    } else if (Array.isArray(fileSystem.files)) {
+                        files = fileSystem.files;
+                    }
+                }
+                files.forEach(f => {
+                    let content;
+                    let id;
+                    if (typeof f === 'string') {
+                        id = f;
+                    } else {
+                        id = f.id || f.name;
+                    }
+                    // Read file content
+                    try {
+                        if (typeof fileSystem.readFile === 'function') {
+                            content = fileSystem.readFile(id);
+                        } else if (typeof fileSystem.getFileContent === 'function') {
+                            content = fileSystem.getFileContent(id);
+                        } else if (typeof fileSystem.getFile === 'function') {
+                            const fileObj = fileSystem.getFile(id);
+                            content = fileObj ? (fileObj.content || fileObj.data || fileObj.body) : null;
+                        }
+                        if (content && typeof content === 'string') {
+                            try {
+                                const json = JSON.parse(content);
+                                if (json && typeof json.type === 'string') {
+                                    addOption(json.type);
+                                }
+                            } catch {}
+                        } else if (content && typeof content === 'object' && typeof content.type === 'string') {
+                            addOption(content.type);
+                        }
+                    } catch {}
+                });
+            } catch (err) {
+                console.warn('Failed to populate user types', err);
+            }
+        }
     }
 
     /**
