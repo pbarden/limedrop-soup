@@ -151,10 +151,12 @@ class AppRegistry {
         const dockItem = document.createElement('div');
         dockItem.className = 'dock-item';
         dockItem.dataset.app = appId;
-        // Include an icon if available.  Use a default icon for user apps when none is provided.
+        // Determine icon class; fallback to a generic cube
         const iconClass = definition.icon || 'fas fa-cube';
-        // Use inherit color on icon so it matches other dock icons
-        dockItem.innerHTML = `<i class="dock-icon ${iconClass}" style="color: inherit;"></i><span class="dock-label">${definition.name}</span>`;
+        // Use only the icon inside the dock item; labels are hidden for a cleaner dock
+        dockItem.innerHTML = `<i class="dock-icon ${iconClass}"></i>`;
+        // Tooltip shows the app name on hover
+        dockItem.title = definition.name || appId;
         dockApps.insertBefore(dockItem, separator);
         dockItem.addEventListener('click', () => {
             this.launchApp(appId);
