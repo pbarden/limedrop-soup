@@ -59,7 +59,10 @@ class AppRegistry {
         definition.favorite = definition.favorite || false;
         this.userApps.set(appId, definition);
         this.saveToStorage();
-        this.addToDock(appId, definition);
+        // Only add to dock if marked as favourite
+        if (definition.favorite) {
+            this.addToDock(appId, definition);
+        }
         return appId;
     }
 
@@ -78,6 +81,31 @@ class AppRegistry {
         // Remove dock item
         const dockApps = document.getElementById('dock-apps');
         if (dockApps) {
+            const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
+            if (dockItem) dockItem.remove();
+        }
+        this.saveToStorage();
+    }
+
+    /**
+     * Toggle an app's favourite status and update its dock presence.
+     * If an app becomes a favourite it is added to the dock; if
+     * unfavourited it is removed.
+     * @param {string} appId
+     */
+    toggleFavorite(appId) {
+        const app = this.userApps.get(appId);
+        if (!app) return;
+        app.favorite = !app.favorite;
+        // Update dock
+        const dockApps = document.getElementById('dock-apps');
+        if (app.favorite) {
+            // Only add if not already present
+            if (!dockApps.querySelector(`[data-app="${appId}"]`)) {
+                this.addToDock(appId, app);
+            }
+        } else {
+            // Remove from dock
             const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
             if (dockItem) dockItem.remove();
         }
@@ -108,6 +136,12 @@ class AppRegistry {
         if (typeof builder.loadAppDefinition === 'function') {
             builder.loadAppDefinition(definition);
         }
+
+        // Mark corresponding dock item as active when editing an app
+        const dockItem = document.querySelector(`#dock-apps [data-app="${appId}"]`);
+        if (dockItem) {
+            dockItem.classList.add('active');
+        }
     }
 
     addToDock(appId, definition) {
@@ -119,7 +153,8 @@ class AppRegistry {
         dockItem.dataset.app = appId;
         // Include an icon if available.  Use a default icon for user apps when none is provided.
         const iconClass = definition.icon || 'fas fa-cube';
-        dockItem.innerHTML = `<i class="dock-icon ${iconClass}"></i><span class="dock-label">${definition.name}</span>`;
+        // Use inherit color on icon so it matches other dock icons
+        dockItem.innerHTML = `<i class="dock-icon ${iconClass}" style="color: inherit;"></i><span class="dock-label">${definition.name}</span>`;
         dockApps.insertBefore(dockItem, separator);
         dockItem.addEventListener('click', () => {
             this.launchApp(appId);
@@ -153,6 +188,12 @@ class AppRegistry {
                 app.height
             );
             this.initializeApp(appId, windowId);
+        }
+
+        // Mark dock item as active
+        const dockItem = document.querySelector(`#dock-apps [data-app="${appId}"]`);
+        if (dockItem) {
+            dockItem.classList.add('active');
         }
     }
 

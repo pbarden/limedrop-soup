@@ -52,11 +52,26 @@ class AppManager {
                 row.style.borderRadius = '6px';
                 row.style.padding = '10px 12px';
                 row.style.gap = '10px';
-                // Label and optional favorite star
+                // Favorite toggle and name
+                const nameContainer = document.createElement('div');
+                nameContainer.style.display = 'flex';
+                nameContainer.style.alignItems = 'center';
+                nameContainer.style.gap = '8px';
+                nameContainer.style.flexGrow = '1';
+                // Star icon indicating favourite
+                const star = document.createElement('i');
+                star.className = appDef.favorite ? 'fas fa-star' : 'far fa-star';
+                star.style.cursor = 'pointer';
+                star.addEventListener('click', () => {
+                    registry.toggleFavorite(appId);
+                    // Update star appearance
+                    star.className = appDef.favorite ? 'fas fa-star' : 'far fa-star';
+                });
+                nameContainer.appendChild(star);
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = appDef.name || appId;
-                nameSpan.style.flexGrow = '1';
-                row.appendChild(nameSpan);
+                nameContainer.appendChild(nameSpan);
+                row.appendChild(nameContainer);
                 // Actions container
                 const actions = document.createElement('div');
                 actions.style.display = 'flex';
