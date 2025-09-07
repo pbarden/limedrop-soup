@@ -2,13 +2,15 @@
 class Settings {
     constructor(windowEl) {
         this.windowEl = windowEl;
+        this.dropdowns = {};
         this.init();
     }
 
     init() {
         this.initializeColorTheme();
         this.initializeGradientPreviews();
-        this.attachEvents();
+        this.initializeDropdowns();
+        this.attachColorEvents();
         this.loadSettings();
     }
 
@@ -43,16 +45,19 @@ class Settings {
         });
     }
 
-    attachEvents() {
-        // Module dropdowns
-        this.initializeModuleDropdown('background-dropdown', (value) => {
+    initializeDropdowns() {
+        // Initialize background dropdown
+        this.dropdowns.background = this.initializeModuleDropdown('background-dropdown', (value) => {
             this.changeBackground(value);
         });
         
-        this.initializeModuleDropdown('button-style-dropdown', (value) => {
+        // Initialize button style dropdown
+        this.dropdowns.buttonStyle = this.initializeModuleDropdown('button-style-dropdown', (value) => {
             this.changePrimaryButtonStyle(value);
         });
+    }
 
+    attachColorEvents() {
         // Color pickers
         const fontColorPicker = this.windowEl.querySelector('#font-color');
         const primaryColorPicker = this.windowEl.querySelector('#primary-button-color');
@@ -213,23 +218,7 @@ class Settings {
         // Handle option selection
         options.forEach(option => {
             option.addEventListener('click', () => {
-                const value = option.dataset.value;
-                const text = option.querySelector('.module-option-name').textContent;
-                
-                // Update selected text
-                selectedText.textContent = text;
-                
-                // Remove previous selection
-                options.forEach(opt => opt.classList.remove('selected'));
-                
-                // Add selection to clicked option
-                option.classList.add('selected');
-                
-                // Close dropdown
-                menu.classList.add('hide');
-                
-                // Call the callback
-                onSelect(value);
+                this.selectDropdownOption(dropdownId, option.dataset.value, onSelect);
             });
         });
 
@@ -239,16 +228,84 @@ class Settings {
                 menu.classList.add('hide');
             }
         });
+
+        // Return an object with methods to control this dropdown
+        return {
+            setValue: (value) => this.setDropdownValue(dropdownId, value, onSelect),
+            getValue: () => this.getDropdownValue(dropdownId)
+        };
+    }
+
+    selectDropdownOption(dropdownId, value, onSelect) {
+        const dropdown = this.windowEl.querySelector(`#${dropdownId}`);
+        const options = dropdown.querySelectorAll('.module-option');
+        const selectedText = dropdown.querySelector('.dropdown-selected-text');
+        const menu = dropdown.querySelector('.module-dropdown-menu');
+        
+        // Find the option and update UI
+        options.forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.value === value) {
+                option.classList.add('selected');
+                const optionName = option.querySelector('.module-option-name');
+                if (optionName) {
+                    selectedText.textContent = optionName.textContent;
+                }
+            }
+        });
+        
+        // Close dropdown
+        menu.classList.add('hide');
+        
+        // Call the callback and save settings
+        if (onSelect) {
+            onSelect(value);
+        }
+    }
+
+    setDropdownValue(dropdownId, value, onSelect) {
+        const dropdown = this.windowEl.querySelector(`#${dropdownId}`);
+        const options = dropdown.querySelectorAll('.module-option');
+        const selectedText = dropdown.querySelector('.dropdown-selected-text');
+        
+        // Find and select the option
+        let found = false;
+        options.forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.value === value) {
+                option.classList.add('selected');
+                const optionName = option.querySelector('.module-option-name');
+                if (optionName) {
+                    selectedText.textContent = optionName.textContent;
+                }
+                found = true;
+            }
+        });
+        
+        // If value was found and we have a callback, call it
+        if (found && onSelect) {
+            onSelect(value);
+        }
+        
+        return found;
+    }
+
+    getDropdownValue(dropdownId) {
+        const dropdown = this.windowEl.querySelector(`#${dropdownId}`);
+        const selectedOption = dropdown.querySelector('.module-option.selected');
+        return selectedOption ? selectedOption.dataset.value : null;
     }
 
     loadSettings() {
         const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
         
-        // Background
-        if (settings.background) {
-            this.setDropdownValue('background-dropdown', settings.background);
-            this.changeBackground(settings.background);
-        }
+        // Load background setting
+        const backgroundValue = settings.background || 'gradient1';
+        this.dropdowns.background.setValue(backgroundValue);
+        
+        // Load button style setting
+        const buttonStyleValue = settings.primaryButtonStyle || 'solid';
+        this.dropdowns.buttonStyle.setValue(buttonStyleValue);
         
         // Font color
         if (settings.fontColor) {
@@ -256,19 +313,13 @@ class Settings {
             this.changeFontColor(settings.fontColor);
         }
         
-        // Primary button settings
-        if (settings.primaryButtonStyle) {
-            this.setDropdownValue('button-style-dropdown', settings.primaryButtonStyle);
-            this.changePrimaryButtonStyle(settings.primaryButtonStyle);
-        } else {
-            this.changePrimaryButtonStyle('solid');
-        }
-        
+        // Primary button color
         if (settings.primaryButtonColor) {
             this.windowEl.querySelector('#primary-button-color').value = settings.primaryButtonColor;
             this.changePrimaryButtonColor(settings.primaryButtonColor);
         }
         
+        // Primary button gradient
         if (settings.primaryGradientStart) {
             this.windowEl.querySelector('#primary-gradient-start').value = settings.primaryGradientStart;
         }
@@ -281,12 +332,13 @@ class Settings {
             this.changePrimaryGradient();
         }
         
+        // Primary button text
         if (settings.primaryButtonText) {
             this.windowEl.querySelector('#primary-button-text').value = settings.primaryButtonText;
             this.changePrimaryButtonText(settings.primaryButtonText);
         }
         
-        // Secondary button settings
+        // Secondary button background
         if (settings.secondaryButtonBg) {
             this.windowEl.querySelector('#secondary-button-bg').value = settings.secondaryButtonBg;
         }
@@ -299,11 +351,13 @@ class Settings {
             this.changeSecondaryButtonBg();
         }
         
+        // Secondary button text
         if (settings.secondaryButtonText) {
             this.windowEl.querySelector('#secondary-button-text').value = settings.secondaryButtonText;
             this.changeSecondaryButtonText(settings.secondaryButtonText);
         }
         
+        // Secondary button border
         if (settings.secondaryButtonBorder) {
             this.windowEl.querySelector('#secondary-button-border').value = settings.secondaryButtonBorder;
         }
@@ -333,28 +387,11 @@ class Settings {
         }
     }
 
-    setDropdownValue(dropdownId, value) {
-        const dropdown = this.windowEl.querySelector(`#${dropdownId}`);
-        const options = dropdown.querySelectorAll('.module-option');
-        const selectedText = dropdown.querySelector('.dropdown-selected-text');
-        
-        options.forEach(option => {
-            option.classList.remove('selected');
-            if (option.dataset.value === value) {
-                option.classList.add('selected');
-                selectedText.textContent = option.querySelector('.module-option-name').textContent;
-            }
-        });
-    }
-
     saveSettings() {
-        const backgroundDropdown = this.windowEl.querySelector('#background-dropdown .module-option.selected');
-        const buttonStyleDropdown = this.windowEl.querySelector('#button-style-dropdown .module-option.selected');
-        
         const settings = {
-            background: backgroundDropdown ? backgroundDropdown.dataset.value : 'gradient1',
+            background: this.dropdowns.background.getValue() || 'gradient1',
             fontColor: this.windowEl.querySelector('#font-color').value,
-            primaryButtonStyle: buttonStyleDropdown ? buttonStyleDropdown.dataset.value : 'solid',
+            primaryButtonStyle: this.dropdowns.buttonStyle.getValue() || 'solid',
             primaryButtonColor: this.windowEl.querySelector('#primary-button-color').value,
             primaryGradientStart: this.windowEl.querySelector('#primary-gradient-start').value,
             primaryGradientEnd: this.windowEl.querySelector('#primary-gradient-end').value,
@@ -370,6 +407,9 @@ class Settings {
         };
         
         localStorage.setItem('limedrop-settings', JSON.stringify(settings));
+        
+        // Debug log to verify saving
+        console.log('Settings saved:', settings);
     }
 
     changeBackground(style) {
