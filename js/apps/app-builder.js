@@ -29,8 +29,8 @@ class AppBuilder {
         // present dedicated drop zones for Input, Processing and Output
         // categories.  The grouping mirrors the sidebar in the builder.
         this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table', 'data-source'];
-        this.processingTypes = ['ai-prompt', 'data-transform'];
-        this.outputTypes = ['display', 'chart', 'export'];
+        this.processingTypes = ['ai-prompt', 'data-transform', 'custom-buttons'];
+        this.outputTypes = ['display', 'summary-output', 'chart', 'export'];
         this.init();
 
         // Cache of user-defined data types extracted from files app.
@@ -63,10 +63,92 @@ class AppBuilder {
         // if it does not already exist.  This ensures the new component
         // appears in the builder sidebar without manual HTML edits.
         this.injectDataSourceComponentItem();
+        // Inject new processing and output component items for custom buttons and summary output
+        this.injectCustomButtonsComponentItem();
+        this.injectSummaryOutputComponentItem();
         // Ensure at least one module exists
         if (this.modules.length === 0) {
             this.addModule();
         }
+    }
+
+    /**
+     * Show a custom input modal to prompt the user for a module name.  This
+     * replaces the native browser prompt and uses the app's styling for a
+     * cohesive appearance.  Returns a promise that resolves to the string
+     * entered or null if the user cancelled.  The modal is inserted into
+     * the DOM and removed after completion.
+     *
+     * @param {string} defaultName The initial value for the input field
+     */
+    promptModuleName(defaultName = '') {
+        return new Promise((resolve) => {
+            // Create overlay and modal container
+            const overlay = document.createElement('div');
+            overlay.className = 'custom-modal-overlay';
+            overlay.innerHTML = `
+                <div class="custom-modal">
+                    <h3 style="margin:0 0 12px 0; font-size:18px;">Edit Module Name</h3>
+                    <input type="text" class="custom-modal-input" value="${defaultName.replace(/"/g, '&quot;')}" />
+                    <div class="custom-modal-actions">
+                        <button class="btn-secondary custom-modal-cancel">Cancel</button>
+                        <button class="btn-primary custom-modal-confirm">Save</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            const input = overlay.querySelector('.custom-modal-input');
+            const confirmBtn = overlay.querySelector('.custom-modal-confirm');
+            const cancelBtn = overlay.querySelector('.custom-modal-cancel');
+            // Focus input on open
+            setTimeout(() => { input.focus(); input.select(); }, 50);
+            const cleanup = () => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            };
+            confirmBtn.addEventListener('click', () => {
+                const val = input.value.trim();
+                cleanup();
+                resolve(val || null);
+            });
+            cancelBtn.addEventListener('click', () => {
+                cleanup();
+                resolve(null);
+            });
+            // Close on overlay click outside modal
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    cleanup();
+                    resolve(null);
+                }
+            });
+        });
+    }
+
+    /**
+     * Move a module from one index to another.  Updates the modules
+     * array, selectedModuleIndex and re-renders the module list and
+     * workflow.  Attempts to move outside the bounds are ignored.
+     *
+     * @param {number} from Index of the module to move
+     * @param {number} to Desired index after move
+     */
+    moveModule(from, to) {
+        if (from === to) return;
+        if (from < 0 || from >= this.modules.length) return;
+        if (to < 0 || to >= this.modules.length) return;
+        const [mod] = this.modules.splice(from, 1);
+        this.modules.splice(to, 0, mod);
+        // Adjust selected module index
+        if (this.selectedModuleIndex === from) {
+            this.selectedModuleIndex = to;
+        } else if (this.selectedModuleIndex > from && this.selectedModuleIndex <= to) {
+            this.selectedModuleIndex -= 1;
+        } else if (this.selectedModuleIndex < from && this.selectedModuleIndex >= to) {
+            this.selectedModuleIndex += 1;
+        }
+        // Re-render modules and workflow to reflect new order
+        this.renderModules();
+        this.renderWorkflow();
     }
 
     /**
@@ -130,6 +212,71 @@ class AppBuilder {
         item.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'copy';
             e.dataTransfer.setData('component-type', 'data-source');
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+        });
+    }
+
+    /**
+     * Insert a new component item for the custom buttons processing component
+     * into the processing components list.  It clones an existing
+     * processing component item (e.g. AI Prompt) to maintain styling.  If
+     * a custom-buttons item already exists, this method does nothing.
+     */
+    injectCustomButtonsComponentItem() {
+        // Check if item already exists
+        if (this.windowEl.querySelector('.component-item[data-type="custom-buttons"]')) {
+            return;
+        }
+        // Find a reference processing component (AI prompt) to clone styles
+        const reference = this.windowEl.querySelector('.component-item[data-type="ai-prompt"]');
+        if (!reference) return;
+        const parent = reference.parentElement;
+        if (!parent) return;
+        const item = document.createElement('div');
+        item.className = reference.className;
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'custom-buttons';
+        // Use a generic icon for custom actions
+        item.innerHTML = `<i class="fas fa-th-list" style="margin-right:8px;"></i><span>Buttons</span>`;
+        parent.appendChild(item);
+        // Attach drag events
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('component-type', 'custom-buttons');
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+        });
+    }
+
+    /**
+     * Insert a new component item for the summary output component into
+     * the output components list.  It clones an existing output component
+     * item (display) to maintain styling.  If a summary-output item
+     * already exists, this method does nothing.
+     */
+    injectSummaryOutputComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="summary-output"]')) {
+            return;
+        }
+        // Find reference output component (display) to clone
+        const reference = this.windowEl.querySelector('.component-item[data-type="display"]');
+        if (!reference) return;
+        const parent = reference.parentElement;
+        if (!parent) return;
+        const item = document.createElement('div');
+        item.className = reference.className;
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'summary-output';
+        item.innerHTML = `<i class="fas fa-info-circle" style="margin-right:8px;"></i><span>Summary</span>`;
+        parent.appendChild(item);
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('component-type', 'summary-output');
             item.classList.add('dragging');
         });
         item.addEventListener('dragend', () => {
@@ -277,6 +424,53 @@ class AppBuilder {
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
+            }
+
+            /* Custom input modal for renaming modules */
+            .custom-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            }
+            .custom-modal {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 8px;
+                padding: 20px;
+                min-width: 280px;
+                backdrop-filter: blur(20px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            }
+            .custom-modal h3 {
+                margin: 0 0 12px 0;
+                font-size: 18px;
+                color: #fff;
+            }
+            .custom-modal-input {
+                width: 100%;
+                padding: 8px 10px;
+                margin-bottom: 12px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 4px;
+                color: #fff;
+            }
+            .custom-modal-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+            .custom-modal-actions .btn-primary,
+            .custom-modal-actions .btn-secondary {
+                font-size: 14px;
+                padding: 6px 12px;
             }
         `;
         document.head.appendChild(style);
@@ -558,6 +752,27 @@ class AppBuilder {
                 // Target component id for in‑place output.  Leave empty to show output in its own area.
                 targetComponentId: ''
             },
+            // Custom button processing component allows the creator to
+            // define multiple buttons, each with its own label, icon
+            // and JavaScript expression to transform the previous value.
+            'custom-buttons': {
+                label: 'Buttons',
+                // List of button definitions { label, icon, code }
+                buttons: [],
+                // Optional text to display to the user above the buttons
+                displayText: ''
+            },
+            // Summary output displays a concise summary of the previous
+            // value.  The summaryType determines the heuristic used to
+            // generate the summary.  displayText is optional text
+            // shown to the user and targetComponentId allows in‑place
+            // updating of another component.
+            'summary-output': {
+                label: 'Summary',
+                summaryType: 'auto',
+                displayText: '',
+                targetComponentId: ''
+            },
             'chart': { type: 'bar', title: 'Chart' },
             'export': { format: 'json', filename: 'export' }
         };
@@ -592,6 +807,8 @@ class AppBuilder {
                 <span class="module-option-name">${module.name}</span>
                 <span class="module-option-count">(${module.components.length})</span>
                 <div class="module-option-actions">
+                    <button class="module-option-up" title="Move Up">↑</button>
+                    <button class="module-option-down" title="Move Down">↓</button>
                     <button class="module-option-edit" title="Rename">✎</button>
                     <button class="module-option-delete" title="Remove">×</button>
                 </div>
@@ -605,26 +822,58 @@ class AppBuilder {
                 this.selectModule(index);
                 menu.classList.add('hide');
             });
-            // Rename module
-            const editBtn = option.querySelector('.module-option-edit');
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const newName = prompt('Enter module name', module.name);
-                if (newName && newName.trim()) {
-                    module.name = newName.trim();
-                    this.renderModules();
+            // Move module up
+            const upBtn = option.querySelector('.module-option-up');
+            if (upBtn) {
+                upBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.moveModule(index, index - 1);
+                });
+                // Hide up button for the first module
+                if (index === 0) {
+                    upBtn.style.visibility = 'hidden';
+                } else {
+                    upBtn.style.visibility = 'visible';
                 }
-            });
+            }
+            // Move module down
+            const downBtn = option.querySelector('.module-option-down');
+            if (downBtn) {
+                downBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.moveModule(index, index + 1);
+                });
+                // Hide down button for the last module
+                if (index === this.modules.length - 1) {
+                    downBtn.style.visibility = 'hidden';
+                } else {
+                    downBtn.style.visibility = 'visible';
+                }
+            }
+            // Rename module using custom input modal
+            const editBtn = option.querySelector('.module-option-edit');
+            if (editBtn) {
+                editBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const newName = await this.promptModuleName(module.name);
+                    if (newName && newName.trim()) {
+                        module.name = newName.trim();
+                        this.renderModules();
+                    }
+                });
+            }
             // Delete module
             const deleteBtn = option.querySelector('.module-option-delete');
-            deleteBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const confirmed = await modalManager.confirm(`Remove ${module.name}?`, 'Remove Module');
-                if (confirmed) {
-                    this.removeModule(module.id);
-                    menu.classList.add('hide');
-                }
-            });
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const confirmed = await modalManager.confirm(`Remove ${module.name}?`, 'Remove Module');
+                    if (confirmed) {
+                        this.removeModule(module.id);
+                        menu.classList.add('hide');
+                    }
+                });
+            }
             menu.appendChild(option);
         });
         // Add option to create a new module
@@ -789,6 +1038,16 @@ class AppBuilder {
         // Provide a custom property editor for AI prompt components
         if (component.type === 'ai-prompt') {
             this.renderAiPromptProperties(container);
+            return;
+        }
+        // Provide a custom property editor for custom buttons processing components
+        if (component.type === 'custom-buttons') {
+            this.renderCustomButtonsProperties(container);
+            return;
+        }
+        // Provide a custom property editor for summary output components
+        if (component.type === 'summary-output') {
+            this.renderSummaryOutputProperties(container);
             return;
         }
 
@@ -1588,6 +1847,159 @@ class AppBuilder {
         this.populateConfig(container);
         this.attachConfigListeners(container);
         // Populate the target component dropdown with eligible components
+        const select = form.querySelector('.config-targetComponentId');
+        if (select) {
+            const module = this.modules[this.selectedModuleIndex];
+            if (module && Array.isArray(module.components)) {
+                module.components.forEach((comp) => {
+                    const type = comp.type;
+                    if (['text-input','rich-text','canvas','table'].includes(type)) {
+                        const opt = document.createElement('option');
+                        opt.value = comp.id;
+                        const lbl = (comp.config && comp.config.label) ? comp.config.label : this.getComponentLabel(comp);
+                        opt.textContent = `${lbl}`;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Render custom properties UI for the custom buttons processing component.
+     * Allows editing the label, an optional display text, and adding up to
+     * 10 button definitions.  Each button has a label, icon class and
+     * JavaScript code to transform the previous value.  The code should
+     * return a new value when executed.  Buttons can be added and
+     * removed dynamically.  This form mirrors the style of other
+     * components and uses populateConfig/attachConfigListeners for
+     * base fields.  Button definitions are stored directly on
+     * component.config.buttons.
+     */
+    renderCustomButtonsProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Display Text</label>
+                <textarea rows="3" class="config-displayText" placeholder="Optional text to display above the buttons..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Buttons</label>
+                <div id="custom-btns-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <button type="button" id="add-custom-btn" class="btn-secondary" style="margin-top:6px;">Add Button</button>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Define up to 10 buttons.  Each button's code is executed with <code>prevValue</code> as input and should return a new value.</small>
+            </div>
+        `;
+        container.appendChild(form);
+        // Populate base fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+        const listEl = form.querySelector('#custom-btns-list');
+        const addBtnEl = form.querySelector('#add-custom-btn');
+        const { component } = this.selectedComponentRef;
+        const cfg = component.config;
+        if (!Array.isArray(cfg.buttons)) {
+            cfg.buttons = [];
+        }
+        // Function to rebuild the buttons list UI
+        const refreshList = () => {
+            listEl.innerHTML = '';
+            cfg.buttons.forEach((btn, index) => {
+                const row = document.createElement('div');
+                row.className = 'custom-btn-row';
+                row.style.display = 'flex';
+                row.style.gap = '8px';
+                row.style.alignItems = 'flex-start';
+                row.innerHTML = `
+                    <input type="text" placeholder="Label" class="btn-label" style="flex:1; padding:4px;" />
+                    <input type="text" placeholder="Icon class" class="btn-icon" style="flex:1; padding:4px;" />
+                    <textarea rows="2" placeholder="JavaScript code" class="btn-code" style="flex:2; padding:4px;"></textarea>
+                    <button type="button" class="btn-remove" title="Remove">×</button>
+                `;
+                listEl.appendChild(row);
+                const labelInput = row.querySelector('.btn-label');
+                const iconInput = row.querySelector('.btn-icon');
+                const codeInput = row.querySelector('.btn-code');
+                const removeBtn = row.querySelector('.btn-remove');
+                labelInput.value = btn.label || '';
+                iconInput.value = btn.icon || '';
+                codeInput.value = btn.code || '';
+                labelInput.addEventListener('input', () => {
+                    cfg.buttons[index].label = labelInput.value;
+                });
+                iconInput.addEventListener('input', () => {
+                    cfg.buttons[index].icon = iconInput.value;
+                });
+                codeInput.addEventListener('input', () => {
+                    cfg.buttons[index].code = codeInput.value;
+                });
+                removeBtn.addEventListener('click', () => {
+                    cfg.buttons.splice(index, 1);
+                    refreshList();
+                });
+            });
+        };
+        addBtnEl.addEventListener('click', () => {
+            if (cfg.buttons.length >= 10) {
+                alert('Maximum of 10 buttons allowed');
+                return;
+            }
+            cfg.buttons.push({ label: 'Button', icon: '', code: '' });
+            refreshList();
+        });
+        // Initial render
+        refreshList();
+    }
+
+    /**
+     * Render custom properties UI for the summary output component.  Allows
+     * editing of the label, an optional display text, selecting the
+     * summary type (auto, text, table, image) and choosing an
+     * optional target component for in‑place display.  Uses existing
+     * styles for consistency.  After building the form populateConfig
+     * and attachConfigListeners are invoked to bind values.
+     */
+    renderSummaryOutputProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Display Text</label>
+                <textarea rows="3" class="config-displayText" placeholder="Optional text to display during this step..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Summary Type</label>
+                <select class="config-summaryType">
+                    <option value="auto">Auto</option>
+                    <option value="text">Text</option>
+                    <option value="table">Table</option>
+                    <option value="image">Image</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Target Component</label>
+                <select class="config-targetComponentId">
+                    <option value="">-- Show in New Section --</option>
+                </select>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Choose an existing component to display the summary in-place.</small>
+            </div>
+        `;
+        container.appendChild(form);
+        // Populate base fields
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+        // Populate target options
         const select = form.querySelector('.config-targetComponentId');
         if (select) {
             const module = this.modules[this.selectedModuleIndex];
