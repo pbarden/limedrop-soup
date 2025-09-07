@@ -3363,3 +3363,62 @@ p, span, div,
     border-color: var(--primary-button-color);
     box-shadow: 0 0 0 2px rgba(var(--primary-button-color), 0.3);
 }
+
+/* Background Animation Styles */
+.desktop-background.animated.gradient-flow {
+    background-size: 400% 400%;
+    animation: gradientShift 45s ease infinite;
+}
+
+.desktop-background.animated.floating-orbs::before,
+.desktop-background.animated.floating-orbs::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    pointer-events: none;
+}
+
+.desktop-background.animated.floating-orbs::before {
+    width: 300px;
+    height: 300px;
+    top: 20%;
+    left: 10%;
+    animation: floatOrb1 60s ease-in-out infinite;
+}
+
+.desktop-background.animated.floating-orbs::after {
+    width: 200px;
+    height: 200px;
+    top: 60%;
+    right: 15%;
+    animation: floatOrb2 80s ease-in-out infinite;
+}
+
+.desktop-background.animated.breathing {
+    animation: breathingBg 8s ease-in-out infinite;
+}
+
+@keyframes floatOrb1 {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+    25% { transform: translate(50px, -30px) scale(1.1); opacity: 0.5; }
+    50% { transform: translate(-20px, 40px) scale(0.9); opacity: 0.2; }
+    75% { transform: translate(30px, 20px) scale(1.05); opacity: 0.4; }
+}
+
+@keyframes floatOrb2 {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+    33% { transform: translate(-40px, 30px) scale(1.2); opacity: 0.4; }
+    66% { transform: translate(20px, -50px) scale(0.8); opacity: 0.3; }
+}
+
+@keyframes breathingBg {
+    0%, 100% { filter: brightness(1) saturate(1); }
+    50% { filter: brightness(1.05) saturate(1.1); }
+}
+
+/* Default - no animation */
+.desktop-background:not(.animated) {
+    background-size: 100% 100%;
+    animation: none;
+}

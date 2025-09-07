@@ -159,6 +159,7 @@ class GlobalSettingsLoader {
         this.applyWindowTint(settings.windowTintColor);
         this.applyBackground(settings.background);
         this.applyDesktopIcons(settings.showIcons);
+        this.applyBackgroundAnimation(settings.backgroundAnimation, settings.animationStyle);
         
         console.log('Global settings loaded:', settings);
     }
@@ -354,6 +355,20 @@ class GlobalSettingsLoader {
                     gradient53: 'linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)'
                 };
                 desktop.style.background = gradients[style] || gradients.gradient1;
+            }
+        }
+    }
+
+    static applyBackgroundAnimation(enabled, style) {
+        const desktop = document.querySelector('.desktop-background');
+        if (desktop) {
+            if (enabled !== false) { // default enabled
+                desktop.classList.add('animated');
+                const animationStyle = style || 'gradient-flow';
+                desktop.classList.remove('gradient-flow', 'floating-orbs', 'breathing');
+                desktop.classList.add(animationStyle);
+            } else {
+                desktop.classList.remove('animated', 'gradient-flow', 'floating-orbs', 'breathing');
             }
         }
     }

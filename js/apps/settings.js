@@ -55,6 +55,10 @@ class Settings {
         this.dropdowns.buttonStyle = this.initializeModuleDropdown('button-style-dropdown', (value) => {
             this.changePrimaryButtonStyle(value);
         });
+
+        this.dropdowns.animationStyle = this.initializeModuleDropdown('animation-style-dropdown', (value) => {
+            this.changeAnimationStyle(value);
+        });
     }
 
     attachColorEvents() {
@@ -130,6 +134,12 @@ class Settings {
 
         showIconsCheck.addEventListener('change', (e) => {
             this.toggleDesktopIcons(e.target.checked);
+        });
+
+        const backgroundAnimationCheck = this.windowEl.querySelector('#background-animation');
+
+        backgroundAnimationCheck.addEventListener('change', (e) => {
+            this.toggleBackgroundAnimation(e.target.checked);
         });
 
         // Color reset buttons
@@ -385,6 +395,15 @@ class Settings {
             this.windowEl.querySelector('#show-icons').checked = settings.showIcons;
             this.toggleDesktopIcons(settings.showIcons);
         }
+
+        // Animation settings
+        const animationEnabled = settings.backgroundAnimation !== false; // default true
+        this.windowEl.querySelector('#background-animation').checked = animationEnabled;
+        this.toggleBackgroundAnimation(animationEnabled);
+
+        if (settings.animationStyle) {
+            this.dropdowns.animationStyle.setValue(settings.animationStyle);
+        }
     }
 
     saveSettings() {
@@ -403,7 +422,9 @@ class Settings {
             secondaryBorderOpacity: this.windowEl.querySelector('#secondary-border-opacity').value,
             windowTintColor: this.windowEl.querySelector('#window-tint-color').value,
             autoSave: this.windowEl.querySelector('#auto-save').checked,
-            showIcons: this.windowEl.querySelector('#show-icons').checked
+            showIcons: this.windowEl.querySelector('#show-icons').checked,
+            backgroundAnimation: this.windowEl.querySelector('#background-animation').checked,
+            animationStyle: this.dropdowns.animationStyle.getValue() || 'gradient-flow',
         };
         
         localStorage.setItem('limedrop-settings', JSON.stringify(settings));
@@ -577,6 +598,34 @@ class Settings {
     toggleDesktopIcons(show) {
         const icons = document.querySelector('.desktop-icons');
         icons.style.display = show ? 'flex' : 'none';
+        this.saveSettings();
+    }
+
+    toggleBackgroundAnimation(enabled) {
+        const desktop = document.querySelector('.desktop-background');
+        if (enabled) {
+            desktop.classList.add('animated');
+            this.windowEl.querySelector('#animation-style-controls').style.display = 'flex';
+            // Apply current animation style
+            const currentStyle = this.dropdowns.animationStyle.getValue() || 'gradient-flow';
+            this.changeAnimationStyle(currentStyle);
+        } else {
+            desktop.classList.remove('animated', 'gradient-flow', 'floating-orbs', 'breathing');
+            this.windowEl.querySelector('#animation-style-controls').style.display = 'none';
+        }
+        this.saveSettings();
+    }
+
+    changeAnimationStyle(style) {
+        const desktop = document.querySelector('.desktop-background');
+        // Remove all animation classes
+        desktop.classList.remove('gradient-flow', 'floating-orbs', 'breathing');
+        
+        // Add the selected animation class if animations are enabled
+        if (desktop.classList.contains('animated')) {
+            desktop.classList.add(style);
+        }
+        
         this.saveSettings();
     }
 }
