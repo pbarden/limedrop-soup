@@ -29,7 +29,7 @@ class AppBuilder {
         // present dedicated drop zones for Input, Processing and Output
         // categories.  The grouping mirrors the sidebar in the builder.
         this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table', 'data-source'];
-        this.processingTypes = ['ai-prompt', 'data-transform', 'custom-buttons'];
+        this.processingTypes = ['ai-prompt', 'data-transform', 'custom-buttons', 'math-operations'];
         this.outputTypes = ['display', 'summary-output', 'chart', 'export'];
         this.init();
 
@@ -62,6 +62,7 @@ class AppBuilder {
         // if it does not already exist.  This ensures the new component
         // appears in the builder sidebar without manual HTML edits.
         this.injectDataSourceComponentItem();
+        this.injectMathOperationsComponentItem();
         // Inject new processing and output component items for custom buttons and summary output
         this.injectCustomButtonsComponentItem();
         this.injectSummaryOutputComponentItem();
@@ -348,6 +349,7 @@ class AppBuilder {
             'data-source': 'fas fa-database',
             'ai-prompt': 'fas fa-robot',
             'data-transform': 'fas fa-exchange-alt',
+            'math-operations': 'fas fa-calculator',
             'custom-buttons': 'fas fa-th-list',
             'display': 'fas fa-tv',
             'summary-output': 'fas fa-info-circle',
@@ -364,6 +366,7 @@ class AppBuilder {
             'data-source': 'Data Source',
             'ai-prompt': 'AI Prompt',
             'data-transform': 'Data Transform',
+            'math-operations': 'Math Operations',
             'custom-buttons': 'Custom Buttons',
             'display': 'Display Output',
             'summary-output': 'Summary Output',
@@ -412,6 +415,7 @@ class AppBuilder {
                 'data-source': 'fas fa-database',
                 'ai-prompt': 'fas fa-robot',
                 'data-transform': 'fas fa-exchange-alt',
+                'math-operations': 'fas fa-calculator',
                 'custom-buttons': 'fas fa-th-list',
                 'display': 'fas fa-tv',
                 'summary-output': 'fas fa-info-circle',
@@ -429,6 +433,7 @@ class AppBuilder {
                 'data-source': 'Data Source',
                 'ai-prompt': 'AI Prompt',
                 'data-transform': 'Data Transform',
+                'math-operations': 'Math Operations',
                 'custom-buttons': 'Custom Buttons',
                 'display': 'Display Output',
                 'summary-output': 'Summary Output',
@@ -566,6 +571,39 @@ class AppBuilder {
         item.addEventListener('dragend', () => {
             item.classList.remove('dragging');
         });
+    }
+
+    injectMathOperationsComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="math-operations"]')) {
+            return;
+        }
+        
+        // Find processing category
+        const categories = this.windowEl.querySelectorAll('.component-category');
+        let processingCategory = null;
+        categories.forEach(cat => {
+            const header = cat.querySelector('h4');
+            if (header && header.textContent.trim() === 'Processing') {
+                processingCategory = cat;
+            }
+        });
+        
+        if (!processingCategory) return;
+        
+        const item = document.createElement('div');
+        item.className = 'component-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'math-operations';
+        
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="fas fa-calculator"></i>
+            </span>
+            <span>Math Operations</span>
+        `;
+        
+        processingCategory.appendChild(item);
+        this.attachComponentEvents(item);
     }
 
     /**
@@ -837,6 +875,26 @@ class AppBuilder {
                 displayText: '',
                 // Legacy transformation field for backwards compatibility (not used in new UI)
                 transformation: 'custom'
+            },
+            'math-operations': {
+                label: 'Math Operations',
+                operationType: 'basic', // 'basic', 'matrix', 'function'
+                basicOperation: 'add', // add, subtract, multiply, divide, power, sqrt, abs
+                matrixOperation: 'multiply', // multiply, add, subtract, transpose, determinant, inverse
+                mathFunction: 'sin', // sin, cos, tan, log, ln, exp, factorial, gcd, lcm
+                inputFormat: 'auto', // auto, number, array, matrix, expression
+                outputFormat: 'auto', // auto, number, array, matrix, formatted
+                precision: 6, // decimal places for results
+                variables: {}, // object to store variable definitions
+                expressions: [], // array of mathematical expressions
+                matrixDimensions: { rows: 2, cols: 2 }, // default matrix size
+                constants: { // commonly used mathematical constants
+                    pi: Math.PI,
+                    e: Math.E,
+                    phi: 1.618033988749 // golden ratio
+                },
+                customFunctions: [], // user-defined function operations
+                displayText: ''
             },
             'display': {
                 label: 'Output Display',
@@ -1128,6 +1186,10 @@ class AppBuilder {
         // Provide a custom property editor for data transform components
         if (component.type === 'data-transform') {
             this.renderDataTransformProperties(container);
+            return;
+        }
+        if (component.type === 'math-operations') {
+            this.renderMathOperationsProperties(container);
             return;
         }
         // Provide a custom property editor for AI prompt components
@@ -1822,6 +1884,329 @@ class AppBuilder {
                 console.warn('Failed to populate user types', err);
             }
         }
+    }
+
+    renderMathOperationsProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Component Label</label>
+                <input type="text" class="config-label" placeholder="Enter component label" />
+            </div>
+            
+            <div class="form-group">
+                <label>Display Text</label>
+                <textarea rows="2" class="config-displayText" placeholder="Optional text to display during this step"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Operation Type</label>
+                <select class="config-operationType">
+                    <option value="basic">Basic Arithmetic</option>
+                    <option value="matrix">Matrix Operations</option>
+                    <option value="function">Mathematical Functions</option>
+                    <option value="expression">Custom Expression</option>
+                    <option value="statistical">Statistical (Basic)</option>
+                </select>
+            </div>
+
+            <!-- Basic Operations Panel -->
+            <div id="basic-operations-panel" class="operation-panel">
+                <div class="form-group">
+                    <label>Basic Operation</label>
+                    <select class="config-basicOperation">
+                        <option value="add">Addition (+)</option>
+                        <option value="subtract">Subtraction (-)</option>
+                        <option value="multiply">Multiplication (×)</option>
+                        <option value="divide">Division (÷)</option>
+                        <option value="power">Power (^)</option>
+                        <option value="modulo">Modulo (%)</option>
+                        <option value="sqrt">Square Root (√)</option>
+                        <option value="abs">Absolute Value (|x|)</option>
+                        <option value="round">Round</option>
+                        <option value="floor">Floor</option>
+                        <option value="ceil">Ceiling</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Second Operand</label>
+                    <input type="text" class="config-secondOperand" placeholder="Number or variable name (e.g., 5 or {{variableName}})" />
+                    <small>For single-operand functions (sqrt, abs, round, etc.), this is ignored</small>
+                </div>
+            </div>
+
+            <!-- Matrix Operations Panel -->
+            <div id="matrix-operations-panel" class="operation-panel" style="display:none;">
+                <div class="form-group">
+                    <label>Matrix Operation</label>
+                    <select class="config-matrixOperation">
+                        <option value="multiply">Matrix Multiplication (A × B)</option>
+                        <option value="add">Matrix Addition (A + B)</option>
+                        <option value="subtract">Matrix Subtraction (A - B)</option>
+                        <option value="transpose">Transpose (A^T)</option>
+                        <option value="determinant">Determinant (det(A))</option>
+                        <option value="inverse">Inverse (A^-1)</option>
+                        <option value="eigenvalues">Eigenvalues</option>
+                        <option value="trace">Trace (diagonal sum)</option>
+                        <option value="norm">Matrix Norm</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Default Matrix Dimensions</label>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1;">
+                            <label>Rows</label>
+                            <input type="number" min="1" max="10" class="config-matrixRows" value="2" />
+                        </div>
+                        <div style="flex:1;">
+                            <label>Columns</label>
+                            <input type="number" min="1" max="10" class="config-matrixCols" value="2" />
+                        </div>
+                    </div>
+                    <small>For operations requiring two matrices, both will use these dimensions</small>
+                </div>
+                <div class="form-group">
+                    <label>Second Matrix</label>
+                    <select class="config-secondMatrix">
+                        <option value="input">Use second input/variable</option>
+                        <option value="identity">Identity Matrix</option>
+                        <option value="zero">Zero Matrix</option>
+                        <option value="random">Random Matrix (0-1)</option>
+                        <option value="custom">Custom Values</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Mathematical Functions Panel -->
+            <div id="function-operations-panel" class="operation-panel" style="display:none;">
+                <div class="form-group">
+                    <label>Mathematical Function</label>
+                    <select class="config-mathFunction">
+                        <optgroup label="Trigonometric">
+                            <option value="sin">Sine (sin)</option>
+                            <option value="cos">Cosine (cos)</option>
+                            <option value="tan">Tangent (tan)</option>
+                            <option value="asin">Arcsine (asin)</option>
+                            <option value="acos">Arccosine (acos)</option>
+                            <option value="atan">Arctangent (atan)</option>
+                        </optgroup>
+                        <optgroup label="Logarithmic & Exponential">
+                            <option value="log">Log base 10 (log)</option>
+                            <option value="ln">Natural log (ln)</option>
+                            <option value="exp">Exponential (e^x)</option>
+                            <option value="log2">Log base 2 (log2)</option>
+                        </optgroup>
+                        <optgroup label="Number Theory">
+                            <option value="factorial">Factorial (n!)</option>
+                            <option value="gcd">Greatest Common Divisor</option>
+                            <option value="lcm">Least Common Multiple</option>
+                            <option value="prime">Is Prime Number</option>
+                            <option value="fibonacci">Fibonacci Number</option>
+                        </optgroup>
+                        <optgroup label="Statistics (Basic)">
+                            <option value="mean">Average/Mean</option>
+                            <option value="median">Median</option>
+                            <option value="mode">Mode</option>
+                            <option value="range">Range (max - min)</option>
+                            <option value="sum">Sum</option>
+                            <option value="product">Product</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Angle Unit (for trig functions)</label>
+                    <select class="config-angleUnit">
+                        <option value="radians">Radians</option>
+                        <option value="degrees">Degrees</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Custom Expression Panel -->
+            <div id="expression-operations-panel" class="operation-panel" style="display:none;">
+                <div class="form-group">
+                    <label>Mathematical Expression</label>
+                    <textarea rows="3" class="config-customExpression" placeholder="Enter mathematical expression (e.g., x^2 + 2*x + 1, or matrix operations)"></textarea>
+                    <small>
+                        Supported: +, -, *, /, ^, sqrt(), sin(), cos(), tan(), log(), ln(), abs()<br>
+                        Variables: Use {{input}} for previous step data, or define custom variables below
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>Custom Variables</label>
+                    <div id="variables-list"></div>
+                    <button type="button" id="add-variable" class="btn-secondary" style="margin-top:6px;">+ Add Variable</button>
+                    <small>Define variables to use in expressions (e.g., x = 5, y = [1,2,3])</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Input Format</label>
+                <select class="config-inputFormat">
+                    <option value="auto">Auto-detect</option>
+                    <option value="number">Single Number</option>
+                    <option value="array">Number Array</option>
+                    <option value="matrix">2D Matrix</option>
+                    <option value="expression">Mathematical Expression</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Output Format</label>
+                <select class="config-outputFormat">
+                    <option value="auto">Auto-format</option>
+                    <option value="number">Number</option>
+                    <option value="array">Array</option>
+                    <option value="matrix">Matrix</option>
+                    <option value="formatted">Formatted Text</option>
+                    <option value="scientific">Scientific Notation</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Decimal Precision</label>
+                <input type="number" min="0" max="15" class="config-precision" value="6" />
+                <small>Number of decimal places in results</small>
+            </div>
+
+            <div class="form-group">
+                <label>Mathematical Constants</label>
+                <div class="constants-list">
+                    <div style="display:flex; gap:10px; align-items:center; margin:4px 0;">
+                        <input type="checkbox" id="use-pi" checked /> 
+                        <label for="use-pi">π (pi) = 3.14159...</label>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center; margin:4px 0;">
+                        <input type="checkbox" id="use-e" checked /> 
+                        <label for="use-e">e (Euler's number) = 2.71828...</label>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center; margin:4px 0;">
+                        <input type="checkbox" id="use-phi" /> 
+                        <label for="use-phi">φ (golden ratio) = 1.618...</label>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(form);
+        
+        // Populate fields from config and attach listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+        
+        // Handle panel switching based on operation type
+        const operationTypeSelect = form.querySelector('.config-operationType');
+        const panels = {
+            'basic': form.querySelector('#basic-operations-panel'),
+            'matrix': form.querySelector('#matrix-operations-panel'),
+            'function': form.querySelector('#function-operations-panel'),
+            'expression': form.querySelector('#expression-operations-panel')
+        };
+        
+        const showPanel = (type) => {
+            Object.values(panels).forEach(panel => {
+                if (panel) panel.style.display = 'none';
+            });
+            if (panels[type]) {
+                panels[type].style.display = 'block';
+            }
+        };
+        
+        operationTypeSelect.addEventListener('change', () => {
+            showPanel(operationTypeSelect.value);
+        });
+        
+        // Initialize with current selection
+        showPanel(operationTypeSelect.value || 'basic');
+        
+        // Handle matrix dimensions sync
+        const { component } = this.selectedComponentRef;
+        const matrixRows = form.querySelector('.config-matrixRows');
+        const matrixCols = form.querySelector('.config-matrixCols');
+        
+        if (matrixRows && matrixCols) {
+            matrixRows.addEventListener('change', () => {
+                if (!component.config.matrixDimensions) {
+                    component.config.matrixDimensions = {};
+                }
+                component.config.matrixDimensions.rows = parseInt(matrixRows.value);
+            });
+            
+            matrixCols.addEventListener('change', () => {
+                if (!component.config.matrixDimensions) {
+                    component.config.matrixDimensions = {};
+                }
+                component.config.matrixDimensions.cols = parseInt(matrixCols.value);
+            });
+            
+            // Set initial values
+            if (component.config.matrixDimensions) {
+                matrixRows.value = component.config.matrixDimensions.rows || 2;
+                matrixCols.value = component.config.matrixDimensions.cols || 2;
+            }
+        }
+        
+        // Handle custom variables
+        const variablesList = form.querySelector('#variables-list');
+        const addVariableBtn = form.querySelector('#add-variable');
+        
+        if (!Array.isArray(component.config.customVariables)) {
+            component.config.customVariables = [];
+        }
+        
+        const renderVariables = () => {
+            if (!variablesList) return;
+            variablesList.innerHTML = '';
+            
+            component.config.customVariables.forEach((variable, index) => {
+                const varDiv = document.createElement('div');
+                varDiv.className = 'variable-item';
+                varDiv.style.cssText = 'display:flex; gap:8px; align-items:center; margin:4px 0; padding:8px; background:rgba(255,255,255,0.05); border-radius:4px;';
+                
+                varDiv.innerHTML = `
+                    <input type="text" placeholder="Variable name" value="${variable.name || ''}" 
+                        style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:4px; color:#fff; padding:4px;" 
+                        class="var-name" />
+                    <span style="color:rgba(255,255,255,0.6);">=</span>
+                    <input type="text" placeholder="Value or expression" value="${variable.value || ''}" 
+                        style="flex:2; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:4px; color:#fff; padding:4px;" 
+                        class="var-value" />
+                    <button type="button" class="remove-var" 
+                            style="padding:4px 8px; background:rgba(255,67,54,0.8); border:none; border-radius:4px; color:#fff; cursor:pointer;">&times;</button>
+                `;
+                
+                const nameInput = varDiv.querySelector('.var-name');
+                const valueInput = varDiv.querySelector('.var-value');
+                const removeBtn = varDiv.querySelector('.remove-var');
+                
+                nameInput.addEventListener('input', () => {
+                    variable.name = nameInput.value;
+                });
+                
+                valueInput.addEventListener('input', () => {
+                    variable.value = valueInput.value;
+                });
+                
+                removeBtn.addEventListener('click', () => {
+                    component.config.customVariables.splice(index, 1);
+                    renderVariables();
+                });
+                
+                variablesList.appendChild(varDiv);
+            });
+        };
+        
+        if (addVariableBtn) {
+            addVariableBtn.addEventListener('click', () => {
+                component.config.customVariables.push({ name: '', value: '' });
+                renderVariables();
+            });
+        }
+        
+        // Initial render of variables
+        renderVariables();
     }
 
     /**
