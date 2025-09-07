@@ -535,7 +535,15 @@ class AppBuilder {
                 model: 'gpt-3.5',
                 displayText: ''
             },
-            'data-transform': { transformation: 'uppercase' },
+            'data-transform': {
+                label: 'Data Transform',
+                // Target data type defines what the input should be converted to: text, table, or image.
+                targetType: 'text',
+                // Optional text to display to the user during the transformation step.
+                displayText: '',
+                // Legacy transformation field for backwards compatibility (not used in new UI)
+                transformation: 'custom'
+            },
             'display': { label: 'Output Display' },
             'chart': { type: 'bar', title: 'Chart' },
             'export': { format: 'json', filename: 'export' }
@@ -758,6 +766,11 @@ class AppBuilder {
         // Provide a custom property editor for data source components
         if (component.type === 'data-source') {
             this.renderDataSourceProperties(container);
+            return;
+        }
+        // Provide a custom property editor for data transform components
+        if (component.type === 'data-transform') {
+            this.renderDataTransformProperties(container);
             return;
         }
         // Provide a custom property editor for AI prompt components
@@ -1380,6 +1393,43 @@ class AppBuilder {
         manualInput.addEventListener('change', () => {
             component.config.fileId = manualInput.value;
         });
+    }
+
+    /**
+     * Render custom properties UI for the data transform component.  Allows
+     * setting the label, selecting a target data type (text, table, image)
+     * and specifying optional display text shown during runtime.  The
+     * transformation is applied automatically at runtime when the user
+     * continues past this step.
+     */
+    renderDataTransformProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Target Data Type</label>
+                <select class="config-targetType">
+                    <option value="text">Text</option>
+                    <option value="table">Table</option>
+                    <option value="image">Image</option>
+                </select>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Select the desired output format. Data will be converted heuristically.</small>
+            </div>
+            <div class="form-group">
+                <label>Display Text</label>
+                <textarea rows="3" class="config-displayText" placeholder="Optional text to display during transformation"></textarea>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">This text will be shown to the user while the transformation occurs.</small>
+            </div>
+        `;
+        container.appendChild(form);
+        // Bind values to config
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
     }
 
     /**

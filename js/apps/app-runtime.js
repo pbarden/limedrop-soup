@@ -309,10 +309,16 @@ class AppRuntime {
                 `;
             }
             case 'data-transform':
-                return `
-                    <p>Data Transformation: ${component.config.transformation}</p>
-                    <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
-                `;
+                {
+                    const cfg = component.config || {};
+                    const display = cfg.displayText || '';
+                    const displayHtml = display ? `<p style="margin-bottom:8px;">${display}</p>` : '';
+                    return `
+                        ${displayHtml}
+                        <p>Transforming data to <strong>${cfg.targetType || 'text'}</strong>...</p>
+                        <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
+                    `;
+                }
             case 'display':
                 return `
                     <label>${component.config.label || 'Display Output'}</label><br/>
@@ -466,6 +472,145 @@ class AppRuntime {
                     });
                 }
                 value = dataRows;
+                break;
+            }
+            case 'data-transform': {
+                const cfg = component.config || {};
+                // Determine the previous value from the last step
+                let prevValue = null;
+                if (this.currentIndex > 0) {
+                    const prevEntry = this.sequence[this.currentIndex - 1];
+                    if (prevEntry && prevEntry.component) {
+                        prevValue = this.state[prevEntry.component.id];
+                    }
+                }
+                const target = (cfg.targetType || 'text').toLowerCase();
+                // Helper functions to detect value types
+                const isImage = (val) => typeof val === 'string' && /^data:image\//i.test(val);
+                const isTable = (val) => Array.isArray(val);
+                const toCSV = (rows) => {
+                    if (!Array.isArray(rows)) return '';
+                    // Determine if rows are array of objects or arrays
+                    if (rows.length === 0) return '';
+                    let keys;
+                    if (Array.isArray(rows[0])) {
+                        return rows.map(row => row.join(',')).join('\n');
+                    } else if (typeof rows[0] === 'object') {
+                        keys = Object.keys(rows[0]);
+                        const header = keys.join(',');
+                        const lines = rows.map(obj => keys.map(k => obj[k]).join(','));
+                        return [header].concat(lines).join('\n');
+                    }
+                    return '';
+                };
+                // Transformations
+                let newValue = prevValue;
+                if (target === 'text') {
+                    if (isTable(prevValue)) {
+                        newValue = toCSV(prevValue);
+                    } else if (isImage(prevValue)) {
+                        // For images, we cannot convert to text easily; embed as notice
+                        newValue = `[Image data: ${prevValue.slice(0, 20)}...]`;
+                    } else {
+                        // Default: stringify
+                        if (typeof prevValue === 'object') {
+                            try { newValue = JSON.stringify(prevValue); } catch { newValue = String(prevValue); }
+                        }
+                    }
+                } else if (target === 'table') {
+                    if (isTable(prevValue)) {
+                        newValue = prevValue;
+                    } else if (typeof prevValue === 'string') {
+                        // Try to parse JSON or CSV
+                        let tableRows = [];
+                        try {
+                            const parsed = JSON.parse(prevValue);
+                            if (Array.isArray(parsed)) {
+                                if (parsed.length && (Array.isArray(parsed[0]) || typeof parsed[0] === 'object')) {
+                                    tableRows = parsed;
+                                }
+                            }
+                        } catch {
+                            // Try CSV: split lines by newline and commas
+                            const lines = prevValue.split(/\r?\n/).filter(l => l.trim().length > 0);
+                            if (lines.length > 0) {
+                                tableRows = lines.map(line => line.split(','));
+                            }
+                        }
+                        // Convert array of arrays to array of objects with generic column names
+                        if (Array.isArray(tableRows) && tableRows.length > 0) {
+                            if (Array.isArray(tableRows[0])) {
+                                // Use Row1 as header if all strings
+                                const header = tableRows[0];
+                                const body = tableRows.slice(1).map(row => {
+                                    const obj = {};
+                                    header.forEach((key, idx) => {
+                                        obj[key] = row[idx] != null ? row[idx] : '';
+                                    });
+                                    return obj;
+                                });
+                                newValue = body;
+                            } else {
+                                newValue = tableRows;
+                            }
+                        } else {
+                            // Fallback: create table with single column 'Value'
+                            newValue = [{ Value: prevValue }];
+                        }
+                    } else if (isImage(prevValue)) {
+                        newValue = [{ Image: prevValue }];
+                    }
+                } else if (target === 'image') {
+                    if (isImage(prevValue)) {
+                        newValue = prevValue;
+                    } else {
+                        // Create an image with text/table content drawn onto a canvas
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 400;
+                            canvas.height = 200;
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.fillStyle = '#000';
+                            ctx.font = '14px sans-serif';
+                            ctx.textBaseline = 'top';
+                            let text = '';
+                            if (isTable(prevValue)) {
+                                text = toCSV(prevValue);
+                            } else if (typeof prevValue === 'object') {
+                                try { text = JSON.stringify(prevValue, null, 2); } catch { text = String(prevValue); }
+                            } else {
+                                text = String(prevValue || '');
+                            }
+                            // Split text into lines to avoid overflow
+                            const lines = text.split(/\r?\n/);
+                            const maxWidth = canvas.width - 20;
+                            let y = 10;
+                            lines.forEach(line => {
+                                // Wrap line if necessary
+                                let current = '';
+                                line.split(/\s+/).forEach(word => {
+                                    const test = current + word + ' ';
+                                    if (ctx.measureText(test).width > maxWidth) {
+                                        ctx.fillText(current.trim(), 10, y);
+                                        y += 16;
+                                        current = word + ' ';
+                                    } else {
+                                        current = test;
+                                    }
+                                });
+                                ctx.fillText(current.trim(), 10, y);
+                                y += 16;
+                            });
+                            newValue = canvas.toDataURL();
+                        } catch (err) {
+                            console.warn('Failed to create image from text', err);
+                            newValue = prevValue;
+                        }
+                    }
+                }
+                value = newValue;
                 break;
             }
             default:
