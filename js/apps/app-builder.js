@@ -66,6 +66,8 @@ class AppBuilder {
         // Inject new processing and output component items for custom buttons and summary output
         this.injectCustomButtonsComponentItem();
         this.injectSummaryOutputComponentItem();
+        // After injecting sidebar items, normalize their labels for consistent casing
+        this.normalizeSidebarItems();
         // Ensure at least one module exists
         if (this.modules.length === 0) {
             this.addModule();
@@ -274,7 +276,8 @@ class AppBuilder {
         item.setAttribute('draggable', 'true');
         item.dataset.type = 'custom-buttons';
         // Use a generic icon for custom actions
-        item.innerHTML = `<i class="fas fa-th-list" style="margin-right:8px;"></i><span>Buttons</span>`;
+        // Label uses Title Case to match other components
+        item.innerHTML = `<i class="fas fa-th-list" style="margin-right:8px;"></i><span>Custom Buttons</span>`;
         parent.appendChild(item);
         // Attach drag events
         item.addEventListener('dragstart', (e) => {
@@ -306,7 +309,8 @@ class AppBuilder {
         item.className = reference.className;
         item.setAttribute('draggable', 'true');
         item.dataset.type = 'summary-output';
-        item.innerHTML = `<i class="fas fa-info-circle" style="margin-right:8px;"></i><span>Summary</span>`;
+        // Use a descriptive label to match casing of other components
+        item.innerHTML = `<i class="fas fa-info-circle" style="margin-right:8px;"></i><span>Summary Output</span>`;
         parent.appendChild(item);
         item.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'copy';
@@ -315,6 +319,71 @@ class AppBuilder {
         });
         item.addEventListener('dragend', () => {
             item.classList.remove('dragging');
+        });
+    }
+
+    /**
+     * Normalize sidebar component items to ensure consistent labels for certain
+     * custom types.  If an item already exists in the DOM (e.g., defined
+     * statically in the HTML), its label text is updated to match the
+     * Title Case used throughout the builder. This is particularly
+     * important for custom-buttons and summary-output types.
+     */
+    normalizeSidebarItems() {
+        const items = this.windowEl.querySelectorAll('.component-item');
+        items.forEach(item => {
+            const type = item.dataset.type;
+            if (!type) return;
+            let desiredLabel;
+            switch (type) {
+                case 'custom-buttons':
+                    desiredLabel = 'Custom Buttons';
+                    break;
+                case 'summary-output':
+                    desiredLabel = 'Summary Output';
+                    break;
+                case 'display':
+                    desiredLabel = 'Display Output';
+                    break;
+                case 'ai-prompt':
+                    desiredLabel = 'AI Prompt';
+                    break;
+                case 'data-transform':
+                    desiredLabel = 'Data Transform';
+                    break;
+                case 'file-upload':
+                    desiredLabel = 'File Upload';
+                    break;
+                case 'rich-text':
+                    desiredLabel = 'Rich Text Editor';
+                    break;
+                case 'text-input':
+                    desiredLabel = 'Text Input';
+                    break;
+                case 'canvas':
+                    desiredLabel = 'Drawing Canvas';
+                    break;
+                case 'table':
+                    desiredLabel = 'Table';
+                    break;
+                case 'data-source':
+                    desiredLabel = 'Data Source';
+                    break;
+                case 'chart':
+                    desiredLabel = 'Chart';
+                    break;
+                case 'export':
+                    desiredLabel = 'Export Data';
+                    break;
+                default:
+                    desiredLabel = null;
+            }
+            if (desiredLabel) {
+                const span = item.querySelector('span');
+                if (span) {
+                    span.textContent = desiredLabel;
+                }
+            }
         });
     }
 
@@ -363,6 +432,62 @@ class AppBuilder {
                 font-size: 12px;
                 text-align: center;
                 padding: 10px 0;
+            }
+
+            /* Sidebar component item alignment: ensure icons and labels are consistently spaced */
+            .component-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .component-item i {
+                margin-right: 0 !important;
+            }
+            .component-item span {
+                flex-grow: 1;
+            }
+
+            /* Checkbox group layout */
+            .checkbox-group {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .checkbox-group label {
+                flex-grow: 1;
+                margin: 0;
+            }
+            .checkbox-group input[type="checkbox"] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                position: relative;
+                cursor: pointer;
+                display: inline-block;
+            }
+            .checkbox-group input[type="checkbox"]::after {
+                content: '';
+                position: absolute;
+                left: 5px;
+                top: 2px;
+                width: 6px;
+                height: 10px;
+                border: solid rgba(255, 255, 255, 0.8);
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+            .checkbox-group input[type="checkbox"]:checked {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-color: transparent;
+            }
+            .checkbox-group input[type="checkbox"]:checked::after {
+                opacity: 1;
             }
 
             /* Module dropdown styles */
@@ -994,6 +1119,8 @@ class AppBuilder {
             'export': 'Export Data'
             , 'table': 'Table'
             , 'data-source': 'Data Source'
+            , 'custom-buttons': 'Custom Buttons'
+            , 'summary-output': 'Summary Output'
         };
         return labels[component.type] || component.type;
     }
@@ -1137,7 +1264,7 @@ class AppBuilder {
                     <option value="url">URL</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Required</label>
                 <input type="checkbox" class="config-required" />
             </div>
@@ -1154,11 +1281,11 @@ class AppBuilder {
                 <input type="text" class="config-pattern" />
             </div>
             <!-- Data source controls -->
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Import</label>
                 <input type="checkbox" class="config-allowImport" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Export</label>
                 <input type="checkbox" class="config-allowExport" />
             </div>
@@ -1197,11 +1324,11 @@ class AppBuilder {
                     <option value="both">Both</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Multiple</label>
                 <input type="checkbox" class="config-multiple" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Required</label>
                 <input type="checkbox" class="config-required" />
             </div>
@@ -1244,11 +1371,11 @@ class AppBuilder {
                     <input type="number" min="50" class="config-height" />
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Editable</label>
                 <input type="checkbox" class="config-editable" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Show Brush Controls</label>
                 <input type="checkbox" class="config-showBrushControls" />
             </div>
@@ -1262,7 +1389,7 @@ class AppBuilder {
                     <input type="color" class="config-brushColor" />
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Show Taskbar</label>
                 <input type="checkbox" class="config-showTaskbar" />
             </div>
@@ -1272,20 +1399,20 @@ class AppBuilder {
                 <button type="button" id="add-ai-option" class="btn-secondary" style="margin-top:6px;">+ Add AI Option</button>
                 <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Configure up to 10 AI actions. Each action includes a button label, a system prompt and an icon.</small>
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Show Fill Tool</label>
                 <input type="checkbox" class="config-showFill" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Show Erase Tool</label>
                 <input type="checkbox" class="config-showErase" />
             </div>
             <!-- Data source controls -->
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Import</label>
                 <input type="checkbox" class="config-allowImport" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Export</label>
                 <input type="checkbox" class="config-allowExport" />
             </div>
@@ -1385,11 +1512,11 @@ class AppBuilder {
                 <label>Initial Rows</label>
                 <input type="number" min="0" class="config-rows" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Editable</label>
                 <input type="checkbox" class="config-editable" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Show Taskbar</label>
                 <input type="checkbox" class="config-showTaskbar" />
             </div>
@@ -1400,11 +1527,11 @@ class AppBuilder {
                 <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Configure up to 10 AI actions. Each action includes a button label, a system prompt and an icon.</small>
             </div>
             <!-- Data source controls -->
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Import</label>
                 <input type="checkbox" class="config-allowImport" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Export</label>
                 <input type="checkbox" class="config-allowExport" />
             </div>
@@ -1509,7 +1636,7 @@ class AppBuilder {
                 <label>Default Value (HTML)</label>
                 <textarea rows="4" class="config-defaultValue"></textarea>
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Show Taskbar</label>
                 <input type="checkbox" class="config-showTaskbar" />
             </div>
@@ -1520,11 +1647,11 @@ class AppBuilder {
                 <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Configure up to 10 AI actions. Each action includes a button label, a system prompt and an icon.</small>
             </div>
             <!-- Data source controls -->
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Import</label>
                 <input type="checkbox" class="config-allowImport" />
             </div>
-            <div class="form-group">
+            <div class="form-group checkbox-group">
                 <label>Allow Export</label>
                 <input type="checkbox" class="config-allowExport" />
             </div>
