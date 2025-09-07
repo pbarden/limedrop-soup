@@ -152,6 +152,40 @@ class AppBuilder {
     }
 
     /**
+     * Load an existing app definition into the builder.  This resets
+     * the current modules to those defined in the provided definition
+     * and re-renders the module list and workflow.  Useful for
+     * editing previously created apps.  The definition should follow
+     * the same structure used when saving (i.e. containing a modules
+     * array with components and their configs).
+     *
+     * @param {Object} def The app definition object to load
+     */
+    loadAppDefinition(def) {
+        if (!def || !Array.isArray(def.modules)) return;
+        // Deep clone modules and components to avoid mutating the
+        // original definition.  Assign new ids where missing.
+        const cloneModule = (mod) => {
+            return {
+                id: mod.id || crypto.randomUUID(),
+                name: mod.name || 'Module',
+                components: (mod.components || []).map(comp => {
+                    return {
+                        id: comp.id || crypto.randomUUID(),
+                        type: comp.type,
+                        config: JSON.parse(JSON.stringify(comp.config || {}))
+                    };
+                })
+            };
+        };
+        this.modules = def.modules.map(cloneModule);
+        this.selectedModuleIndex = 0;
+        this.selectedComponentRef = null;
+        this.renderModules();
+        this.renderWorkflow();
+    }
+
+    /**
      * Insert a new component item for the table input into the input
      * components list.  It clones the class names from the text input
      * item to maintain visual consistency.  If a table item already
