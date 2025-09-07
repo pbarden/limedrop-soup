@@ -209,11 +209,11 @@ class AppBuilder {
         
         // Proper icon + text structure
         item.innerHTML = `
-            <span class="component-icon">
-                <i class="fas fa-table"></i>
-            </span>
-            <span>Table</span>
-        `;
+        <span class="component-icon">
+            <i class="fas fa-table"></i>
+        </span>
+        <span>Table</span>
+    `;
         
         inputCategory.appendChild(item);
         this.attachComponentEvents(item);
@@ -236,11 +236,11 @@ class AppBuilder {
         item.dataset.type = 'data-source';
         
         item.innerHTML = `
-            <span class="component-icon">
-                <i class="fas fa-database"></i>
-            </span>
-            <span>Data Source</span>
-        `;
+        <span class="component-icon">
+            <i class="fas fa-database"></i>
+        </span>
+        <span>Data Source</span>
+    `;
         
         inputCategory.appendChild(item);
         this.attachComponentEvents(item);
@@ -322,6 +322,52 @@ class AppBuilder {
      * Helper method to attach drag events to component items
      */
     attachComponentEvents(item) {
+        const type = item.dataset.type;
+        
+        // Define icon mappings
+        const iconMap = {
+            'text-input': 'fas fa-keyboard',
+            'file-upload': 'fas fa-upload',
+            'canvas': 'fas fa-paint-brush',
+            'rich-text': 'fas fa-file-alt',
+            'table': 'fas fa-table',
+            'data-source': 'fas fa-database',
+            'ai-prompt': 'fas fa-robot',
+            'data-transform': 'fas fa-exchange-alt',
+            'custom-buttons': 'fas fa-th-list',
+            'display': 'fas fa-tv',
+            'summary-output': 'fas fa-info-circle',
+            'chart': 'fas fa-chart-bar',
+            'export': 'fas fa-download'
+        };
+        
+        const labelMap = {
+            'text-input': 'Text Input',
+            'file-upload': 'File Upload', 
+            'canvas': 'Drawing Canvas',
+            'rich-text': 'Rich Text Editor',
+            'table': 'Table',
+            'data-source': 'Data Source',
+            'ai-prompt': 'AI Prompt',
+            'data-transform': 'Data Transform',
+            'custom-buttons': 'Custom Buttons',
+            'display': 'Display Output',
+            'summary-output': 'Summary Output',
+            'chart': 'Chart',
+            'export': 'Export Data'
+        };
+        
+        const iconClass = iconMap[type] || 'fas fa-cube';
+        const labelText = labelMap[type] || type;
+        
+        // Ensure proper structure
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="${iconClass}"></i>
+            </span>
+            <span>${labelText}</span>
+        `;
+        
         item.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'copy';
             e.dataTransfer.setData('component-type', item.dataset.type);
@@ -342,10 +388,6 @@ class AppBuilder {
             const type = item.dataset.type;
             if (!type) return;
             
-            // Check if already has proper structure
-            const hasIcon = item.querySelector('.component-icon');
-            if (hasIcon) return;
-            
             // Define icon mappings
             const iconMap = {
                 'text-input': 'fas fa-keyboard',
@@ -363,16 +405,51 @@ class AppBuilder {
                 'export': 'fas fa-download'
             };
             
-            const iconClass = iconMap[type] || 'fas fa-cube';
-            const currentText = item.textContent.trim();
+            // Define label mappings
+            const labelMap = {
+                'text-input': 'Text Input',
+                'file-upload': 'File Upload',
+                'canvas': 'Drawing Canvas',
+                'rich-text': 'Rich Text Editor',
+                'table': 'Table',
+                'data-source': 'Data Source',
+                'ai-prompt': 'AI Prompt',
+                'data-transform': 'Data Transform',
+                'custom-buttons': 'Custom Buttons',
+                'display': 'Display Output',
+                'summary-output': 'Summary Output',
+                'chart': 'Chart',
+                'export': 'Export Data'
+            };
             
-            // Rebuild with proper structure
+            const iconClass = iconMap[type] || 'fas fa-cube';
+            const labelText = labelMap[type] || type;
+            
+            // Always rebuild with proper structure to ensure consistency
             item.innerHTML = `
                 <span class="component-icon">
                     <i class="${iconClass}"></i>
                 </span>
-                <span>${currentText}</span>
+                <span>${labelText}</span>
             `;
+            
+            // Ensure draggable attributes are set
+            item.setAttribute('draggable', 'true');
+            
+            // Re-attach drag events if needed
+            if (!item.hasAttribute('data-events-attached')) {
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('component-type', type);
+                    item.classList.add('dragging');
+                });
+                
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                });
+                
+                item.setAttribute('data-events-attached', 'true');
+            }
         });
     }
 
@@ -474,71 +551,6 @@ class AppBuilder {
         });
         item.addEventListener('dragend', () => {
             item.classList.remove('dragging');
-        });
-    }
-
-    /**
-     * Normalize sidebar component items to ensure consistent labels for certain
-     * custom types.  If an item already exists in the DOM (e.g., defined
-     * statically in the HTML), its label text is updated to match the
-     * Title Case used throughout the builder. This is particularly
-     * important for custom-buttons and summary-output types.
-     */
-    normalizeSidebarItems() {
-        const items = this.windowEl.querySelectorAll('.component-item');
-        items.forEach(item => {
-            const type = item.dataset.type;
-            if (!type) return;
-            let desiredLabel;
-            switch (type) {
-                case 'custom-buttons':
-                    desiredLabel = 'Custom Buttons';
-                    break;
-                case 'summary-output':
-                    desiredLabel = 'Summary Output';
-                    break;
-                case 'display':
-                    desiredLabel = 'Display Output';
-                    break;
-                case 'ai-prompt':
-                    desiredLabel = 'AI Prompt';
-                    break;
-                case 'data-transform':
-                    desiredLabel = 'Data Transform';
-                    break;
-                case 'file-upload':
-                    desiredLabel = 'File Upload';
-                    break;
-                case 'rich-text':
-                    desiredLabel = 'Rich Text Editor';
-                    break;
-                case 'text-input':
-                    desiredLabel = 'Text Input';
-                    break;
-                case 'canvas':
-                    desiredLabel = 'Drawing Canvas';
-                    break;
-                case 'table':
-                    desiredLabel = 'Table';
-                    break;
-                case 'data-source':
-                    desiredLabel = 'Data Source';
-                    break;
-                case 'chart':
-                    desiredLabel = 'Chart';
-                    break;
-                case 'export':
-                    desiredLabel = 'Export Data';
-                    break;
-                default:
-                    desiredLabel = null;
-            }
-            if (desiredLabel) {
-                const span = item.querySelector('span');
-                if (span) {
-                    span.textContent = desiredLabel;
-                }
-            }
         });
     }
 
