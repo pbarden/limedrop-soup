@@ -1,3 +1,14 @@
+/* CSS Custom Properties for Theming */
+:root {
+    --font-color: #ffffff;
+    --button-bg-color: #667eea;
+    --button-text-color: #ffffff;
+    --window-tint-color: #ffffff;
+    --window-tint-rgb: 255, 255, 255;
+    --glass-opacity: 0.8;
+    --glass-blur: 10px;
+}
+
 /* Global Transitions for Smooth Interactions */
 * {
     margin: 0;
@@ -17,6 +28,7 @@ body {
     overflow: hidden;
     height: 100vh;
     background: #000;
+    color: var(--font-color);
 }
 
 /* Font Awesome Global Styles */
@@ -215,7 +227,7 @@ i[class*=" fa-"] {
     min-width: 400px;
     min-height: 300px;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(50px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
@@ -796,8 +808,8 @@ textarea:focus::placeholder {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
+    background: var(--button-bg-color);
+    color: var(--button-text-color);
 }
 
 .btn-primary:hover {
@@ -2017,7 +2029,7 @@ textarea:focus:not(:focus-visible) {
     width: 100%;
     padding: 10px 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
+    color: var(--font-color);
     border: none;
     border-radius: 6px;
     font-size: 14px;
@@ -2276,7 +2288,7 @@ textarea:focus:not(:focus-visible) {
     width: 100%;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--font-color);
     padding: 4px 6px;
     border-radius: 4px;
     font-size: 13px;
@@ -2764,4 +2776,55 @@ textarea:focus:not(:focus-visible) {
 
 .dock-separator:empty {
     display: none;
+}
+
+/* Color picker wrapper styling */
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-picker-wrapper input[type="color"] {
+    width: 60px;
+    height: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.color-reset {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: var(--font-color);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.color-reset:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.window::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(var(--window-tint-rgb), 0.1);
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.window-header,
+.window-content {
+    position: relative;
+    z-index: 2;
 }

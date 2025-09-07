@@ -8,26 +8,53 @@ class Settings {
     init() {
         this.attachEvents();
         this.loadSettings();
+        this.initializeColorTheme();
     }
 
     attachEvents() {
         const bgSelect = this.windowEl.querySelector('#theme-background');
-        const opacitySlider = this.windowEl.querySelector('#glass-opacity');
-        const blurSlider = this.windowEl.querySelector('#blur-intensity');
         const autoSaveCheck = this.windowEl.querySelector('#auto-save');
         const showIconsCheck = this.windowEl.querySelector('#show-icons');
         const clearBtn = this.windowEl.querySelector('.clear-storage');
+        const fontColorPicker = this.windowEl.querySelector('#font-color');
+        const buttonBgColorPicker = this.windowEl.querySelector('#button-bg-color');
+        const buttonTextColorPicker = this.windowEl.querySelector('#button-text-color');
+        const windowTintColorPicker = this.windowEl.querySelector('#window-tint-color');
+        const colorResetBtns = this.windowEl.querySelectorAll('.color-reset');
+
+        fontColorPicker.addEventListener('input', (e) => {
+            this.changeFontColor(e.target.value);
+        });
+
+        buttonBgColorPicker.addEventListener('input', (e) => {
+            this.changeButtonBgColor(e.target.value);
+        });
+
+        buttonTextColorPicker.addEventListener('input', (e) => {
+            this.changeButtonTextColor(e.target.value);
+        });
+
+        windowTintColorPicker.addEventListener('input', (e) => {
+            this.changeWindowTint(e.target.value);
+        });
+
+        // Color reset buttons
+        colorResetBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = e.target.dataset.target;
+                const defaultValue = e.target.dataset.default;
+                const targetInput = this.windowEl.querySelector(`#${targetId}`);
+                
+                if (targetInput) {
+                    targetInput.value = defaultValue;
+                    // Trigger the input event to apply the change
+                    targetInput.dispatchEvent(new Event('input'));
+                }
+            });
+        });
         
         bgSelect.addEventListener('change', (e) => {
             this.changeBackground(e.target.value);
-        });
-        
-        opacitySlider.addEventListener('input', (e) => {
-            this.changeOpacity(e.target.value);
-        });
-        
-        blurSlider.addEventListener('input', (e) => {
-            this.changeBlur(e.target.value);
         });
         
         autoSaveCheck.addEventListener('change', (e) => {
@@ -67,22 +94,11 @@ class Settings {
             this.changeBackground(settings.background);
         }
         
-        if (settings.opacity !== undefined) {
-            this.windowEl.querySelector('#glass-opacity').value = settings.opacity;
-            this.changeOpacity(settings.opacity);
-        }
-        
-        if (settings.blur !== undefined) {
-            this.windowEl.querySelector('#blur-intensity').value = settings.blur;
-            this.changeBlur(settings.blur);
-        }
     }
 
     saveSettings() {
         const settings = {
             background: this.windowEl.querySelector('#theme-background').value,
-            opacity: this.windowEl.querySelector('#glass-opacity').value,
-            blur: this.windowEl.querySelector('#blur-intensity').value,
             autoSave: this.windowEl.querySelector('#auto-save').checked,
             showIcons: this.windowEl.querySelector('#show-icons').checked
         };
@@ -136,19 +152,19 @@ class Settings {
             gradient41: 'linear-gradient(135deg, #fff0e1 0%, #ffc49c 22%, #f77f00 45%, #a3663f 72%, #fff7e9 100%)',
             gradient42: 'linear-gradient(135deg, #fff5f7 0%, #ffd3de 22%, #ff6b81 45%, #ff3d3d 72%, #ffecee 100%)',
             gradient43: 'linear-gradient(135deg, #ffffff 0%, #f4efe7 22%, #e2d7c5 45%, #c7b8a1 72%, #8a7a63 100%)',
+            gradient44: 'linear-gradient(135deg, #ffe4ec 0%, #ff6f91 25%, #2dd4bf 50%, #111827 75%, #f5f5f5 100%)',
+            gradient45: 'linear-gradient(135deg, #fff1e6 0%, #00c6ff 25%, #1e3a8a 50%, #ff4dcf 75%, #ffe5d1 100%)',
+            gradient46: 'linear-gradient(135deg, #fff36d 0%, #8bc34a 25%, #1b5e20 50%, #0b0f10 75%, #f5f7fa 100%)',
+            gradient47: 'linear-gradient(135deg, #fffced 0%, #ff6685 22%, #0e9f6e 50%, #111827 72%, #a7f3d0 100%)',
+            gradient48: 'linear-gradient(135deg, #fff0ea 0%, #ff6b6b 25%, #5b32b4 50%, #86b6ff 75%, #f2e9ff 100%)',
+            gradient49: 'linear-gradient(135deg, #4e342e 0%, #86efac 25%, #ec4899 50%, #f9a8d4 75%, #fff1f2 100%)',
+            gradient50: 'linear-gradient(135deg, #fff1cc 0%, #ffb700 25%, #6d28d9 50%, #2e1065 75%, #0f172a 100%)',
+            gradient51: 'linear-gradient(135deg, #fff8f0 0%, #84cc16 25%, #ef4444 50%, #ffe4e6 75%, #fff8f0 100%)',
+            gradient52: 'linear-gradient(135deg, #ffffff 0%, #ff0db0 25%, #84cc16 50%, #111827 75%, #f5f5f5 100%)',
+            gradient53: 'linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)',
         };
         
         desktop.style.background = gradients[style] || gradients.gradient1;
-        this.saveSettings();
-    }
-
-    changeOpacity(value) {
-        document.documentElement.style.setProperty('--glass-opacity', value / 100);
-        this.saveSettings();
-    }
-
-    changeBlur(value) {
-        document.documentElement.style.setProperty('--glass-blur', `${value}px`);
         this.saveSettings();
     }
 
@@ -161,5 +177,53 @@ class Settings {
         const icons = document.querySelector('.desktop-icons');
         icons.style.display = show ? 'flex' : 'none';
         this.saveSettings();
+    }
+
+    initializeColorTheme() {
+        // Set up CSS custom properties for theming
+        const root = document.documentElement;
+        
+        // Default values
+        root.style.setProperty('--font-color', '#ffffff');
+        root.style.setProperty('--button-bg-color', '#667eea');
+        root.style.setProperty('--button-text-color', '#ffffff');
+        root.style.setProperty('--window-tint-color', '#ffffff');
+        root.style.setProperty('--glass-opacity', '0.8');
+        root.style.setProperty('--glass-blur', '10px');
+    }
+
+    changeFontColor(color) {
+        document.documentElement.style.setProperty('--font-color', color);
+        this.saveSettings();
+    }
+
+    changeButtonBgColor(color) {
+        document.documentElement.style.setProperty('--button-bg-color', color);
+        this.saveSettings();
+    }
+
+    changeButtonTextColor(color) {
+        document.documentElement.style.setProperty('--button-text-color', color);
+        this.saveSettings();
+    }
+
+    changeWindowTint(color) {
+        // Convert hex color to RGB for use with CSS filters or overlays
+        const rgb = this.hexToRgb(color);
+        if (rgb) {
+            // Apply a color overlay to windows using mix-blend-mode or filter
+            document.documentElement.style.setProperty('--window-tint-color', color);
+            document.documentElement.style.setProperty('--window-tint-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+        }
+        this.saveSettings();
+    }
+
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
     }
 }
