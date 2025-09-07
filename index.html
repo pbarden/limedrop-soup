@@ -844,7 +844,55 @@
                             <div id="close-icon-picker"></div>
                         </div>
                     </div>
-
+                    <div class="settings-section">
+                        <h3>Window Header</h3>
+                        
+                        <div class="setting-item">
+                            <label>Header Background Color</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="window-header-color" value="#ffffff">
+                                <button class="color-reset" data-target="window-header-color" data-default="#ffffff">Reset</button>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <label>Header Background Opacity</label>
+                            <div class="opacity-controls">
+                                <input type="range" id="window-header-opacity" min="5" max="50" value="15" step="1">
+                                <span class="opacity-value">15%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <label>Header Text Color</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="window-header-text" value="#ffffff">
+                                <button class="color-reset" data-target="window-header-text" data-default="#ffffff">Reset</button>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <label>Header Border Opacity</label>
+                            <div class="opacity-controls">
+                                <input type="range" id="window-header-border-opacity" min="5" max="30" value="10" step="1">
+                                <span class="opacity-value">10%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item header-preview-container">
+                            <label>Preview</label>
+                            <div class="header-preview">
+                                <div class="preview-header">
+                                    <span class="preview-title">Sample Window</span>
+                                    <div class="preview-controls">
+                                        <div class="window-control minimize">−</div>
+                                        <div class="window-control maximize">□</div>
+                                        <div class="window-control close">×</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <style>

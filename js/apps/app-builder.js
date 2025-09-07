@@ -29,7 +29,7 @@ class AppBuilder {
         // present dedicated drop zones for Input, Processing and Output
         // categories.  The grouping mirrors the sidebar in the builder.
         this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table', 'data-source'];
-        this.processingTypes = ['ai-prompt', 'data-transform', 'custom-buttons', 'math-operations'];
+        this.processingTypes = ['ai-prompt', 'data-transform', 'custom-buttons', 'math-operations', 'stats-operations'];
         this.outputTypes = ['display', 'summary-output', 'chart', 'export'];
         this.init();
 
@@ -63,6 +63,7 @@ class AppBuilder {
         // appears in the builder sidebar without manual HTML edits.
         this.injectDataSourceComponentItem();
         this.injectMathOperationsComponentItem();
+        this.injectStatsOperationsComponentItem();
         // Inject new processing and output component items for custom buttons and summary output
         this.injectCustomButtonsComponentItem();
         this.injectSummaryOutputComponentItem();
@@ -350,6 +351,7 @@ class AppBuilder {
             'ai-prompt': 'fas fa-robot',
             'data-transform': 'fas fa-exchange-alt',
             'math-operations': 'fas fa-calculator',
+            'stats-operations': 'fas fa-chart-line',
             'custom-buttons': 'fas fa-th-list',
             'display': 'fas fa-tv',
             'summary-output': 'fas fa-info-circle',
@@ -367,6 +369,7 @@ class AppBuilder {
             'ai-prompt': 'AI Prompt',
             'data-transform': 'Data Transform',
             'math-operations': 'Math Operations',
+            'stats-operations': 'Statistics Operations',
             'custom-buttons': 'Custom Buttons',
             'display': 'Display Output',
             'summary-output': 'Summary Output',
@@ -416,6 +419,7 @@ class AppBuilder {
                 'ai-prompt': 'fas fa-robot',
                 'data-transform': 'fas fa-exchange-alt',
                 'math-operations': 'fas fa-calculator',
+                'stats-operations': 'fas fa-chart-line',
                 'custom-buttons': 'fas fa-th-list',
                 'display': 'fas fa-tv',
                 'summary-output': 'fas fa-info-circle',
@@ -434,6 +438,7 @@ class AppBuilder {
                 'ai-prompt': 'AI Prompt',
                 'data-transform': 'Data Transform',
                 'math-operations': 'Math Operations',
+                'stats-operations': 'Statistics Operations',
                 'custom-buttons': 'Custom Buttons',
                 'display': 'Display Output',
                 'summary-output': 'Summary Output',
@@ -600,6 +605,39 @@ class AppBuilder {
                 <i class="fas fa-calculator"></i>
             </span>
             <span>Math Operations</span>
+        `;
+        
+        processingCategory.appendChild(item);
+        this.attachComponentEvents(item);
+    }
+
+    injectStatsOperationsComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="stats-operations"]')) {
+            return;
+        }
+        
+        // Find processing category
+        const categories = this.windowEl.querySelectorAll('.component-category');
+        let processingCategory = null;
+        categories.forEach(cat => {
+            const header = cat.querySelector('h4');
+            if (header && header.textContent.trim() === 'Processing') {
+                processingCategory = cat;
+            }
+        });
+        
+        if (!processingCategory) return;
+        
+        const item = document.createElement('div');
+        item.className = 'component-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'stats-operations';
+        
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="fas fa-chart-line"></i>
+            </span>
+            <span>Statistics Operations</span>
         `;
         
         processingCategory.appendChild(item);
@@ -896,6 +934,29 @@ class AppBuilder {
                 customFunctions: [], // user-defined function operations
                 displayText: ''
             },
+            'stats-operations': {
+                label: 'Statistics Operations',
+                analysisType: 'descriptive', // 'descriptive', 'inferential', 'regression', 'distribution', 'timeseries', 'preprocessing'
+                descriptiveStats: ['mean', 'median', 'mode'], // selected descriptive statistics
+                inferentialTest: 'ttest', // ttest, ztest, chisquare, anova, correlation
+                regressionType: 'linear', // linear, polynomial, exponential, logarithmic
+                distributionType: 'normal', // normal, binomial, poisson, exponential, uniform
+                confidenceLevel: 0.95, // for confidence intervals and hypothesis tests
+                significanceLevel: 0.05, // alpha level for hypothesis testing
+                inputFormat: 'auto', // auto, array, matrix, paired, grouped
+                outputFormat: 'detailed', // detailed, summary, values-only, formatted
+                includeGraphs: false, // whether to generate simple text-based visualizations
+                preprocessingSteps: [], // array of preprocessing operations
+                missingValueHandling: 'ignore', // ignore, mean, median, interpolate, remove
+                outlierDetection: 'none', // none, iqr, zscore, modified-zscore
+                outlierAction: 'flag', // flag, remove, cap
+                groupingVariable: '', // for grouped analysis
+                pairedAnalysis: false, // for paired t-tests, etc.
+                polynomialDegree: 2, // for polynomial regression
+                movingWindowSize: 3, // for time series moving averages
+                seasonality: 'none', // none, monthly, quarterly, yearly
+                displayText: ''
+            },
             'display': {
                 label: 'Output Display',
                 // Optional text to display to the user during this step
@@ -1111,6 +1172,8 @@ class AppBuilder {
             'export': 'Export Data'
             , 'table': 'Table'
             , 'data-source': 'Data Source'
+            , 'math-operations': 'Math Operations'
+            , 'stats-operations': 'Statistics Operations'
             , 'custom-buttons': 'Custom Buttons'
             , 'summary-output': 'Summary Output'
         };
@@ -1190,6 +1253,10 @@ class AppBuilder {
         }
         if (component.type === 'math-operations') {
             this.renderMathOperationsProperties(container);
+            return;
+        }
+        if (component.type === 'stats-operations') {
+            this.renderStatsOperationsProperties(container);
             return;
         }
         // Provide a custom property editor for AI prompt components
@@ -2208,6 +2275,429 @@ class AppBuilder {
         // Initial render of variables
         renderVariables();
     }
+
+    renderStatsOperationsProperties(container) {
+    container.innerHTML = '';
+    const form = document.createElement('div');
+    form.className = 'config-form';
+    form.innerHTML = `
+        <div class="form-group">
+            <label>Component Label</label>
+            <input type="text" class="config-label" placeholder="Enter component label" />
+        </div>
+        
+        <div class="form-group">
+            <label>Display Text</label>
+            <textarea rows="2" class="config-displayText" placeholder="Optional text to display during this step"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Analysis Type</label>
+            <select class="config-analysisType">
+                <option value="descriptive">Descriptive Statistics</option>
+                <option value="inferential">Inferential Testing</option>
+                <option value="regression">Regression Analysis</option>
+                <option value="distribution">Distribution Analysis</option>
+                <option value="timeseries">Time Series Analysis</option>
+                <option value="preprocessing">Data Preprocessing</option>
+            </select>
+        </div>
+
+        <!-- Descriptive Statistics Panel -->
+        <div id="descriptive-panel" class="stats-panel">
+            <div class="form-group">
+                <label>Statistics to Calculate</label>
+                <div class="stats-checkboxes" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:8px 0;">
+                    <label><input type="checkbox" class="stat-checkbox" value="mean" checked> Mean (Average)</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="median" checked> Median</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="mode" checked> Mode</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="std"> Standard Deviation</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="variance"> Variance</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="range"> Range</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="iqr"> Interquartile Range</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="skewness"> Skewness</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="kurtosis"> Kurtosis</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="percentiles"> Percentiles (25,50,75)</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="count"> Count/Sample Size</label>
+                    <label><input type="checkbox" class="stat-checkbox" value="sum"> Sum</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Custom Percentiles</label>
+                <input type="text" class="config-customPercentiles" placeholder="e.g., 10,90,95,99" />
+                <small>Comma-separated percentile values (0-100)</small>
+            </div>
+        </div>
+
+        <!-- Inferential Testing Panel -->
+        <div id="inferential-panel" class="stats-panel" style="display:none;">
+            <div class="form-group">
+                <label>Statistical Test</label>
+                <select class="config-inferentialTest">
+                    <optgroup label="Mean Tests">
+                        <option value="ttest-one">One-Sample T-Test</option>
+                        <option value="ttest-two">Two-Sample T-Test</option>
+                        <option value="ttest-paired">Paired T-Test</option>
+                        <option value="ztest">Z-Test</option>
+                    </optgroup>
+                    <optgroup label="Non-Parametric">
+                        <option value="wilcoxon">Wilcoxon Signed-Rank</option>
+                        <option value="mann-whitney">Mann-Whitney U</option>
+                        <option value="kruskal-wallis">Kruskal-Wallis</option>
+                    </optgroup>
+                    <optgroup label="Association">
+                        <option value="correlation">Correlation Test</option>
+                        <option value="chisquare">Chi-Square Test</option>
+                        <option value="fisher-exact">Fisher's Exact Test</option>
+                    </optgroup>
+                    <optgroup label="Variance">
+                        <option value="ftest">F-Test (Variance)</option>
+                        <option value="levene">Levene's Test</option>
+                        <option value="bartlett">Bartlett's Test</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Significance Level (α)</label>
+                <select class="config-significanceLevel">
+                    <option value="0.01">0.01 (99% confidence)</option>
+                    <option value="0.05" selected>0.05 (95% confidence)</option>
+                    <option value="0.10">0.10 (90% confidence)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Hypothesis Alternative</label>
+                <select class="config-alternative">
+                    <option value="two-sided">Two-sided (≠)</option>
+                    <option value="greater">Greater than (>)</option>
+                    <option value="less">Less than (<)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Test Value (for one-sample tests)</label>
+                <input type="number" class="config-testValue" placeholder="Hypothesized population value" />
+            </div>
+        </div>
+
+        <!-- Regression Analysis Panel -->
+        <div id="regression-panel" class="stats-panel" style="display:none;">
+            <div class="form-group">
+                <label>Regression Type</label>
+                <select class="config-regressionType">
+                    <option value="linear">Linear Regression (y = mx + b)</option>
+                    <option value="polynomial">Polynomial Regression</option>
+                    <option value="exponential">Exponential Regression</option>
+                    <option value="logarithmic">Logarithmic Regression</option>
+                    <option value="power">Power Regression</option>
+                    <option value="multiple">Multiple Linear Regression</option>
+                </select>
+            </div>
+            <div class="form-group" id="polynomial-degree-group">
+                <label>Polynomial Degree</label>
+                <input type="number" min="2" max="6" class="config-polynomialDegree" value="2" />
+                <small>Degree for polynomial regression (2-6)</small>
+            </div>
+            <div class="form-group">
+                <label>Include Statistics</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <label><input type="checkbox" class="regression-stat" value="r-squared" checked> R-squared</label>
+                    <label><input type="checkbox" class="regression-stat" value="correlation"> Correlation (r)</label>
+                    <label><input type="checkbox" class="regression-stat" value="residuals"> Residuals</label>
+                    <label><input type="checkbox" class="regression-stat" value="predictions"> Predictions</label>
+                    <label><input type="checkbox" class="regression-stat" value="confidence"> Confidence Intervals</label>
+                    <label><input type="checkbox" class="regression-stat" value="anova"> ANOVA Table</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution Analysis Panel -->
+        <div id="distribution-panel" class="stats-panel" style="display:none;">
+            <div class="form-group">
+                <label>Distribution Type</label>
+                <select class="config-distributionType">
+                    <option value="normal">Normal Distribution</option>
+                    <option value="binomial">Binomial Distribution</option>
+                    <option value="poisson">Poisson Distribution</option>
+                    <option value="exponential">Exponential Distribution</option>
+                    <option value="uniform">Uniform Distribution</option>
+                    <option value="chi-square">Chi-Square Distribution</option>
+                    <option value="t-distribution">T-Distribution</option>
+                    <option value="f-distribution">F-Distribution</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Analysis Options</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <label><input type="checkbox" class="distribution-option" value="pdf" checked> Probability Density</label>
+                    <label><input type="checkbox" class="distribution-option" value="cdf"> Cumulative Distribution</label>
+                    <label><input type="checkbox" class="distribution-option" value="quantiles"> Quantiles</label>
+                    <label><input type="checkbox" class="distribution-option" value="parameters"> Parameter Estimation</label>
+                    <label><input type="checkbox" class="distribution-option" value="goodness-fit"> Goodness of Fit</label>
+                    <label><input type="checkbox" class="distribution-option" value="random"> Generate Random Samples</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Sample Size (for random generation)</label>
+                <input type="number" min="1" max="10000" class="config-sampleSize" value="100" />
+            </div>
+        </div>
+
+        <!-- Time Series Analysis Panel -->
+        <div id="timeseries-panel" class="stats-panel" style="display:none;">
+            <div class="form-group">
+                <label>Time Series Operations</label>
+                <div style="display:grid; grid-template-columns: 1fr; gap:8px;">
+                    <label><input type="checkbox" class="timeseries-option" value="trend" checked> Trend Analysis</label>
+                    <label><input type="checkbox" class="timeseries-option" value="moving-average"> Moving Average</label>
+                    <label><input type="checkbox" class="timeseries-option" value="seasonality"> Seasonality Detection</label>
+                    <label><input type="checkbox" class="timeseries-option" value="decomposition"> Time Series Decomposition</label>
+                    <label><input type="checkbox" class="timeseries-option" value="autocorrelation"> Autocorrelation</label>
+                    <label><input type="checkbox" class="timeseries-option" value="stationarity"> Stationarity Test</label>
+                    <label><input type="checkbox" class="timeseries-option" value="forecast"> Simple Forecasting</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Moving Window Size</label>
+                <input type="number" min="2" max="50" class="config-movingWindowSize" value="3" />
+                <small>Window size for moving averages and rolling statistics</small>
+            </div>
+            <div class="form-group">
+                <label>Seasonality Period</label>
+                <select class="config-seasonality">
+                    <option value="none">No seasonality</option>
+                    <option value="daily">Daily (7)</option>
+                    <option value="monthly">Monthly (12)</option>
+                    <option value="quarterly">Quarterly (4)</option>
+                    <option value="custom">Custom period</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Data Preprocessing Panel -->
+        <div id="preprocessing-panel" class="stats-panel" style="display:none;">
+            <div class="form-group">
+                <label>Missing Value Handling</label>
+                <select class="config-missingValueHandling">
+                    <option value="ignore">Ignore missing values</option>
+                    <option value="remove">Remove rows with missing values</option>
+                    <option value="mean">Replace with mean</option>
+                    <option value="median">Replace with median</option>
+                    <option value="mode">Replace with mode</option>
+                    <option value="interpolate">Linear interpolation</option>
+                    <option value="forward-fill">Forward fill</option>
+                    <option value="backward-fill">Backward fill</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Outlier Detection</label>
+                <select class="config-outlierDetection">
+                    <option value="none">No outlier detection</option>
+                    <option value="iqr">IQR Method (1.5 × IQR)</option>
+                    <option value="zscore">Z-Score (>3 std dev)</option>
+                    <option value="modified-zscore">Modified Z-Score</option>
+                    <option value="isolation-forest">Isolation Forest</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Outlier Action</label>
+                <select class="config-outlierAction">
+                    <option value="flag">Flag only (identify)</option>
+                    <option value="remove">Remove outliers</option>
+                    <option value="cap">Cap at percentiles</option>
+                    <option value="transform">Log transform</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Data Transformations</label>
+                <div style="display:grid; grid-template-columns: 1fr; gap:8px;">
+                    <label><input type="checkbox" class="preprocessing-option" value="normalize"> Normalize (0-1)</label>
+                    <label><input type="checkbox" class="preprocessing-option" value="standardize"> Standardize (z-score)</label>
+                    <label><input type="checkbox" class="preprocessing-option" value="log-transform"> Log Transform</label>
+                    <label><input type="checkbox" class="preprocessing-option" value="sqrt-transform"> Square Root Transform</label>
+                    <label><input type="checkbox" class="preprocessing-option" value="rank-transform"> Rank Transform</label>
+                    <label><input type="checkbox" class="preprocessing-option" value="winsorize"> Winsorize (cap extremes)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Input Format</label>
+            <select class="config-inputFormat">
+                <option value="auto">Auto-detect</option>
+                <option value="array">Single Array/Series</option>
+                <option value="matrix">Matrix (multiple variables)</option>
+                <option value="paired">Paired Data (x,y coordinates)</option>
+                <option value="grouped">Grouped Data</option>
+                <option value="time-series">Time Series (date,value)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Output Format</label>
+            <select class="config-outputFormat">
+                <option value="detailed">Detailed Report</option>
+                <option value="summary">Summary Only</option>
+                <option value="values-only">Values Only</option>
+                <option value="formatted">Formatted Text</option>
+                <option value="json">JSON Object</option>
+                <option value="csv">CSV Format</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Grouping Variable</label>
+            <input type="text" class="config-groupingVariable" placeholder="Variable name for grouped analysis" />
+            <small>For grouped statistics (e.g., mean by category)</small>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <label>Include Text Visualizations</label>
+            <input type="checkbox" class="config-includeGraphs" />
+            <small>Generate simple ASCII charts and histograms</small>
+        </div>
+
+        <div class="form-group">
+            <label>Confidence Level</label>
+            <select class="config-confidenceLevel">
+                <option value="0.90">90%</option>
+                <option value="0.95" selected>95%</option>
+                <option value="0.99">99%</option>
+                <option value="0.999">99.9%</option>
+            </select>
+            <small>For confidence intervals and hypothesis tests</small>
+        </div>
+    `;
+    
+    container.appendChild(form);
+    
+    // Populate fields from config and attach listeners
+    this.populateConfig(container);
+    this.attachConfigListeners(container);
+    
+    // Handle panel switching based on analysis type
+    const analysisTypeSelect = form.querySelector('.config-analysisType');
+    const panels = {
+        'descriptive': form.querySelector('#descriptive-panel'),
+        'inferential': form.querySelector('#inferential-panel'),
+        'regression': form.querySelector('#regression-panel'),
+        'distribution': form.querySelector('#distribution-panel'),
+        'timeseries': form.querySelector('#timeseries-panel'),
+        'preprocessing': form.querySelector('#preprocessing-panel')
+    };
+    
+    const showPanel = (type) => {
+        Object.values(panels).forEach(panel => {
+            if (panel) panel.style.display = 'none';
+        });
+        if (panels[type]) {
+            panels[type].style.display = 'block';
+        }
+    };
+    
+    analysisTypeSelect.addEventListener('change', () => {
+        showPanel(analysisTypeSelect.value);
+        handlePanelSpecificLogic(analysisTypeSelect.value);
+    });
+    
+    // Initialize with current selection
+    showPanel(analysisTypeSelect.value || 'descriptive');
+    
+    // Handle panel-specific logic
+    const handlePanelSpecificLogic = (type) => {
+        const { component } = this.selectedComponentRef;
+        
+        if (type === 'regression') {
+            const regressionType = form.querySelector('.config-regressionType');
+            const polynomialGroup = form.querySelector('#polynomial-degree-group');
+            
+            const togglePolynomialDegree = () => {
+                if (polynomialGroup) {
+                    polynomialGroup.style.display = 
+                        regressionType.value === 'polynomial' ? 'block' : 'none';
+                }
+            };
+            
+            regressionType.addEventListener('change', togglePolynomialDegree);
+            togglePolynomialDegree(); // Initial state
+        }
+    };
+    
+    // Handle checkbox arrays for complex configurations
+    const handleCheckboxArrays = () => {
+        const { component } = this.selectedComponentRef;
+        
+        // Descriptive statistics checkboxes
+        const statCheckboxes = form.querySelectorAll('.stat-checkbox');
+        const updateDescriptiveStats = () => {
+            component.config.descriptiveStats = Array.from(statCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        };
+        
+        statCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateDescriptiveStats);
+            // Set initial state
+            if (component.config.descriptiveStats && 
+                component.config.descriptiveStats.includes(checkbox.value)) {
+                checkbox.checked = true;
+            }
+        });
+        
+        // Regression statistics checkboxes
+        const regressionCheckboxes = form.querySelectorAll('.regression-stat');
+        const updateRegressionStats = () => {
+            component.config.regressionStats = Array.from(regressionCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        };
+        
+        regressionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateRegressionStats);
+        });
+        
+        // Distribution options checkboxes
+        const distributionCheckboxes = form.querySelectorAll('.distribution-option');
+        const updateDistributionOptions = () => {
+            component.config.distributionOptions = Array.from(distributionCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        };
+        
+        distributionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateDistributionOptions);
+        });
+        
+        // Time series options checkboxes
+        const timeseriesCheckboxes = form.querySelectorAll('.timeseries-option');
+        const updateTimeseriesOptions = () => {
+            component.config.timeseriesOptions = Array.from(timeseriesCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        };
+        
+        timeseriesCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateTimeseriesOptions);
+        });
+        
+        // Preprocessing options checkboxes
+        const preprocessingCheckboxes = form.querySelectorAll('.preprocessing-option');
+        const updatePreprocessingOptions = () => {
+            component.config.preprocessingOptions = Array.from(preprocessingCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        };
+        
+        preprocessingCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updatePreprocessingOptions);
+        });
+    };
+    
+    // Initialize checkbox handling
+    handleCheckboxArrays();
+    
+    // Handle initial panel-specific logic
+    handlePanelSpecificLogic(analysisTypeSelect.value || 'descriptive');
+}
 
     /**
      * Render custom properties UI for the AI prompt component.  Allows

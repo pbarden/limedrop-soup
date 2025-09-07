@@ -269,16 +269,20 @@ i[class*=" fa-"] {
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.85);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(var(--window-header-rgb), var(--window-header-opacity));
+    border-bottom: 1px solid rgba(var(--window-header-rgb), var(--window-header-border-opacity));
     cursor: move;
     user-select: none;
+    backdrop-filter: blur(10px);
+    position: relative;
 }
 
 .window-title {
-    color: white;
+    color: var(--window-header-text);
     font-size: 14px;
     font-weight: 500;
+    z-index: 2;
+    position: relative;
 }
 
 .window-controls {
@@ -2861,6 +2865,11 @@ textarea:focus:not(:focus-visible) {
     --window-tint-rgb: 255, 255, 255;
     --glass-opacity: 0.8;
     --glass-blur: 10px;
+    --window-header-color: #ffffff;
+    --window-header-rgb: 255, 255, 255;
+    --window-header-opacity: 0.15;
+    --window-header-text: #ffffff;
+    --window-header-border-opacity: 0.1;
 }
 
 /* Update existing button styles */
@@ -3675,8 +3684,8 @@ p, span, div,
     height: 28px;
     border: none;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(var(--window-header-rgb), calc(var(--window-header-opacity) + 0.1));
+    color: var(--window-header-text);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -3688,10 +3697,11 @@ p, span, div,
     margin: 0;
     position: relative;
     flex-shrink: 0;
+    backdrop-filter: blur(5px);
 }
 
 .window-control:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(var(--window-header-rgb), calc(var(--window-header-opacity) + 0.2));
     transform: scale(1.05);
 }
 
@@ -4165,4 +4175,87 @@ p, span, div,
 
 .button-config-card:hover .btn-icon {
     transform: scale(1.05);
+}
+
+/* Opacity control styling */
+.opacity-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 200px;
+}
+
+.opacity-controls input[type="range"] {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.opacity-controls input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-button-color);
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.opacity-value {
+    font-size: 12px;
+    color: var(--font-color);
+    min-width: 40px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Header preview styling */
+.header-preview-container {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.header-preview {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(var(--window-header-rgb), var(--window-header-opacity));
+    border: 1px solid rgba(var(--window-header-rgb), var(--window-header-border-opacity));
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.preview-title {
+    color: var(--window-header-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.preview-controls .window-control {
+    width: 24px;
+    height: 24px;
+    background: rgba(var(--window-header-rgb), calc(var(--window-header-opacity) + 0.1));
+    color: var(--window-header-text);
 }

@@ -37,6 +37,11 @@ class Settings {
         root.style.setProperty('--window-tint-rgb', '255, 255, 255');
         root.style.setProperty('--glass-opacity', '0.8');
         root.style.setProperty('--glass-blur', '10px');
+        root.style.setProperty('--window-header-color', '#ffffff');
+        root.style.setProperty('--window-header-rgb', '255, 255, 255');
+        root.style.setProperty('--window-header-opacity', '0.15');
+        root.style.setProperty('--window-header-text', '#ffffff');
+        root.style.setProperty('--window-header-border-opacity', '0.1');
     }
 
     initializeGradientPreviews() {
@@ -81,6 +86,10 @@ class Settings {
         const showIconsCheck = this.windowEl.querySelector('#show-icons');
         const clearBtn = this.windowEl.querySelector('.clear-storage');
         const colorResetBtns = this.windowEl.querySelectorAll('.color-reset');
+        const windowHeaderColorPicker = this.windowEl.querySelector('#window-header-color');
+        const windowHeaderOpacitySlider = this.windowEl.querySelector('#window-header-opacity');
+        const windowHeaderTextPicker = this.windowEl.querySelector('#window-header-text');
+        const windowHeaderBorderOpacity = this.windowEl.querySelector('#window-header-border-opacity');
 
         // Font color
         fontColorPicker.addEventListener('input', (e) => {
@@ -129,6 +138,46 @@ class Settings {
         windowTintColorPicker.addEventListener('input', (e) => {
             this.changeWindowTint(e.target.value);
         });
+
+        // Window header color
+        if (windowHeaderColorPicker) {
+            windowHeaderColorPicker.addEventListener('input', (e) => {
+                this.changeWindowHeaderColor(e.target.value);
+            });
+        }
+
+        // Window header opacity
+        if (windowHeaderOpacitySlider) {
+            const opacityValue = windowHeaderOpacitySlider.parentElement.querySelector('.opacity-value');
+            
+            windowHeaderOpacitySlider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (opacityValue) {
+                    opacityValue.textContent = value + '%';
+                }
+                this.changeWindowHeaderOpacity(value);
+            });
+        }
+
+        // Window header text color
+        if (windowHeaderTextPicker) {
+            windowHeaderTextPicker.addEventListener('input', (e) => {
+                this.changeWindowHeaderText(e.target.value);
+            });
+        }
+
+        // Window header border opacity
+        if (windowHeaderBorderOpacity) {
+            const borderOpacityValue = windowHeaderBorderOpacity.parentElement.querySelector('.opacity-value');
+            
+            windowHeaderBorderOpacity.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (borderOpacityValue) {
+                    borderOpacityValue.textContent = value + '%';
+                }
+                this.changeWindowHeaderBorderOpacity(value);
+            });
+        }
 
         // System settings
         autoSaveCheck.addEventListener('change', (e) => {
@@ -389,6 +438,37 @@ class Settings {
             this.changeWindowTint(settings.windowTintColor);
         }
 
+        // Window header settings
+        if (settings.windowHeaderColor) {
+            this.windowEl.querySelector('#window-header-color').value = settings.windowHeaderColor;
+            this.changeWindowHeaderColor(settings.windowHeaderColor);
+        }
+
+        if (settings.windowHeaderOpacity !== undefined) {
+            const slider = this.windowEl.querySelector('#window-header-opacity');
+            const valueDisplay = slider.parentElement.querySelector('.opacity-value');
+            slider.value = settings.windowHeaderOpacity;
+            if (valueDisplay) {
+                valueDisplay.textContent = settings.windowHeaderOpacity + '%';
+            }
+            this.changeWindowHeaderOpacity(settings.windowHeaderOpacity);
+        }
+
+        if (settings.windowHeaderText) {
+            this.windowEl.querySelector('#window-header-text').value = settings.windowHeaderText;
+            this.changeWindowHeaderText(settings.windowHeaderText);
+        }
+
+        if (settings.windowHeaderBorderOpacity !== undefined) {
+            const slider = this.windowEl.querySelector('#window-header-border-opacity');
+            const valueDisplay = slider.parentElement.querySelector('.opacity-value');
+            slider.value = settings.windowHeaderBorderOpacity;
+            if (valueDisplay) {
+                valueDisplay.textContent = settings.windowHeaderBorderOpacity + '%';
+            }
+            this.changeWindowHeaderBorderOpacity(settings.windowHeaderBorderOpacity);
+        }
+
         // System settings
         if (settings.autoSave !== undefined) {
             this.windowEl.querySelector('#auto-save').checked = settings.autoSave;
@@ -434,6 +514,10 @@ class Settings {
             showIcons: this.windowEl.querySelector('#show-icons').checked,
             backgroundAnimation: this.windowEl.querySelector('#background-animation').checked,
             animationStyle: this.dropdowns.animationStyle.getValue() || 'gradient-flow',
+            windowHeaderColor: this.windowEl.querySelector('#window-header-color').value,
+            windowHeaderOpacity: this.windowEl.querySelector('#window-header-opacity').value,
+            windowHeaderText: this.windowEl.querySelector('#window-header-text').value,
+            windowHeaderBorderOpacity: this.windowEl.querySelector('#window-header-border-opacity').value,
         };
 
         // Save window control settings - FIXED
@@ -1092,6 +1176,32 @@ saveWindowControlSettings() {
     });
     
     localStorage.setItem('limedrop-settings', JSON.stringify(settings));
+}
+
+changeWindowHeaderColor(color) {
+    const rgb = this.hexToRgb(color);
+    if (rgb) {
+        document.documentElement.style.setProperty('--window-header-color', color);
+        document.documentElement.style.setProperty('--window-header-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    }
+    this.saveSettings();
+}
+
+changeWindowHeaderOpacity(opacity) {
+    const opacityValue = opacity / 100;
+    document.documentElement.style.setProperty('--window-header-opacity', opacityValue);
+    this.saveSettings();
+}
+
+changeWindowHeaderText(color) {
+    document.documentElement.style.setProperty('--window-header-text', color);
+    this.saveSettings();
+}
+
+changeWindowHeaderBorderOpacity(opacity) {
+    const opacityValue = opacity / 100;
+    document.documentElement.style.setProperty('--window-header-border-opacity', opacityValue);
+    this.saveSettings();
 }
 }
 
