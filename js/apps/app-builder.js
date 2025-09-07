@@ -1960,94 +1960,227 @@ class AppBuilder {
         }
     }
 
-    /**
-     * Render custom properties UI for the custom buttons processing component.
-     * Allows editing the label, an optional display text, and adding up to
-     * 10 button definitions.  Each button has a label, icon class and
-     * JavaScript code to transform the previous value.  The code should
-     * return a new value when executed.  Buttons can be added and
-     * removed dynamically.  This form mirrors the style of other
-     * components and uses populateConfig/attachConfigListeners for
-     * base fields.  Button definitions are stored directly on
-     * component.config.buttons.
-     */
     renderCustomButtonsProperties(container) {
         container.innerHTML = '';
         const form = document.createElement('div');
         form.className = 'config-form';
         form.innerHTML = `
             <div class="form-group">
-                <label>Label</label>
-                <input type="text" class="config-label" />
+                <label>Component Label</label>
+                <input type="text" class="config-label" placeholder="Enter component label" />
             </div>
+            
             <div class="form-group">
                 <label>Display Text</label>
-                <textarea rows="3" class="config-displayText" placeholder="Optional text to display above the buttons..."></textarea>
+                <textarea rows="2" class="config-displayText" placeholder="Optional text to display above the buttons (e.g., 'Choose an action to transform your data:')"></textarea>
+                <small class="form-hint">This text appears above the buttons to guide users</small>
             </div>
+            
             <div class="form-group">
-                <label>Buttons</label>
-                <div id="custom-btns-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-                <button type="button" id="add-custom-btn" class="btn-secondary" style="margin-top:6px;">Add Button</button>
-                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Define up to 10 buttons.  Each button's code is executed with <code>prevValue</code> as input and should return a new value.</small>
+                <label>
+                    <i class="fas fa-magic" style="margin-right: 6px; color: #667eea;"></i>
+                    AI-Powered Buttons
+                </label>
+                <div class="buttons-config-container">
+                    <div id="custom-buttons-list" class="buttons-list"></div>
+                    <button type="button" id="add-custom-button" class="btn-add-button">
+                        <i class="fas fa-plus"></i>
+                        Add AI Button
+                    </button>
+                    <div class="buttons-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Each button can execute an AI prompt to transform the previous step's output. Define up to 10 buttons.</span>
+                    </div>
+                </div>
             </div>
         `;
+        
         container.appendChild(form);
+        
         // Populate base fields from config and attach listeners
         this.populateConfig(container);
         this.attachConfigListeners(container);
-        const listEl = form.querySelector('#custom-btns-list');
-        const addBtnEl = form.querySelector('#add-custom-btn');
+        
+        const listEl = form.querySelector('#custom-buttons-list');
+        const addBtnEl = form.querySelector('#add-custom-button');
         const { component } = this.selectedComponentRef;
         const cfg = component.config;
+        
         if (!Array.isArray(cfg.buttons)) {
             cfg.buttons = [];
         }
-        // Function to rebuild the buttons list UI
+        
+        // Function to rebuild the buttons list UI with enhanced design
         const refreshList = () => {
             listEl.innerHTML = '';
-            cfg.buttons.forEach((btn, index) => {
-                const row = document.createElement('div');
-                row.className = 'custom-btn-row';
-                row.style.display = 'flex';
-                row.style.gap = '8px';
-                row.style.alignItems = 'flex-start';
-                row.innerHTML = `
-                    <input type="text" placeholder="Label" class="btn-label" style="flex:1; padding:4px;" />
-                    <input type="text" placeholder="Icon class" class="btn-icon" style="flex:1; padding:4px;" />
-                    <textarea rows="2" placeholder="JavaScript code" class="btn-code" style="flex:2; padding:4px;"></textarea>
-                    <button type="button" class="btn-remove" title="Remove">×</button>
+            
+            if (cfg.buttons.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'buttons-empty-state';
+                emptyState.innerHTML = `
+                    <div class="empty-icon">
+                        <i class="fas fa-mouse-pointer"></i>
+                    </div>
+                    <div class="empty-text">No buttons defined yet</div>
+                    <div class="empty-subtext">Add AI-powered buttons to transform your data</div>
                 `;
-                listEl.appendChild(row);
-                const labelInput = row.querySelector('.btn-label');
-                const iconInput = row.querySelector('.btn-icon');
-                const codeInput = row.querySelector('.btn-code');
-                const removeBtn = row.querySelector('.btn-remove');
-                labelInput.value = btn.label || '';
-                iconInput.value = btn.icon || '';
-                codeInput.value = btn.code || '';
+                listEl.appendChild(emptyState);
+                return;
+            }
+            
+            cfg.buttons.forEach((btn, index) => {
+                const buttonCard = document.createElement('div');
+                buttonCard.className = 'button-config-card';
+                buttonCard.innerHTML = `
+                    <div class="button-card-header">
+                        <div class="button-preview">
+                            <i class="${btn.icon || 'fas fa-magic'}"></i>
+                            <span class="button-preview-label">${btn.label || 'Button'}</span>
+                        </div>
+                        <div class="button-card-actions">
+                            <button type="button" class="btn-icon btn-icon-small icon-picker-btn" title="Change Icon">
+                                <i class="fas fa-palette"></i>
+                            </button>
+                            <button type="button" class="btn-icon btn-icon-small btn-danger remove-btn" title="Remove Button">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="button-card-body">
+                        <div class="form-row">
+                            <div class="form-col">
+                                <label class="field-label">Button Label</label>
+                                <input type="text" 
+                                    class="button-label-input" 
+                                    placeholder="e.g., 'Summarize', 'Translate'" 
+                                    value="${btn.label || ''}" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-col">
+                                <label class="field-label">
+                                    <i class="fas fa-robot" style="margin-right: 4px; color: #667eea;"></i>
+                                    AI Prompt
+                                </label>
+                                <textarea class="button-prompt-input" 
+                                        rows="3" 
+                                        placeholder="Enter the AI prompt (e.g., 'Summarize the following text in 2-3 sentences: {{input}}')">${btn.prompt || ''}</textarea>
+                                <div class="prompt-hint">
+                                    <i class="fas fa-lightbulb"></i>
+                                    Use <code>{{input}}</code> to reference the previous step's output
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-col-half">
+                                <label class="field-label">Model</label>
+                                <select class="button-model-select">
+                                    <option value="gpt-3.5" ${btn.model === 'gpt-3.5' ? 'selected' : ''}>GPT-3.5</option>
+                                    <option value="gpt-4" ${btn.model === 'gpt-4' ? 'selected' : ''}>GPT-4</option>
+                                    <option value="claude" ${btn.model === 'claude' ? 'selected' : ''}>Claude</option>
+                                </select>
+                            </div>
+                            <div class="form-col-half">
+                                <label class="field-label">Mode</label>
+                                <select class="button-mode-select">
+                                    <option value="transform" ${btn.mode === 'transform' ? 'selected' : ''}>Transform Data</option>
+                                    <option value="append" ${btn.mode === 'append' ? 'selected' : ''}>Append to Data</option>
+                                    <option value="replace" ${btn.mode === 'replace' ? 'selected' : ''}>Replace Data</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                listEl.appendChild(buttonCard);
+                
+                // Get references to inputs
+                const labelInput = buttonCard.querySelector('.button-label-input');
+                const promptInput = buttonCard.querySelector('.button-prompt-input');
+                const modelSelect = buttonCard.querySelector('.button-model-select');
+                const modeSelect = buttonCard.querySelector('.button-mode-select');
+                const iconPickerBtn = buttonCard.querySelector('.icon-picker-btn');
+                const removeBtn = buttonCard.querySelector('.remove-btn');
+                const previewIcon = buttonCard.querySelector('.button-preview i');
+                const previewLabel = buttonCard.querySelector('.button-preview-label');
+                
+                // Set up icon picker
+                const iconContainer = document.createElement('div');
+                iconContainer.style.display = 'none';
+                iconContainer.style.position = 'absolute';
+                iconContainer.style.zIndex = '10000';
+                buttonCard.appendChild(iconContainer);
+                
+                const picker = new IconPicker(iconContainer, btn.icon || 'fas fa-magic', (icon) => {
+                    btn.icon = icon;
+                    previewIcon.className = icon;
+                    iconContainer.style.display = 'none';
+                });
+                
+                // Event listeners
                 labelInput.addEventListener('input', () => {
-                    cfg.buttons[index].label = labelInput.value;
+                    btn.label = labelInput.value;
+                    previewLabel.textContent = labelInput.value || 'Button';
                 });
-                iconInput.addEventListener('input', () => {
-                    cfg.buttons[index].icon = iconInput.value;
+                
+                promptInput.addEventListener('input', () => {
+                    btn.prompt = promptInput.value;
                 });
-                codeInput.addEventListener('input', () => {
-                    cfg.buttons[index].code = codeInput.value;
+                
+                modelSelect.addEventListener('change', () => {
+                    btn.model = modelSelect.value;
                 });
-                removeBtn.addEventListener('click', () => {
+                
+                modeSelect.addEventListener('change', () => {
+                    btn.mode = modeSelect.value;
+                });
+                
+                iconPickerBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    iconContainer.style.display = iconContainer.style.display === 'none' ? 'block' : 'none';
+                });
+                
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     cfg.buttons.splice(index, 1);
                     refreshList();
                 });
+                
+                // Close icon picker when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!buttonCard.contains(e.target)) {
+                        iconContainer.style.display = 'none';
+                    }
+                });
             });
         };
-        addBtnEl.addEventListener('click', () => {
+        
+        // Add button event listener
+        addBtnEl.addEventListener('click', (e) => {
+            e.preventDefault();
             if (cfg.buttons.length >= 10) {
-                alert('Maximum of 10 buttons allowed');
+                if (window.NotificationManager) {
+                    NotificationManager.error('Maximum of 10 AI buttons allowed');
+                } else {
+                    alert('Maximum of 10 AI buttons allowed');
+                }
                 return;
             }
-            cfg.buttons.push({ label: 'Button', icon: '', code: '' });
+            cfg.buttons.push({ 
+                label: 'New Button', 
+                prompt: 'Transform the following: {{input}}', 
+                icon: 'fas fa-magic',
+                model: 'gpt-3.5',
+                mode: 'transform'
+            });
             refreshList();
         });
+        
         // Initial render
         refreshList();
     }

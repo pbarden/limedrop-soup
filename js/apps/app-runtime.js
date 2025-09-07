@@ -2026,6 +2026,469 @@ class AppRuntime {
     }
 }
 
+/**
+ * Enhanced Custom Buttons Runtime Handler
+ * Add this to your app runtime to handle the new AI-powered custom buttons
+ */
+
+class CustomButtonsRuntime {
+    constructor(component, container, prevValue) {
+        this.component = component;
+        this.container = container;
+        this.prevValue = prevValue;
+        this.currentValue = prevValue;
+        this.isProcessing = false;
+        this.render();
+    }
+
+    render() {
+        const config = this.component.config;
+        
+        this.container.innerHTML = `
+            <div class="runtime-custom-buttons">
+                ${config.displayText ? `
+                    <div class="buttons-display-text">
+                        ${this.escapeHtml(config.displayText)}
+                    </div>
+                ` : ''}
+                
+                <div class="buttons-container" id="buttons-container">
+                    ${this.renderButtons()}
+                </div>
+                
+                <div class="buttons-output" id="buttons-output" style="display: none;">
+                    <div class="output-label">
+                        <i class="fas fa-check-circle"></i>
+                        Processing Complete
+                    </div>
+                    <div class="output-content" id="output-content"></div>
+                </div>
+                
+                <div class="buttons-processing" id="buttons-processing" style="display: none;">
+                    <div class="processing-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                    <div class="processing-text">Processing with AI...</div>
+                </div>
+            </div>
+        `;
+
+        this.attachEventListeners();
+    }
+
+    renderButtons() {
+        const config = this.component.config;
+        
+        if (!config.buttons || config.buttons.length === 0) {
+            return `
+                <div class="buttons-empty">
+                    <i class="fas fa-info-circle"></i>
+                    <span>No buttons configured</span>
+                </div>
+            `;
+        }
+
+        return config.buttons.map((button, index) => `
+            <button class="runtime-ai-button" 
+                    data-index="${index}"
+                    ${this.isProcessing ? 'disabled' : ''}>
+                <div class="button-icon">
+                    <i class="${button.icon || 'fas fa-magic'}"></i>
+                </div>
+                <div class="button-content">
+                    <div class="button-label">${this.escapeHtml(button.label || 'Button')}</div>
+                    <div class="button-model">
+                        <i class="fas fa-robot"></i>
+                        ${button.model || 'gpt-3.5'}
+                    </div>
+                </div>
+                <div class="button-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+        `).join('');
+    }
+
+    attachEventListeners() {
+        const buttons = this.container.querySelectorAll('.runtime-ai-button');
+        buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.executeButton(index);
+            });
+        });
+    }
+
+    async executeButton(index) {
+        if (this.isProcessing) return;
+
+        const config = this.component.config;
+        const button = config.buttons[index];
+        
+        if (!button || !button.prompt) {
+            this.showError('Button configuration is incomplete');
+            return;
+        }
+
+        this.isProcessing = true;
+        this.showProcessing(button);
+
+        try {
+            // Prepare the prompt by replacing {{input}} with the previous value
+            const processedPrompt = this.processPrompt(button.prompt, this.prevValue);
+            
+            // Simulate AI API call (replace with actual AI service)
+            const result = await this.callAI(processedPrompt, button.model);
+            
+            // Process the result based on the button's mode
+            const finalResult = this.processResult(result, button.mode);
+            
+            this.currentValue = finalResult;
+            this.showResult(finalResult, button);
+            
+        } catch (error) {
+            console.error('AI processing error:', error);
+            this.showError(`Failed to process with AI: ${error.message}`);
+        } finally {
+            this.isProcessing = false;
+            this.updateButtonStates();
+        }
+    }
+
+    processPrompt(prompt, inputValue) {
+        // Convert input value to string format suitable for AI processing
+        let inputString = '';
+        
+        if (typeof inputValue === 'string') {
+            inputString = inputValue;
+        } else if (Array.isArray(inputValue)) {
+            inputString = inputValue.join('\n');
+        } else if (typeof inputValue === 'object') {
+            inputString = JSON.stringify(inputValue, null, 2);
+        } else {
+            inputString = String(inputValue);
+        }
+        
+        // Replace {{input}} placeholder with actual input
+        return prompt.replace(/\{\{input\}\}/g, inputString);
+    }
+
+    async callAI(prompt, model) {
+        // This is a mock implementation - replace with actual AI API calls
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                // Simulate AI response based on prompt content
+                if (prompt.toLowerCase().includes('summarize')) {
+                    resolve('This is a summary of the provided content, highlighting the key points and main ideas in a concise format.');
+                } else if (prompt.toLowerCase().includes('translate')) {
+                    resolve('Este es el contenido traducido al idioma solicitado.');
+                } else if (prompt.toLowerCase().includes('analyze')) {
+                    resolve('Analysis complete: The content shows positive sentiment with key themes around innovation and growth.');
+                } else {
+                    resolve('AI processing complete. The content has been transformed according to your prompt.');
+                }
+            }, 2000 + Math.random() * 1000); // Simulate API latency
+        });
+    }
+
+    processResult(result, mode) {
+        switch (mode) {
+            case 'append':
+                if (typeof this.prevValue === 'string') {
+                    return this.prevValue + '\n\n' + result;
+                } else if (Array.isArray(this.prevValue)) {
+                    return [...this.prevValue, result];
+                } else {
+                    return result;
+                }
+            
+            case 'replace':
+                return result;
+            
+            case 'transform':
+            default:
+                return result;
+        }
+    }
+
+    showProcessing(button) {
+        const processingEl = this.container.querySelector('#buttons-processing');
+        const outputEl = this.container.querySelector('#buttons-output');
+        const buttonsContainer = this.container.querySelector('#buttons-container');
+        
+        processingEl.style.display = 'flex';
+        outputEl.style.display = 'none';
+        buttonsContainer.classList.add('processing');
+        
+        const processingText = processingEl.querySelector('.processing-text');
+        processingText.textContent = `Processing with ${button.model || 'AI'}...`;
+    }
+
+    showResult(result, button) {
+        const processingEl = this.container.querySelector('#buttons-processing');
+        const outputEl = this.container.querySelector('#buttons-output');
+        const outputContent = this.container.querySelector('#output-content');
+        const buttonsContainer = this.container.querySelector('#buttons-container');
+        
+        processingEl.style.display = 'none';
+        outputEl.style.display = 'block';
+        buttonsContainer.classList.remove('processing');
+        
+        // Format the output based on content type
+        if (typeof result === 'string') {
+            outputContent.innerHTML = `<pre class="result-text">${this.escapeHtml(result)}</pre>`;
+        } else if (Array.isArray(result)) {
+            outputContent.innerHTML = `
+                <div class="result-array">
+                    ${result.map(item => `<div class="array-item">${this.escapeHtml(String(item))}</div>`).join('')}
+                </div>
+            `;
+        } else {
+            outputContent.innerHTML = `<pre class="result-json">${this.escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+        }
+    }
+
+    showError(message) {
+        const processingEl = this.container.querySelector('#buttons-processing');
+        const outputEl = this.container.querySelector('#buttons-output');
+        const buttonsContainer = this.container.querySelector('#buttons-container');
+        
+        processingEl.style.display = 'none';
+        buttonsContainer.classList.remove('processing');
+        
+        // Show error notification
+        if (window.NotificationManager) {
+            NotificationManager.error(message);
+        } else {
+            alert(message);
+        }
+    }
+
+    updateButtonStates() {
+        const buttons = this.container.querySelectorAll('.runtime-ai-button');
+        buttons.forEach(button => {
+            button.disabled = this.isProcessing;
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    getValue() {
+        return this.currentValue;
+    }
+}
+
+// CSS Styles for the runtime buttons (add to your styles.css)
+const runtimeButtonsCSS = `
+.runtime-custom-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.buttons-display-text {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.buttons-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+    transition: opacity 0.3s ease;
+}
+
+.buttons-container.processing {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.runtime-ai-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.runtime-ai-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.runtime-ai-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.button-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.button-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.button-model {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.button-arrow {
+    color: rgba(255, 255, 255, 0.4);
+    transition: transform 0.3s ease;
+}
+
+.runtime-ai-button:hover .button-arrow {
+    transform: translateX(4px);
+    color: rgba(102, 126, 234, 0.8);
+}
+
+.buttons-processing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.processing-spinner {
+    position: relative;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(102, 126, 234, 0.8);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.processing-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+}
+
+.buttons-output {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.output-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(76, 175, 80, 0.9);
+}
+
+.output-content {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.result-text,
+.result-json {
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.result-array {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.array-item {
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.buttons-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    text-align: center;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+`;
+
+// Inject runtime styles
+if (!document.getElementById('custom-buttons-runtime-styles')) {
+    const style = document.createElement('style');
+    style.id = 'custom-buttons-runtime-styles';
+    style.textContent = runtimeButtonsCSS;
+    document.head.appendChild(style);
+}
+
+// Export for use in app runtime
+window.CustomButtonsRuntime = CustomButtonsRuntime;
+
 // The runtime instance is exposed globally so that inline onclick handlers
 // can call completeCurrentStep() without binding context.  Each launch
 // creates a fresh AppRuntime which overrides this variable.
