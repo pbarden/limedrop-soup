@@ -38,6 +38,15 @@ class AppRegistry {
             width: 600,
             height: 500
         });
+
+        // Register App Manager for managing installed user apps
+        this.registerSystemApp('app-manager', {
+            name: 'App Manager',
+            icon: 'fas fa-th-large',
+            template: null,
+            width: 600,
+            height: 500
+        });
     }
 
     registerSystemApp(id, definition) {
@@ -46,19 +55,71 @@ class AppRegistry {
 
     registerUserApp(definition) {
         const appId = `user-app-${Date.now()}`;
+        // Ensure favorite flag exists on definition
+        definition.favorite = definition.favorite || false;
         this.userApps.set(appId, definition);
         this.saveToStorage();
         this.addToDock(appId, definition);
         return appId;
     }
 
+    /**
+     * Remove a user app from the registry and update persistent storage
+     * and dock.  If the app is currently open, its window remains
+     * untouched (the user may need to close it manually).  Removing
+     * an app also removes its dock entry.
+     * @param {string} appId
+     */
+    deleteUserApp(appId) {
+        // Remove from map
+        const appDef = this.userApps.get(appId);
+        if (!appDef) return;
+        this.userApps.delete(appId);
+        // Remove dock item
+        const dockApps = document.getElementById('dock-apps');
+        if (dockApps) {
+            const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
+            if (dockItem) dockItem.remove();
+        }
+        this.saveToStorage();
+    }
+
+    /**
+     * Launch the App Builder in edit mode for an existing user app.  The
+     * specified app's definition is loaded into a new builder instance,
+     * allowing the user to modify modules and components.  The caller
+     * must supply a valid appId that exists in the userApps map.
+     * @param {string} appId The user app identifier to edit
+     */
+    editUserApp(appId) {
+        const definition = this.userApps.get(appId);
+        if (!definition) return;
+        // Create a builder window and load the app definition
+        const windowId = windowManager.createWindow(
+            'app-builder',
+            `Edit ${definition.name}`,
+            null,
+            900,
+            600
+        );
+        const windowObj = windowManager.windows.get(windowId);
+        const content = windowObj.element;
+        const builder = new AppBuilder(content);
+        if (typeof builder.loadAppDefinition === 'function') {
+            builder.loadAppDefinition(definition);
+        }
+    }
+
     addToDock(appId, definition) {
         const dockApps = document.getElementById('dock-apps');
+        if (!dockApps) return;
         const separator = dockApps.querySelector('.dock-separator');
         const dockItem = document.createElement('div');
         dockItem.className = 'dock-item';
         dockItem.dataset.app = appId;
-        dockItem.innerHTML = `<span class="dock-label">${definition.name}</span>`;
+        // Include an icon if available.  Use a default icon for user apps when none is provided.
+        const iconClass = definition.icon || 'fas fa-cube';
+        dockItem.innerHTML = `<i class="dock-icon ${iconClass}"></i><span class="dock-label">${definition.name}</span>`;
         dockApps.insertBefore(dockItem, separator);
         dockItem.addEventListener('click', () => {
             this.launchApp(appId);
@@ -123,6 +184,9 @@ class AppRegistry {
                 break;
             case 'settings':
                 new Settings(windowObj.element);
+                break;
+            case 'app-manager':
+                new AppManager(windowObj.element);
                 break;
         }
     }
