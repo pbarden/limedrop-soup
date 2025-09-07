@@ -74,32 +74,61 @@ class AppRegistry {
         return appId;
     }
 
+    /**
+     * Toggle an app's favourite status and update its dock presence.
+     * If an app becomes a favourite it is added to the dock; if
+     * unfavourited it is removed.
+     * @param {string} appId
+     */
     toggleFavorite(appId) {
+        console.log('toggleFavorite called for:', appId);
+        
         const app = this.userApps.get(appId);
-        if (!app) return;
+        if (!app) {
+            console.error('App not found:', appId);
+            return;
+        }
         
+        console.log('Current favorite status:', app.favorite);
         app.favorite = !app.favorite;
+        console.log('New favorite status:', app.favorite);
         
-        const dockApps = document.getElementById('dock-apps');
-        if (!dockApps) return;
+        // Update dock - but handle missing dock gracefully
+        const dockApps = document.getElementById('dock-apps') || document.getElementById('dock-favorites');
         
-        const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
+        if (!dockApps) {
+            console.warn('No dock container found (looking for #dock-apps or #dock-favorites)');
+            // Still save the favorite status even if dock is missing
+            this.saveToStorage();
+            return;
+        }
+        
+        console.log('Found dock container:', dockApps);
         
         if (app.favorite) {
-            // Add to dock if not already there
-            if (!dockItem) {
+            // Only add if not already present
+            const existingDockItem = dockApps.querySelector(`[data-app="${appId}"]`);
+            if (!existingDockItem) {
+                console.log('Adding to dock');
                 this.addToDock(appId, app);
+            } else {
+                console.log('Already in dock');
             }
         } else {
             // Remove from dock
+            const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
             if (dockItem) {
+                console.log('Removing from dock');
                 dockItem.remove();
+            } else {
+                console.log('Not in dock, nothing to remove');
             }
         }
         
         this.saveToStorage();
+        console.log('toggleFavorite completed');
     }
-
+    
     /**
      * Remove a user app from the registry and update persistent storage
      * and dock.  If the app is currently open, its window remains
@@ -115,31 +144,6 @@ class AppRegistry {
         // Remove dock item
         const dockApps = document.getElementById('dock-apps');
         if (dockApps) {
-            const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
-            if (dockItem) dockItem.remove();
-        }
-        this.saveToStorage();
-    }
-
-    /**
-     * Toggle an app's favourite status and update its dock presence.
-     * If an app becomes a favourite it is added to the dock; if
-     * unfavourited it is removed.
-     * @param {string} appId
-     */
-    toggleFavorite(appId) {
-        const app = this.userApps.get(appId);
-        if (!app) return;
-        app.favorite = !app.favorite;
-        // Update dock
-        const dockApps = document.getElementById('dock-apps');
-        if (app.favorite) {
-            // Only add if not already present
-            if (!dockApps.querySelector(`[data-app="${appId}"]`)) {
-                this.addToDock(appId, app);
-            }
-        } else {
-            // Remove from dock
             const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
             if (dockItem) dockItem.remove();
         }
@@ -301,6 +305,7 @@ class AppRegistry {
             }
         }
     }
+    
 }
 
 // Expose globally

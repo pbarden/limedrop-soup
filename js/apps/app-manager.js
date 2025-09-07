@@ -1,42 +1,63 @@
-// Fixed App Manager - Uses template system consistently
+// Fixed App Manager - Handles timing issues
 class AppManager {
     constructor(windowEl) {
         this.windowEl = windowEl;
         console.log('AppManager constructor called');
-        this.init();
+        console.log('windowEl:', this.windowEl);
+        
+        // Add a small delay to ensure window content is loaded
+        setTimeout(() => {
+            this.init();
+        }, 50);
     }
 
     init() {
+        console.log('AppManager init() called');
+        
         // Find the content that was loaded from the template
         const content = this.windowEl.querySelector('.window-content');
+        console.log('Found window-content:', content);
+        
         if (!content) {
-            console.error('No window content found');
+            console.error('No window content found - this should not happen');
+            // Try to find any container as fallback
+            const fallbackContent = this.windowEl.querySelector('.window-body') || this.windowEl;
+            console.log('Using fallback content:', fallbackContent);
+            this.createContent(fallbackContent);
             return;
         }
 
         // Check if content is already populated from template
         let appManagerEl = content.querySelector('.app-manager');
+        console.log('Found app-manager element:', appManagerEl);
+        
         if (!appManagerEl) {
             // Fallback: create content if template didn't load
             console.warn('App Manager template not found, creating content manually');
             this.createContent(content);
             appManagerEl = content.querySelector('.app-manager');
+            console.log('Created app-manager element:', appManagerEl);
         }
 
         if (appManagerEl) {
+            console.log('Binding events and rendering apps list');
             this.bindEvents(appManagerEl);
             this.renderAppsList(appManagerEl);
+        } else {
+            console.error('Failed to create or find app-manager element');
         }
     }
 
     createContent(container) {
+        console.log('Creating content in container:', container);
+        
         // Fallback content creation if template fails
         container.innerHTML = `
             <div class="app-manager">
                 <div class="app-manager-header">
                     <h2>App Manager</h2>
                     <div class="app-manager-controls">
-                        <button class="btn-secondary new-app" onclick="appRegistry.launchApp('app-builder')">
+                        <button class="btn-secondary new-app">
                             <i class="fas fa-plus"></i> New App
                         </button>
                     </div>
@@ -48,37 +69,73 @@ class AppManager {
                 </div>
             </div>
         `;
+        
+        console.log('Content created, innerHTML set');
     }
 
     bindEvents(appManagerEl) {
+        console.log('Binding events for app manager');
+        
         // Find and bind any interactive elements
         const newAppBtn = appManagerEl.querySelector('.new-app');
+        console.log('Found new app button:', newAppBtn);
+        
         if (newAppBtn) {
             newAppBtn.addEventListener('click', () => {
-                appRegistry.launchApp('app-builder');
+                console.log('New app button clicked');
+                if (typeof appRegistry !== 'undefined') {
+                    appRegistry.launchApp('app-builder');
+                } else {
+                    console.error('appRegistry not available');
+                }
             });
         }
     }
 
     renderAppsList(appManagerEl) {
-        const appsList = appManagerEl.querySelector('#apps-list') || 
-                        appManagerEl.querySelector('.apps-list');
+        console.log('Rendering apps list');
+        
+        // Try multiple selectors to find the apps container
+        let appsList = appManagerEl.querySelector('#apps-list') || 
+                      appManagerEl.querySelector('.apps-list') ||
+                      appManagerEl.querySelector('[data-apps-list]') ||
+                      appManagerEl.querySelector('.app-list') ||
+                      appManagerEl.querySelector('.apps-container');
+        
+        console.log('Found apps list container:', appsList);
+        console.log('Available elements in appManagerEl:', appManagerEl.innerHTML);
         
         if (!appsList) {
-            console.error('Apps list container not found');
-            return;
+            console.error('Apps list container not found, creating one');
+            // Create the missing container
+            const bodyEl = appManagerEl.querySelector('.app-manager-body') || 
+                          appManagerEl.querySelector('.app-body') ||
+                          appManagerEl;
+            
+            appsList = document.createElement('div');
+            appsList.className = 'apps-list';
+            appsList.id = 'apps-list';
+            bodyEl.appendChild(appsList);
+            console.log('Created apps list container:', appsList);
         }
 
         // Check for registry using the global variable directly
+        console.log('Checking for appRegistry:', typeof appRegistry);
+        
         if (typeof appRegistry === 'undefined') {
+            console.error('App Registry not available');
             appsList.innerHTML = '<p style="color: red;">Error: App Registry not available</p>';
             return;
         }
+        
+        console.log('AppRegistry found, getting user apps');
+        console.log('appRegistry.userApps:', appRegistry.userApps);
         
         const userApps = Array.from(appRegistry.userApps.entries());
         console.log('Found user apps:', userApps);
         
         if (userApps.length === 0) {
+            console.log('No user apps found, showing empty state');
             // No apps - show empty state
             appsList.innerHTML = `
                 <div style="text-align: center; padding: 40px;">
@@ -94,6 +151,7 @@ class AppManager {
                 </div>
             `;
         } else {
+            console.log('Rendering', userApps.length, 'user apps');
             // Show list of apps
             appsList.innerHTML = '';
             
@@ -179,10 +237,37 @@ class AppManager {
         `;
         starBtn.innerHTML = '<i class="fas fa-star"></i>';
         starBtn.title = app.favorite ? 'Remove from dock' : 'Add to dock';
-        starBtn.onclick = () => {
-            console.log('Toggling favorite for:', appId);
-            appRegistry.toggleFavorite(appId);
-            this.renderAppsList(this.windowEl.querySelector('.app-manager'));
+        starBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Star button clicked for app:', appId, 'current favorite status:', app.favorite);
+            
+            try {
+                if (typeof appRegistry === 'undefined') {
+                    console.error('appRegistry not available');
+                    return;
+                }
+                
+                if (typeof appRegistry.toggleFavorite !== 'function') {
+                    console.error('toggleFavorite method not found on appRegistry');
+                    return;
+                }
+                
+                // Toggle the favorite status
+                appRegistry.toggleFavorite(appId);
+                console.log('Favorite toggled, re-rendering apps list');
+                
+                // Re-render the apps list
+                const appManagerEl = this.windowEl.querySelector('.app-manager');
+                if (appManagerEl) {
+                    this.renderAppsList(appManagerEl);
+                } else {
+                    console.error('Could not find app-manager element for re-rendering');
+                }
+                
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+            }
         };
         actionsDiv.appendChild(starBtn);
         

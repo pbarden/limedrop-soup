@@ -539,10 +539,16 @@ class Settings {
             settings.windowControlStyle = this.dropdowns.windowControlStyle.getValue() || 'circle';
         }
         
-        if (this.minimizePicker) settings.minimizeIcon = this.minimizePicker.getValue();
-        if (this.maximizePicker) settings.maximizeIcon = this.maximizePicker.getValue();
-        if (this.closePicker) settings.closeIcon = this.closePicker.getValue();
-        
+        // Save icon settings from DOM
+        ['minimize', 'maximize', 'close'].forEach(controlType => {
+            const picker = this.windowEl.querySelector(`#${controlType}-icon-picker`);
+            if (picker) {
+                const selected = picker.querySelector('.icon-picker-item.selected');
+                if (selected) {
+                    settings[`${controlType}Icon`] = selected.dataset.iconClass;
+                }
+            }
+        });        
         localStorage.setItem('limedrop-settings', JSON.stringify(settings));
         
         // Debug log to verify saving

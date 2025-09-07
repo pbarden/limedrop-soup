@@ -69,6 +69,8 @@ class FileManager {
         container.innerHTML = '';
         
         fileSystem.fileTypes.forEach((type, typeId) => {
+            if (typeId === 'app') return;
+
             const item = document.createElement('div');
             item.className = 'file-type-item';
             if (typeId === this.selectedType) {
