@@ -12,8 +12,8 @@ class Settings {
         this.initializeGradientPreviews();
         this.initializeDropdowns();
         this.attachColorEvents();
-        this.loadSettings();
         this.initializeWindowControlSettings();
+        this.loadSettings();
         this.isInitializing = false; 
     }
 
@@ -407,9 +407,11 @@ class Settings {
         if (settings.animationStyle) {
             this.dropdowns.animationStyle.setValue(settings.animationStyle);
         }
+
+        this.loadWindowControlSettings();
     }
 
-    saveSettings() {
+        saveSettings() {
         if (this.isInitializing) {
             return;
         }
@@ -434,18 +436,15 @@ class Settings {
             animationStyle: this.dropdowns.animationStyle.getValue() || 'gradient-flow',
         };
 
-        settings.windowControlStyle = this.dropdowns.windowControlStyle.getValue() || 'circle';
-        // Save individual icons
-        ['minimize', 'maximize', 'close'].forEach(controlType => {
-            const picker = this.windowEl.querySelector(`#${controlType}-icon-picker`);
-            if (picker) {
-                const selectedItem = picker.querySelector('.icon-picker-item.selected');
-                if (selectedItem) {
-                    settings[`${controlType}Icon`] = selectedItem.dataset.iconClass;
-                    settings[`${controlType}IconName`] = selectedItem.dataset.iconName;
-                }
-            }
-        });
+        // Save window control settings - FIXED
+        if (this.dropdowns.windowControlStyle) {
+            settings.windowControlStyle = this.dropdowns.windowControlStyle.getValue() || 'circle';
+        }
+        
+        if (this.minimizePicker) settings.minimizeIcon = this.minimizePicker.getValue();
+        if (this.maximizePicker) settings.maximizeIcon = this.maximizePicker.getValue();
+        if (this.closePicker) settings.closeIcon = this.closePicker.getValue();
+        
         localStorage.setItem('limedrop-settings', JSON.stringify(settings));
         
         // Debug log to verify saving
@@ -718,21 +717,36 @@ class Settings {
     // Window Controls Settings - Add these methods to your Settings class
 
 initializeWindowControlSettings() {
-    // Initialize window control style dropdown
-    this.dropdowns.windowControlStyle = this.initializeModuleDropdown('window-control-style-dropdown', (value) => {
-        this.changeWindowControlStyle(value);
-    });
-
-    // Initialize icon pickers for each control
-    this.initializeWindowControlIconPickers();
+    // Create IconPicker instances like everywhere else
+    this.minimizePicker = new IconPicker(
+        this.windowEl.querySelector('#minimize-icon-picker'),
+        'fas fa-minus',
+        (iconClass) => this.applyControlIcon('minimize', iconClass)
+    );
     
-    // Attach reset button event
-    const resetBtn = this.windowEl.querySelector('.reset-window-controls');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            this.resetWindowControlsToDefault();
-        });
-    }
+    this.maximizePicker = new IconPicker(
+        this.windowEl.querySelector('#maximize-icon-picker'),
+        'fas fa-square',
+        (iconClass) => this.applyControlIcon('maximize', iconClass)
+    );
+    
+    this.closePicker = new IconPicker(
+        this.windowEl.querySelector('#close-icon-picker'),
+        'fas fa-times',
+        (iconClass) => this.applyControlIcon('close', iconClass)
+    );
+}
+
+applyControlIcon(controlType, iconClass) {
+    // Apply to all existing windows
+    const windows = document.querySelectorAll('.window');
+    windows.forEach(window => {
+        const control = window.querySelector(`.window-control.${controlType}`);
+        if (control) {
+            control.innerHTML = `<i class="${iconClass}"></i>`;
+        }
+    });
+    this.saveSettings();
 }
 
 initializeWindowControlIconPickers() {
@@ -777,14 +791,20 @@ initializeWindowControlIconPickers() {
 initializeControlIconPicker(controlType, icons) {
     const pickerId = `${controlType}-icon-picker`;
     const picker = this.windowEl.querySelector(`#${pickerId}`);
-    if (!picker) return;
+    if (!picker) {
+        console.warn(`Icon picker not found: ${pickerId}`);
+        return;
+    }
 
     const toggle = picker.querySelector('.icon-picker-toggle');
     const dropdown = picker.querySelector('.icon-picker-dropdown');
     const grid = picker.querySelector('.icon-picker-grid');
-    const selectedPreview = picker.querySelector('.selected-icon-preview');
-    const selectedName = picker.querySelector('.selected-icon-name');
     const searchInput = picker.querySelector('.icon-search-input');
+
+    if (!toggle || !dropdown || !grid) {
+        console.warn(`Required elements not found for ${pickerId}`);
+        return;
+    }
 
     // Populate icon grid
     this.populateIconGrid(grid, icons, controlType);
@@ -821,11 +841,16 @@ initializeControlIconPicker(controlType, icons) {
 }
 
 populateIconGrid(grid, icons, controlType) {
+    if (!grid) {
+        console.warn(`Grid not found for ${controlType}`);
+        return;
+    }
+    
     grid.innerHTML = '';
     
     // Add default option
     const defaultItem = document.createElement('div');
-    defaultItem.className = 'icon-picker-item default-option';
+    defaultItem.className = 'icon-picker-item default-option selected'; // Add selected by default
     defaultItem.dataset.iconClass = 'default';
     defaultItem.dataset.iconName = 'Default';
     defaultItem.innerHTML = `<span class="default-icon">${this.getDefaultSymbol(controlType)}</span>`;
@@ -1007,38 +1032,19 @@ getDefaultSymbol(controlType) {
     return symbols[controlType] || '?';
 }
 
-// Load window control settings
 loadWindowControlSettings() {
     const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
     
-    // Load control style
-    const controlStyle = settings.windowControlStyle || 'circle';
-    this.dropdowns.windowControlStyle.setValue(controlStyle);
-    
-    // Load individual icons
-    ['minimize', 'maximize', 'close'].forEach(controlType => {
-        const iconClass = settings[`${controlType}Icon`] || 'default';
-        const iconName = settings[`${controlType}IconName`] || 'Default';
-        
-        // Find the picker and update it
-        const picker = this.windowEl.querySelector(`#${controlType}-icon-picker`);
-        if (picker) {
-            const selectedPreview = picker.querySelector('.selected-icon-preview');
-            const selectedName = picker.querySelector('.selected-icon-name');
-            
-            if (iconClass === 'default') {
-                selectedPreview.innerHTML = `<span class="default-icon">${this.getDefaultSymbol(controlType)}</span>`;
-            } else {
-                selectedPreview.innerHTML = `<i class="fas ${iconClass}"></i>`;
-            }
-            selectedName.textContent = iconName;
-
-            // Apply to windows
-            this.applyControlIcon(controlType, iconClass);
-        }
-    });
-
-    this.updatePreview();
+    // Load individual icons using IconPicker setValue()
+    if (settings.minimizeIcon && this.minimizePicker) {
+        this.minimizePicker.setValue(settings.minimizeIcon);
+    }
+    if (settings.maximizeIcon && this.maximizePicker) {
+        this.maximizePicker.setValue(settings.maximizeIcon);
+    }
+    if (settings.closeIcon && this.closePicker) {
+        this.closePicker.setValue(settings.closeIcon);
+    }
 }
 
 // Save window control settings (update existing saveSettings method)
