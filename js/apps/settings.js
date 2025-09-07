@@ -3,6 +3,7 @@ class Settings {
     constructor(windowEl) {
         this.windowEl = windowEl;
         this.dropdowns = {};
+        this.isInitializing = true; // Add initialization flag
         this.init();
     }
 
@@ -12,7 +13,8 @@ class Settings {
         this.initializeDropdowns();
         this.attachColorEvents();
         this.loadSettings();
-        this.initializeWindowControlSettings(); 
+        this.initializeWindowControlSettings();
+        this.isInitializing = false; 
     }
 
     initializeColorTheme() {
@@ -408,6 +410,10 @@ class Settings {
     }
 
     saveSettings() {
+        if (this.isInitializing) {
+            return;
+        }
+        
         const settings = {
             background: this.dropdowns.background.getValue() || 'gradient1',
             fontColor: this.windowEl.querySelector('#font-color').value,
