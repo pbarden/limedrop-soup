@@ -1,4 +1,4 @@
-// Window Management System
+// Fixed Window Management System
 class WindowManager {
     constructor() {
         this.windows = new Map();
@@ -44,13 +44,16 @@ class WindowManager {
             titleEl.textContent = title;
         }
         
+        // FIXED: Properly load template content
         const contentEl = windowEl.querySelector('.window-content');
         if (contentTemplate && contentEl) {
             const content = document.getElementById(contentTemplate);
             if (content) {
+                // Clear any existing content and clone the template
+                contentEl.innerHTML = '';
                 contentEl.appendChild(content.content.cloneNode(true));
             } else {
-                console.warn(`Content template '${contentTemplate}' not found`);
+                console.warn(`Content template '${contentTemplate}' not found for app '${appId}'`);
             }
         }
         
@@ -88,7 +91,7 @@ class WindowManager {
         return windowId;
     }
 
-    // In window-manager.js, improve attachWindowEvents method:
+    // Rest of the WindowManager methods remain the same...
     attachWindowEvents(windowEl, windowId) {
         const header = windowEl.querySelector('.window-header');
         const minimizeBtn = windowEl.querySelector('.window-control.minimize');
@@ -221,75 +224,6 @@ class WindowManager {
         });
     }
 
-    attachWindowEvents(windowEl, windowId) {
-        const header = windowEl.querySelector('.window-header');
-        const minimizeBtn = windowEl.querySelector('.window-control.minimize');
-        const maximizeBtn = windowEl.querySelector('.window-control.maximize');
-        const closeBtn = windowEl.querySelector('.window-control.close');
-        const resizeHandle = windowEl.querySelector('.window-resize-handle');
-        
-        // Window dragging
-        let isDragging = false;
-        let dragOffset = { x: 0, y: 0 };
-        
-        header.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('window-control')) return;
-            isDragging = true;
-            dragOffset = {
-                x: e.clientX - windowEl.offsetLeft,
-                y: e.clientY - windowEl.offsetTop
-            };
-            this.focusWindow(windowId);
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging && !this.windows.get(windowId).maximized) {
-                windowEl.style.left = `${e.clientX - dragOffset.x}px`;
-                windowEl.style.top = `${e.clientY - dragOffset.y}px`;
-            }
-        });
-        
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-        
-        // Window resizing
-        let isResizing = false;
-        let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
-        
-        resizeHandle.addEventListener('mousedown', (e) => {
-            isResizing = true;
-            resizeStart = {
-                x: e.clientX,
-                y: e.clientY,
-                width: windowEl.offsetWidth,
-                height: windowEl.offsetHeight
-            };
-            e.preventDefault();
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (isResizing && !this.windows.get(windowId).maximized) {
-                const newWidth = resizeStart.width + (e.clientX - resizeStart.x);
-                const newHeight = resizeStart.height + (e.clientY - resizeStart.y);
-                windowEl.style.width = `${Math.max(400, newWidth)}px`;
-                windowEl.style.height = `${Math.max(300, newHeight)}px`;
-            }
-        });
-        
-        document.addEventListener('mouseup', () => {
-            isResizing = false;
-        });
-        
-        // Window controls
-        minimizeBtn.addEventListener('click', () => this.minimizeWindow(windowId));
-        maximizeBtn.addEventListener('click', () => this.toggleMaximize(windowId));
-        closeBtn.addEventListener('click', () => this.closeWindow(windowId));
-        
-        // Focus on click
-        windowEl.addEventListener('mousedown', () => this.focusWindow(windowId));
-    }
-
     focusWindow(windowId) {
         const window = this.windows.get(windowId);
         if (!window) return;
@@ -345,26 +279,25 @@ class WindowManager {
         // Update dock
         const dockItem = document.querySelector(`.dock-item[data-app="${window.appId}"]`);
         if (dockItem) {
-        // Check if any other windows of this app are open
-        const hasOtherWindows = Array.from(this.windows.values()).some(w => w.appId === window.appId);
-        if (!hasOtherWindows) {
-            dockItem.classList.remove('active');
-            
-            // Remove from running dock if not a favorite
-            const dockRunning = document.getElementById('dock-running');
-            if (dockRunning && window.appId.startsWith('user-app-')) {
-                const app = appRegistry.userApps.get(window.appId);
-                if (app && !app.favorite) {
-                    const runningItem = dockRunning.querySelector(`[data-app="${window.appId}"]`);
-                    if (runningItem) runningItem.remove();
+            // Check if any other windows of this app are open
+            const hasOtherWindows = Array.from(this.windows.values()).some(w => w.appId === window.appId);
+            if (!hasOtherWindows) {
+                dockItem.classList.remove('active');
+                
+                // Remove from running dock if not a favorite
+                const dockRunning = document.getElementById('dock-running');
+                if (dockRunning && window.appId.startsWith('user-app-')) {
+                    const app = appRegistry.userApps.get(window.appId);
+                    if (app && !app.favorite) {
+                        const runningItem = dockRunning.querySelector(`[data-app="${window.appId}"]`);
+                        if (runningItem) runningItem.remove();
+                    }
                 }
             }
         }
-    }
 
-    // Update dock running section
-    this.updateDockRunning();
-
+        // Update dock running section
+        this.updateDockRunning();
     }
 
     updateDockRunning() {
@@ -428,5 +361,3 @@ class WindowManager {
         return null;
     }
 }
-
-// File System Manager

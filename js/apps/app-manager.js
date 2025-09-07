@@ -1,35 +1,77 @@
-// Simple working App Manager
+// Fixed App Manager - Uses template system consistently
 class AppManager {
     constructor(windowEl) {
         this.windowEl = windowEl;
         console.log('AppManager constructor called');
-        this.render();
+        this.init();
     }
 
-    render() {
-        console.log('AppManager render called');
+    init() {
+        // Find the content that was loaded from the template
         const content = this.windowEl.querySelector('.window-content');
         if (!content) {
             console.error('No window content found');
             return;
         }
 
-        content.innerHTML = '';
+        // Check if content is already populated from template
+        let appManagerEl = content.querySelector('.app-manager');
+        if (!appManagerEl) {
+            // Fallback: create content if template didn't load
+            console.warn('App Manager template not found, creating content manually');
+            this.createContent(content);
+            appManagerEl = content.querySelector('.app-manager');
+        }
+
+        if (appManagerEl) {
+            this.bindEvents(appManagerEl);
+            this.renderAppsList(appManagerEl);
+        }
+    }
+
+    createContent(container) {
+        // Fallback content creation if template fails
+        container.innerHTML = `
+            <div class="app-manager">
+                <div class="app-manager-header">
+                    <h2>App Manager</h2>
+                    <div class="app-manager-controls">
+                        <button class="btn-secondary new-app" onclick="appRegistry.launchApp('app-builder')">
+                            <i class="fas fa-plus"></i> New App
+                        </button>
+                    </div>
+                </div>
+                <div class="app-manager-body">
+                    <div class="apps-list" id="apps-list">
+                        <!-- Apps will be populated here -->
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    bindEvents(appManagerEl) {
+        // Find and bind any interactive elements
+        const newAppBtn = appManagerEl.querySelector('.new-app');
+        if (newAppBtn) {
+            newAppBtn.addEventListener('click', () => {
+                appRegistry.launchApp('app-builder');
+            });
+        }
+    }
+
+    renderAppsList(appManagerEl) {
+        const appsList = appManagerEl.querySelector('#apps-list') || 
+                        appManagerEl.querySelector('.apps-list');
         
-        // Create main container
-        const container = document.createElement('div');
-        container.style.cssText = 'padding: 20px; color: white; height: 100%; overflow-y: auto;';
-        
-        // Add title
-        const title = document.createElement('h2');
-        title.textContent = 'App Manager';
-        title.style.cssText = 'margin: 0 0 20px 0; color: white;';
-        container.appendChild(title);
-        
+        if (!appsList) {
+            console.error('Apps list container not found');
+            return;
+        }
+
         // Check for registry using the global variable directly
         if (typeof appRegistry === 'undefined') {
-            container.innerHTML = '<h2>App Manager</h2><p style="color: red;">Error: App Registry not available</p>';
-            content.appendChild(container);
+            appsList.innerHTML = '<p style="color: red;">Error: App Registry not available</p>';
             return;
         }
         
@@ -38,8 +80,7 @@ class AppManager {
         
         if (userApps.length === 0) {
             // No apps - show empty state
-            container.innerHTML = `
-                <h2 style="margin: 0 0 20px 0; color: white;">App Manager</h2>
+            appsList.innerHTML = `
                 <div style="text-align: center; padding: 40px;">
                     <div style="font-size: 48px; margin-bottom: 16px; color: rgba(255,255,255,0.7);">
                         <i class="fas fa-cube"></i>
@@ -47,31 +88,28 @@ class AppManager {
                     <h3 style="color: white; margin-bottom: 8px;">No Apps Found</h3>
                     <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">Create your first app with the App Builder</p>
                     <button onclick="appRegistry.launchApp('app-builder')" 
-                            style="padding: 10px 20px; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            style="padding: 10px 20px; color: white; border: none; border-radius: 6px; cursor: pointer; background: var(--primary-button-color);">
                         <i class="fas fa-hammer"></i> Open App Builder
                     </button>
                 </div>
             `;
         } else {
             // Show list of apps
-            const appsList = document.createElement('div');
-            appsList.style.cssText = 'display: flex; flex-direction: column; gap: 12px;';
+            appsList.innerHTML = '';
             
             userApps.forEach(([appId, app]) => {
                 console.log('Creating row for app:', app.name);
                 const appRow = this.createAppRow(appId, app);
                 appsList.appendChild(appRow);
             });
-            
-            container.appendChild(appsList);
         }
         
-        content.appendChild(container);
-        console.log('AppManager render complete');
+        console.log('AppManager renderAppsList complete');
     }
     
     createAppRow(appId, app) {
         const row = document.createElement('div');
+        row.className = 'app-row';
         row.style.cssText = `
             display: flex;
             align-items: center;
@@ -80,6 +118,7 @@ class AppManager {
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             padding: 16px;
+            margin-bottom: 12px;
             transition: background 0.3s ease;
         `;
         
@@ -143,7 +182,7 @@ class AppManager {
         starBtn.onclick = () => {
             console.log('Toggling favorite for:', appId);
             appRegistry.toggleFavorite(appId);
-            this.render();
+            this.renderAppsList(this.windowEl.querySelector('.app-manager'));
         };
         actionsDiv.appendChild(starBtn);
         
@@ -203,7 +242,7 @@ class AppManager {
         };
         
         appRegistry.registerUserApp(newApp);
-        this.render();
+        this.renderAppsList(this.windowEl.querySelector('.app-manager'));
         
         if (typeof NotificationManager !== 'undefined') {
             NotificationManager.success(`App duplicated as "${newApp.name}"`);
@@ -243,7 +282,7 @@ class AppManager {
         
         if (confirmed) {
             appRegistry.deleteUserApp(appId);
-            this.render();
+            this.renderAppsList(this.windowEl.querySelector('.app-manager'));
             
             if (typeof NotificationManager !== 'undefined') {
                 NotificationManager.success(`"${app.name}" deleted successfully`);
