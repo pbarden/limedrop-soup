@@ -2452,3 +2452,304 @@ textarea:focus:not(:focus-visible) {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 4px;
 }
+
+/* Add these CSS rules to fix dock icon consistency */
+
+/* Ensure ALL dock icons have consistent styling */
+.dock-item {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    /* Ensure custom app icons are treated the same */
+    flex-shrink: 0;
+}
+
+/* Fix dock icon content to be consistent */
+.dock-item .dock-icon,
+.dock-item > i {
+    font-size: 24px;
+    color: white;
+    display: block;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    line-height: 24px;
+}
+
+/* Ensure custom app dock items follow same pattern */
+.dock-item[data-app^="user-app-"] .dock-icon,
+.dock-item[data-app^="user-app-"] > i {
+    font-size: 24px;
+    color: white;
+    display: block;
+}
+
+/* Fix dock label styling for ALL items */
+.dock-item .dock-label,
+.dock-item .dock-tooltip {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1001;
+}
+
+.dock-item:hover .dock-label,
+.dock-item:hover .dock-tooltip {
+    opacity: 1;
+}
+
+/* Component item icon fixes - ensure icons show properly */
+.component-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin-bottom: 5px;
+    cursor: move;
+    transition: all 0.3s ease;
+    font-size: 13px;
+}
+
+.component-item .component-icon {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.component-item .component-icon i {
+    display: block;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.component-item span:not(.component-icon) {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* File type icon consistency */
+.file-type-item .file-type-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.file-type-item .file-type-icon i {
+    display: block;
+    line-height: 1;
+}
+
+/* App Manager specific styles */
+.app-manager-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.app-manager-container h3 {
+    margin: 0 0 8px 0;
+    color: white;
+    font-size: 18px;
+}
+
+.app-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.app-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.app-row-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.app-row-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 16px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.app-row-icon i {
+    display: block;
+    line-height: 1;
+}
+
+.app-row-details {
+    flex: 1;
+}
+
+.app-row-name {
+    font-size: 14px;
+    color: white;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.app-row-meta {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.app-row-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.app-favorite-star {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 4px;
+}
+
+.app-favorite-star.active {
+    color: #FFD700;
+}
+
+.app-favorite-star:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.app-favorite-star.active:hover {
+    color: #FFD700;
+}
+
+/* Custom file type schema builder */
+.schema-builder {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+.schema-field {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.schema-field-name {
+    flex: 1;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+    font-size: 13px;
+}
+
+.schema-field-type {
+    min-width: 120px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+    font-size: 13px;
+}
+
+.schema-field-remove {
+    background: rgba(255, 67, 54, 0.8);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.schema-field-remove:hover {
+    background: rgba(255, 67, 54, 1);
+}
+
+.schema-add-field {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.schema-add-field:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.schema-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    max-height: 200px;
+    overflow-y: auto;
+}

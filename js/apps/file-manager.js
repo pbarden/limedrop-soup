@@ -143,13 +143,13 @@ class FileManager {
     async createNewFile() {
         const types = Array.from(fileSystem.fileTypes.entries()).map(([id, type]) => ({
             value: id,
-            label: type.name
+            label: type.name,
+            schema: type.schema
         }));
         
         const modal = modalManager.createModal('Create New File');
         const body = modal.querySelector('.modal-body');
         
-        // Create custom form with icon picker
         body.innerHTML = `
             <div class="modal-content">
                 <form class="modal-form">
@@ -159,13 +159,15 @@ class FileManager {
                     </div>
                     <div class="modal-form-group">
                         <label>File Type</label>
-                        <select name="type">
-                            ${types.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
+                        <select name="type" id="file-type-select">
+                            ${types.map(t => `<option value="${t.value}" data-schema='${JSON.stringify(t.schema || {})}'>${t.label}</option>`).join('')}
                         </select>
                     </div>
                     <div class="modal-form-group">
-                        <label>Initial Content (JSON)</label>
-                        <textarea name="content" rows="5" placeholder='{\n  "key": "value"\n}'>{\n  \n}</textarea>
+                        <label>Content</label>
+                        <div id="dynamic-content-form">
+                            <!-- Dynamic form will be inserted here based on schema -->
+                        </div>
                     </div>
                 </form>
             </div>
@@ -174,6 +176,73 @@ class FileManager {
                 <button class="btn-primary modal-submit">Create</button>
             </div>
         `;
+        
+        const typeSelect = body.querySelector('#file-type-select');
+        const dynamicForm = body.querySelector('#dynamic-content-form');
+        
+        const renderDynamicForm = (schema) => {
+            dynamicForm.innerHTML = '';
+            
+            if (!schema || Object.keys(schema).length === 0) {
+                // Default JSON textarea for types without schema
+                dynamicForm.innerHTML = `
+                    <textarea name="content" rows="5" placeholder='{\n  "key": "value"\n}'>{\n  \n}</textarea>
+                `;
+                return;
+            }
+            
+            // Create form fields based on schema
+            Object.entries(schema).forEach(([fieldName, fieldType]) => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'modal-form-group';
+                
+                let inputHtml = '';
+                switch (fieldType) {
+                    case 'text':
+                    case 'email':
+                    case 'url':
+                        inputHtml = `<input type="${fieldType}" name="field_${fieldName}" placeholder="Enter ${fieldName}">`;
+                        break;
+                    case 'richtext':
+                        inputHtml = `<textarea name="field_${fieldName}" rows="4" placeholder="Enter ${fieldName}"></textarea>`;
+                        break;
+                    case 'number':
+                        inputHtml = `<input type="number" name="field_${fieldName}" placeholder="Enter ${fieldName}">`;
+                        break;
+                    case 'date':
+                        inputHtml = `<input type="date" name="field_${fieldName}">`;
+                        break;
+                    case 'boolean':
+                        inputHtml = `<input type="checkbox" name="field_${fieldName}">`;
+                        break;
+                    case 'image':
+                    case 'file':
+                        inputHtml = `<input type="file" name="field_${fieldName}" ${fieldType === 'image' ? 'accept="image/*"' : ''}>`;
+                        break;
+                    default:
+                        inputHtml = `<input type="text" name="field_${fieldName}" placeholder="Enter ${fieldName}">`;
+                }
+                
+                fieldDiv.innerHTML = `
+                    <label>${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}</label>
+                    ${inputHtml}
+                `;
+                
+                dynamicForm.appendChild(fieldDiv);
+            });
+        };
+        
+        // Initial render
+        const initialOption = typeSelect.options[typeSelect.selectedIndex];
+        const initialSchema = JSON.parse(initialOption.dataset.schema || '{}');
+        renderDynamicForm(initialSchema);
+        
+        // Update form when type changes
+        typeSelect.addEventListener('change', () => {
+            const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+            const schema = JSON.parse(selectedOption.dataset.schema || '{}');
+            renderDynamicForm(schema);
+        });
         
         modalManager.showModal(modal);
         
@@ -185,8 +254,24 @@ class FileManager {
             submitBtn.addEventListener('click', () => {
                 const formData = new FormData(form);
                 const data = {};
+                const content = {};
+                
                 for (let [key, value] of formData.entries()) {
-                    data[key] = value;
+                    if (key.startsWith('field_')) {
+                        const fieldName = key.replace('field_', '');
+                        // Handle file uploads
+                        if (value instanceof File && value.size > 0) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                content[fieldName] = e.target.result;
+                            };
+                            reader.readAsDataURL(value);
+                        } else {
+                            content[fieldName] = value;
+                        }
+                    } else {
+                        data[key] = value;
+                    }
                 }
                 
                 if (!data.name || data.name.trim() === '') {
@@ -194,9 +279,12 @@ class FileManager {
                     return;
                 }
                 
+                // Use schema-based content or fallback to JSON
+                const finalContent = Object.keys(content).length > 0 ? content : 
+                                    (data.content ? JSON.parse(data.content) : {});
+                
                 try {
-                    const content = JSON.parse(data.content);
-                    const fileId = fileSystem.createFile(data.name, data.type, content);
+                    const fileId = fileSystem.createFile(data.name, data.type, finalContent);
                     this.selectedType = data.type;
                     this.renderFileTypes();
                     this.renderFiles();
@@ -204,7 +292,7 @@ class FileManager {
                     modalManager.closeModal(modal);
                     resolve(data);
                 } catch (error) {
-                    NotificationManager.error('Invalid JSON data. Please check your input.');
+                    NotificationManager.error('Failed to create file: ' + error.message);
                 }
             });
             
@@ -219,7 +307,7 @@ class FileManager {
         const modal = modalManager.createModal('Create New File Type');
         const body = modal.querySelector('.modal-body');
         
-        // Create custom form with icon picker
+        // Enhanced form with schema builder
         body.innerHTML = `
             <div class="modal-content">
                 <form class="modal-form">
@@ -233,7 +321,21 @@ class FileManager {
                     </div>
                     <div class="modal-form-group">
                         <label>Description</label>
-                        <textarea name="description" rows="3" placeholder="Describe this file type..."></textarea>
+                        <textarea name="description" rows="2" placeholder="Describe this file type..."></textarea>
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Fields Schema</label>
+                        <div class="schema-builder">
+                            <div id="schema-fields"></div>
+                            <button type="button" class="schema-add-field">
+                                <i class="fas fa-plus"></i>
+                                Add Field
+                            </button>
+                            <div class="schema-preview">
+                                <strong>Preview:</strong>
+                                <pre id="schema-preview-content">{}</pre>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -246,6 +348,106 @@ class FileManager {
         // Initialize icon picker
         const iconPickerContainer = body.querySelector('#type-icon-picker');
         const iconPicker = new IconPicker(iconPickerContainer, 'fas fa-file');
+        
+        // Schema builder functionality
+        const schemaFields = body.querySelector('#schema-fields');
+        const addFieldBtn = body.querySelector('.schema-add-field');
+        const previewContent = body.querySelector('#schema-preview-content');
+        
+        let fields = [];
+        
+        const availableTypes = [
+            { value: 'text', label: 'Text' },
+            { value: 'richtext', label: 'Rich Text' },
+            { value: 'number', label: 'Number' },
+            { value: 'boolean', label: 'Boolean' },
+            { value: 'date', label: 'Date' },
+            { value: 'image', label: 'Image' },
+            { value: 'file', label: 'File' },
+            { value: 'url', label: 'URL' },
+            { value: 'email', label: 'Email' },
+            { value: 'array', label: 'Array' },
+            { value: 'object', label: 'Object' }
+        ];
+        
+        const renderFields = () => {
+            schemaFields.innerHTML = '';
+            
+            fields.forEach((field, index) => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'schema-field';
+                fieldDiv.innerHTML = `
+                    <input type="text" 
+                        class="schema-field-name" 
+                        placeholder="Field name" 
+                        value="${field.name}"
+                        data-index="${index}">
+                    <select class="schema-field-type" data-index="${index}">
+                        ${availableTypes.map(type => 
+                            `<option value="${type.value}" ${field.type === type.value ? 'selected' : ''}>${type.label}</option>`
+                        ).join('')}
+                    </select>
+                    <button type="button" class="schema-field-remove" data-index="${index}">×</button>
+                `;
+                schemaFields.appendChild(fieldDiv);
+            });
+            
+            updatePreview();
+        };
+        
+        const updatePreview = () => {
+            const schema = {};
+            fields.forEach(field => {
+                if (field.name.trim()) {
+                    schema[field.name] = field.type;
+                }
+            });
+            previewContent.textContent = JSON.stringify(schema, null, 2);
+        };
+        
+        const addField = () => {
+            fields.push({ name: '', type: 'text' });
+            renderFields();
+        };
+        
+        const removeField = (index) => {
+            fields.splice(index, 1);
+            renderFields();
+        };
+        
+        const updateField = (index, property, value) => {
+            if (fields[index]) {
+                fields[index][property] = value;
+                updatePreview();
+            }
+        };
+        
+        // Event listeners
+        addFieldBtn.addEventListener('click', addField);
+        
+        schemaFields.addEventListener('click', (e) => {
+            if (e.target.classList.contains('schema-field-remove')) {
+                const index = parseInt(e.target.dataset.index);
+                removeField(index);
+            }
+        });
+        
+        schemaFields.addEventListener('input', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            if (e.target.classList.contains('schema-field-name')) {
+                updateField(index, 'name', e.target.value);
+            }
+        });
+        
+        schemaFields.addEventListener('change', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            if (e.target.classList.contains('schema-field-type')) {
+                updateField(index, 'type', e.target.value);
+            }
+        });
+        
+        // Add some default fields to start
+        addField();
         
         modalManager.showModal(modal);
         
@@ -266,7 +468,21 @@ class FileManager {
                     return;
                 }
                 
+                if (fields.length === 0 || !fields.some(f => f.name.trim())) {
+                    NotificationManager.error('At least one field is required');
+                    return;
+                }
+                
+                // Build schema from fields
+                const schema = {};
+                fields.forEach(field => {
+                    if (field.name.trim()) {
+                        schema[field.name.trim()] = field.type;
+                    }
+                });
+                
                 data.icon = iconPicker.getValue();
+                data.schema = schema;
                 
                 modalManager.closeModal(modal);
                 
@@ -275,8 +491,8 @@ class FileManager {
                 fileSystem.registerType(typeId, {
                     name: data.name,
                     icon: data.icon,
-                    description: data.description,
-                    schema: {}
+                    description: data.description || '',
+                    schema: schema
                 });
                 
                 this.renderFileTypes();

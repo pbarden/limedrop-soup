@@ -24,6 +24,7 @@ class AppRegistry {
             width: 900,
             height: 600
         });
+        
         this.registerSystemApp('file-manager', {
             name: 'File Manager',
             icon: 'fas fa-folder',
@@ -31,6 +32,7 @@ class AppRegistry {
             width: 800,
             height: 500
         });
+        
         this.registerSystemApp('settings', {
             name: 'Settings',
             icon: 'fas fa-cog',
@@ -39,13 +41,13 @@ class AppRegistry {
             height: 500
         });
 
-        // Register App Manager for managing installed user apps
+        // Add App Manager as a system app
         this.registerSystemApp('app-manager', {
             name: 'App Manager',
             icon: 'fas fa-th-large',
-            template: null,
-            width: 600,
-            height: 500
+            template: 'app-manager-template',
+            width: 700,
+            height: 600
         });
     }
 
@@ -55,15 +57,47 @@ class AppRegistry {
 
     registerUserApp(definition) {
         const appId = `user-app-${Date.now()}`;
-        // Ensure favorite flag exists on definition
+        
+        // Ensure definition has required properties
         definition.favorite = definition.favorite || false;
+        definition.icon = definition.icon || 'fas fa-cube';
+        definition.created = definition.created || new Date().toISOString();
+        
         this.userApps.set(appId, definition);
         this.saveToStorage();
+        
         // Only add to dock if marked as favourite
         if (definition.favorite) {
             this.addToDock(appId, definition);
         }
+        
         return appId;
+    }
+
+    toggleFavorite(appId) {
+        const app = this.userApps.get(appId);
+        if (!app) return;
+        
+        app.favorite = !app.favorite;
+        
+        const dockApps = document.getElementById('dock-apps');
+        if (!dockApps) return;
+        
+        const dockItem = dockApps.querySelector(`[data-app="${appId}"]`);
+        
+        if (app.favorite) {
+            // Add to dock if not already there
+            if (!dockItem) {
+                this.addToDock(appId, app);
+            }
+        } else {
+            // Remove from dock
+            if (dockItem) {
+                dockItem.remove();
+            }
+        }
+        
+        this.saveToStorage();
     }
 
     /**
@@ -147,17 +181,35 @@ class AppRegistry {
     addToDock(appId, definition) {
         const dockApps = document.getElementById('dock-apps');
         if (!dockApps) return;
+        
+        // Check if already exists
+        const existing = dockApps.querySelector(`[data-app="${appId}"]`);
+        if (existing) return;
+        
         const separator = dockApps.querySelector('.dock-separator');
         const dockItem = document.createElement('div');
         dockItem.className = 'dock-item';
         dockItem.dataset.app = appId;
-        // Determine icon class; fallback to a generic cube
+        
+        // Get the icon class - ensure it has a default
         const iconClass = definition.icon || 'fas fa-cube';
-        // Use only the icon inside the dock item; labels are hidden for a cleaner dock
-        dockItem.innerHTML = `<i class="dock-icon ${iconClass}"></i>`;
-        // Tooltip shows the app name on hover
-        dockItem.title = definition.name || appId;
-        dockApps.insertBefore(dockItem, separator);
+        
+        // Create consistent dock item structure
+        dockItem.innerHTML = `
+            <div class="dock-icon">
+                <i class="${iconClass}"></i>
+            </div>
+            <div class="dock-tooltip">${definition.name}</div>
+        `;
+        
+        // Insert before separator (or at end if no separator)
+        if (separator) {
+            dockApps.insertBefore(dockItem, separator);
+        } else {
+            dockApps.appendChild(dockItem);
+        }
+        
+        // Add click handler
         dockItem.addEventListener('click', () => {
             this.launchApp(appId);
         });

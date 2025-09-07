@@ -197,26 +197,182 @@ class AppBuilder {
         if (this.windowEl.querySelector('.component-item[data-type="table"]')) {
             return;
         }
-        // Find an existing input component item to clone classes
-        const reference = this.windowEl.querySelector('.component-item[data-type="text-input"]');
-        if (!reference) return;
-        const parent = reference.parentElement;
-        if (!parent) return;
+        
+        // Find the input components container
+        const inputCategory = this.windowEl.querySelector('.component-category');
+        if (!inputCategory) return;
+        
         const item = document.createElement('div');
-        item.className = reference.className;
+        item.className = 'component-item';
         item.setAttribute('draggable', 'true');
         item.dataset.type = 'table';
-        // Use a table icon if font-awesome is available
-        item.innerHTML = `<i class="fas fa-table" style="margin-right:8px;"></i><span>Table</span>`;
-        parent.appendChild(item);
-        // Attach dragstart and dragend events to the new item
+        
+        // Proper icon + text structure
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="fas fa-table"></i>
+            </span>
+            <span>Table</span>
+        `;
+        
+        inputCategory.appendChild(item);
+        this.attachComponentEvents(item);
+    }
+
+    /**
+     * Insert a new component item for the data source input with proper structure.
+     */
+    injectDataSourceComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="data-source"]')) {
+            return;
+        }
+        
+        const inputCategory = this.windowEl.querySelector('.component-category');
+        if (!inputCategory) return;
+        
+        const item = document.createElement('div');
+        item.className = 'component-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'data-source';
+        
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="fas fa-database"></i>
+            </span>
+            <span>Data Source</span>
+        `;
+        
+        inputCategory.appendChild(item);
+        this.attachComponentEvents(item);
+    }
+
+    /**
+     * Insert custom buttons component into processing category.
+     */
+    injectCustomButtonsComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="custom-buttons"]')) {
+            return;
+        }
+        
+        // Find processing category
+        const categories = this.windowEl.querySelectorAll('.component-category');
+        let processingCategory = null;
+        categories.forEach(cat => {
+            const header = cat.querySelector('h4');
+            if (header && header.textContent.trim() === 'Processing') {
+                processingCategory = cat;
+            }
+        });
+        
+        if (!processingCategory) return;
+        
+        const item = document.createElement('div');
+        item.className = 'component-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'custom-buttons';
+        
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="fas fa-th-list"></i>
+            </span>
+            <span>Custom Buttons</span>
+        `;
+        
+        processingCategory.appendChild(item);
+        this.attachComponentEvents(item);
+    }
+
+    /**
+     * Insert summary output component into output category.
+     */
+    injectSummaryOutputComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="summary-output"]')) {
+            return;
+        }
+        
+        // Find output category
+        const categories = this.windowEl.querySelectorAll('.component-category');
+        let outputCategory = null;
+        categories.forEach(cat => {
+            const header = cat.querySelector('h4');
+            if (header && header.textContent.trim() === 'Output Components') {
+                outputCategory = cat;
+            }
+        });
+        
+        if (!outputCategory) return;
+        
+        const item = document.createElement('div');
+        item.className = 'component-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'summary-output';
+        
+        item.innerHTML = `
+            <span class="component-icon">
+                <i class="fas fa-info-circle"></i>
+            </span>
+            <span>Summary Output</span>
+        `;
+        
+        outputCategory.appendChild(item);
+        this.attachComponentEvents(item);
+    }
+
+    /**
+     * Helper method to attach drag events to component items
+     */
+    attachComponentEvents(item) {
         item.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'copy';
-            e.dataTransfer.setData('component-type', 'table');
+            e.dataTransfer.setData('component-type', item.dataset.type);
             item.classList.add('dragging');
         });
+        
         item.addEventListener('dragend', () => {
             item.classList.remove('dragging');
+        });
+    }
+
+    /**
+     * Normalize all component items to ensure consistent structure
+     */
+    normalizeSidebarItems() {
+        const items = this.windowEl.querySelectorAll('.component-item');
+        items.forEach(item => {
+            const type = item.dataset.type;
+            if (!type) return;
+            
+            // Check if already has proper structure
+            const hasIcon = item.querySelector('.component-icon');
+            if (hasIcon) return;
+            
+            // Define icon mappings
+            const iconMap = {
+                'text-input': 'fas fa-keyboard',
+                'file-upload': 'fas fa-upload',
+                'canvas': 'fas fa-paint-brush',
+                'rich-text': 'fas fa-file-alt',
+                'table': 'fas fa-table',
+                'data-source': 'fas fa-database',
+                'ai-prompt': 'fas fa-robot',
+                'data-transform': 'fas fa-exchange-alt',
+                'custom-buttons': 'fas fa-th-list',
+                'display': 'fas fa-tv',
+                'summary-output': 'fas fa-info-circle',
+                'chart': 'fas fa-chart-bar',
+                'export': 'fas fa-download'
+            };
+            
+            const iconClass = iconMap[type] || 'fas fa-cube';
+            const currentText = item.textContent.trim();
+            
+            // Rebuild with proper structure
+            item.innerHTML = `
+                <span class="component-icon">
+                    <i class="${iconClass}"></i>
+                </span>
+                <span>${currentText}</span>
+            `;
         });
     }
 
