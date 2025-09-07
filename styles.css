@@ -1,8 +1,18 @@
 /* CSS Custom Properties for Theming */
 :root {
     --font-color: #ffffff;
-    --button-bg-color: #667eea;
-    --button-text-color: #ffffff;
+    --primary-button-style: solid;
+    --primary-button-color: #667eea;
+    --primary-gradient-start: #667eea;
+    --primary-gradient-end: #764ba2;
+    --primary-button-text: #ffffff;
+    --secondary-button-bg: #ffffff;
+    --secondary-button-bg-rgb: 255, 255, 255;
+    --secondary-button-opacity: 0.1;
+    --secondary-button-text: #ffffff;
+    --secondary-button-border: #ffffff;
+    --secondary-button-border-rgb: 255, 255, 255;
+    --secondary-border-opacity: 0.2;
     --window-tint-color: #ffffff;
     --window-tint-rgb: 255, 255, 255;
     --glass-opacity: 0.8;
@@ -808,8 +818,8 @@ textarea:focus::placeholder {
 }
 
 .btn-primary {
-    background: var(--button-bg-color);
-    color: var(--button-text-color);
+    background: var(--primary-button-color);
+    color: var(--primary-button-text);
 }
 
 .btn-primary:hover {
@@ -2827,4 +2837,529 @@ textarea:focus:not(:focus-visible) {
 .window-content {
     position: relative;
     z-index: 2;
+}
+
+/* Enhanced CSS Custom Properties for Button Theming */
+:root {
+    --font-color: #ffffff;
+    --primary-button-style: solid;
+    --primary-button-color: #667eea;
+    --primary-gradient-start: #667eea;
+    --primary-gradient-end: #764ba2;
+    --primary-button-text: #ffffff;
+    --secondary-button-bg: #ffffff;
+    --secondary-button-bg-rgb: 255, 255, 255;
+    --secondary-button-opacity: 0.1;
+    --secondary-button-text: #ffffff;
+    --secondary-button-border: #ffffff;
+    --secondary-button-border-rgb: 255, 255, 255;
+    --secondary-border-opacity: 0.2;
+    --window-tint-color: #ffffff;
+    --window-tint-rgb: 255, 255, 255;
+    --glass-opacity: 0.8;
+    --glass-blur: 10px;
+}
+
+/* Update existing button styles */
+.btn-primary {
+    background: var(--primary-button-color) !important;
+    color: var(--primary-button-text) !important;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.1);
+}
+
+.btn-secondary {
+    background: rgba(var(--secondary-button-bg-rgb), var(--secondary-button-opacity)) !important;
+    color: var(--secondary-button-text) !important;
+    border: 1px solid rgba(var(--secondary-button-border-rgb), var(--secondary-border-opacity)) !important;
+}
+
+.btn-secondary:hover {
+    background: rgba(var(--secondary-button-bg-rgb), calc(var(--secondary-button-opacity) + 0.1)) !important;
+    border-color: rgba(var(--secondary-button-border-rgb), calc(var(--secondary-border-opacity) + 0.1)) !important;
+}
+
+/* Gradient styling when body has gradient class */
+body.gradient-buttons .btn-primary,
+body.gradient-buttons .icon-category-btn.active,
+body.gradient-buttons .icon-picker-item.selected,
+body.gradient-buttons .module-dropdown-toggle,
+body.gradient-buttons .modal-ok,
+body.gradient-buttons .modal-confirm,
+body.gradient-buttons .modal-submit {
+    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end)) !important;
+}
+
+body.gradient-buttons .setting-item input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    border: none;
+}
+
+/* Apply button theming to elements that use primary button styling */
+.icon-category-btn.active,
+.icon-picker-item.selected,
+.module-dropdown-toggle {
+    background: var(--primary-button-color) !important;
+    color: var(--primary-button-text) !important;
+}
+
+/* Enhanced color picker styling for the new controls */
+.gradient-picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.gradient-picker-wrapper .color-picker-wrapper {
+    justify-content: flex-start;
+    margin: 0;
+}
+
+.gradient-label {
+    font-size: 11px;
+    color: var(--font-color);
+    min-width: 40px;
+    margin: 0 !important;
+}
+
+.color-picker-wrapper input[type="range"] {
+    width: 80px;
+    margin-left: 8px;
+}
+
+.color-picker-wrapper input[type="range"]::-webkit-slider-track {
+    background: rgba(255, 255, 255, 0.2);
+    height: 4px;
+    border-radius: 2px;
+}
+
+.color-picker-wrapper input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-button-color);
+    cursor: pointer;
+    border: 2px solid white;
+}
+
+.color-picker-wrapper input[type="range"]::-moz-range-track {
+    background: rgba(255, 255, 255, 0.2);
+    height: 4px;
+    border-radius: 2px;
+    border: none;
+}
+
+.color-picker-wrapper input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-button-color);
+    cursor: pointer;
+    border: 2px solid white;
+}
+
+/* Settings layout adjustments for enhanced controls */
+#primary-gradient-controls {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#primary-gradient-controls .gradient-picker-wrapper {
+    width: 100%;
+}
+
+.setting-item select {
+    min-width: 140px;
+}
+
+/* Enhanced secondary button styling for specific components */
+.window-control,
+.dock-item,
+.component-item,
+.file-type-item,
+.workflow-item {
+    background: rgba(var(--secondary-button-bg-rgb), var(--secondary-button-opacity)) !important;
+    color: var(--secondary-button-text) !important;
+    border-color: rgba(var(--secondary-button-border-rgb), var(--secondary-border-opacity)) !important;
+}
+
+.window-control:hover,
+.dock-item:hover,
+.component-item:hover,
+.file-type-item:hover,
+.workflow-item:hover {
+    background: rgba(var(--secondary-button-bg-rgb), calc(var(--secondary-button-opacity) + 0.05)) !important;
+    border-color: rgba(var(--secondary-button-border-rgb), calc(var(--secondary-border-opacity) + 0.1)) !important;
+}
+
+/* Ensure danger button retains its red color but respects text color */
+.btn-danger {
+    background: rgba(255, 67, 54, 0.8) !important;
+    color: var(--primary-button-text) !important;
+}
+
+.btn-danger:hover {
+    background: rgba(255, 67, 54, 1) !important;
+}
+
+/* Apply theming to modal buttons */
+.modal-ok,
+.modal-confirm,
+.modal-submit {
+    background: var(--primary-button-color) !important;
+    color: var(--primary-button-text) !important;
+}
+
+.modal-cancel {
+    background: rgba(var(--secondary-button-bg-rgb), var(--secondary-button-opacity)) !important;
+    color: var(--secondary-button-text) !important;
+    border: 1px solid rgba(var(--secondary-button-border-rgb), var(--secondary-border-opacity)) !important;
+}
+
+/* Checkbox theming updates */
+.setting-item input[type="checkbox"]:checked {
+    background: var(--primary-button-color) !important;
+    border-color: var(--primary-button-color) !important;
+}
+
+.setting-item input[type="checkbox"]:checked::after {
+    color: var(--primary-button-text) !important;
+}
+
+/* Update existing color properties with theme variables */
+body,
+.window-title,
+.window-content,
+.icon-label,
+.dock-tooltip,
+h1, h2, h3, h4, h5, h6,
+p, span, div,
+.app-builder h2,
+.app-builder h3,
+.file-manager h2,
+.file-manager h3,
+.settings h2,
+.settings h3,
+.component-category h4,
+.form-group label,
+.setting-item label,
+.modal-title,
+.modal-message,
+.notification-title,
+.notification-message,
+.app-name-input,
+.runtime-component label,
+.properties-placeholder,
+.preview-placeholder,
+.workflow-placeholder,
+.file-name,
+.app-row-name,
+.app-row-meta {
+    color: var(--font-color) !important;
+}
+
+/* Window tinting */
+.window::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(var(--window-tint-rgb), 0.1);
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.window-header,
+.window-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* Color picker wrapper styling updates */
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-picker-wrapper input[type="color"] {
+    width: 60px;
+    height: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.color-picker-wrapper input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+}
+
+.color-reset {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: var(--font-color);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.color-reset:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Update settings section styling */
+.settings-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.settings-section h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: var(--font-color) !important;
+    font-weight: 600;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item label {
+    font-size: 14px;
+    color: var(--font-color) !important;
+    font-weight: 500;
+    flex: 1;
+}
+
+/* Improved select styling */
+.setting-item select {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: var(--font-color);
+    font-size: 14px;
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.setting-item select:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.setting-item select option {
+    background: rgba(30, 30, 30, 0.95);
+    color: white;
+    padding: 8px;
+}
+
+/* Checkbox styling improvements */
+.setting-item input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.setting-item input[type="checkbox"]:checked {
+    background: var(--primary-button-color);
+    border-color: var(--primary-button-color);
+}
+
+.setting-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    color: var(--primary-button-text);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Gradient Preview Styling */
+.gradient-preview {
+    width: 24px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-right: 10px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Settings Module Dropdown Styling */
+.settings .module-dropdown {
+    position: relative;
+    display: inline-block;
+    min-width: 200px;
+}
+
+.settings .module-dropdown-toggle {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: var(--font-color);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings .module-dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.settings .module-dropdown-toggle i {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.settings .module-dropdown:not(.hide) .module-dropdown-toggle i {
+    transform: rotate(180deg);
+}
+
+.settings .module-dropdown-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 2px;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    transform: translateY(-5px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.settings .module-dropdown-menu:not(.hide) {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.settings .module-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.settings .module-dropdown-menu::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.settings .module-dropdown-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.settings .module-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.settings .module-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s ease;
+    color: var(--font-color);
+}
+
+.settings .module-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.settings .module-option.selected {
+    background: rgba(255, 255, 255, 0.15);
+    border-left: 3px solid var(--primary-button-color);
+}
+
+.settings .module-option-name {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Settings specific dropdown adjustments */
+.setting-item .module-dropdown {
+    flex: 1;
+    max-width: 250px;
+}
+
+.dropdown-selected-text {
+    color: var(--font-color);
+    font-size: 14px;
+}
+
+/* Improve spacing for gradient previews in background dropdown */
+#background-dropdown .module-option {
+    padding: 8px 12px;
+}
+
+#background-dropdown .gradient-preview {
+    margin-right: 8px;
+}
+
+/* Enhanced hover effects */
+.settings .module-option:hover .gradient-preview {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    transform: scale(1.05);
+}
+
+/* Selection indicator for gradient options */
+.settings .module-option.selected .gradient-preview {
+    border-color: var(--primary-button-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-button-color), 0.3);
 }

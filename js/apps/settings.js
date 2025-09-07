@@ -6,36 +6,125 @@ class Settings {
     }
 
     init() {
+        this.initializeColorTheme();
+        this.initializeGradientPreviews();
         this.attachEvents();
         this.loadSettings();
-        this.initializeColorTheme();
+    }
+
+    initializeColorTheme() {
+        // Set up CSS custom properties for theming
+        const root = document.documentElement;
+        
+        // Default values
+        root.style.setProperty('--font-color', '#ffffff');
+        root.style.setProperty('--primary-button-style', 'solid');
+        root.style.setProperty('--primary-button-color', '#667eea');
+        root.style.setProperty('--primary-gradient-start', '#667eea');
+        root.style.setProperty('--primary-gradient-end', '#764ba2');
+        root.style.setProperty('--primary-button-text', '#ffffff');
+        root.style.setProperty('--secondary-button-bg', '#ffffff');
+        root.style.setProperty('--secondary-button-opacity', '0.1');
+        root.style.setProperty('--secondary-button-text', '#ffffff');
+        root.style.setProperty('--secondary-button-border', '#ffffff');
+        root.style.setProperty('--secondary-border-opacity', '0.2');
+        root.style.setProperty('--window-tint-color', '#ffffff');
+        root.style.setProperty('--window-tint-rgb', '255, 255, 255');
+        root.style.setProperty('--glass-opacity', '0.8');
+        root.style.setProperty('--glass-blur', '10px');
+    }
+
+    initializeGradientPreviews() {
+        // Set up gradient previews for background options
+        const gradientPreviews = this.windowEl.querySelectorAll('.gradient-preview');
+        gradientPreviews.forEach(preview => {
+            const gradient = preview.dataset.gradient;
+            preview.style.background = gradient;
+        });
     }
 
     attachEvents() {
-        const bgSelect = this.windowEl.querySelector('#theme-background');
+        // Module dropdowns
+        this.initializeModuleDropdown('background-dropdown', (value) => {
+            this.changeBackground(value);
+        });
+        
+        this.initializeModuleDropdown('button-style-dropdown', (value) => {
+            this.changePrimaryButtonStyle(value);
+        });
+
+        // Color pickers
+        const fontColorPicker = this.windowEl.querySelector('#font-color');
+        const primaryColorPicker = this.windowEl.querySelector('#primary-button-color');
+        const primaryGradientStart = this.windowEl.querySelector('#primary-gradient-start');
+        const primaryGradientEnd = this.windowEl.querySelector('#primary-gradient-end');
+        const primaryTextPicker = this.windowEl.querySelector('#primary-button-text');
+        const secondaryBgPicker = this.windowEl.querySelector('#secondary-button-bg');
+        const secondaryOpacitySlider = this.windowEl.querySelector('#secondary-button-opacity');
+        const secondaryTextPicker = this.windowEl.querySelector('#secondary-button-text');
+        const secondaryBorderPicker = this.windowEl.querySelector('#secondary-button-border');
+        const secondaryBorderOpacity = this.windowEl.querySelector('#secondary-border-opacity');
+        const windowTintColorPicker = this.windowEl.querySelector('#window-tint-color');
         const autoSaveCheck = this.windowEl.querySelector('#auto-save');
         const showIconsCheck = this.windowEl.querySelector('#show-icons');
         const clearBtn = this.windowEl.querySelector('.clear-storage');
-        const fontColorPicker = this.windowEl.querySelector('#font-color');
-        const buttonBgColorPicker = this.windowEl.querySelector('#button-bg-color');
-        const buttonTextColorPicker = this.windowEl.querySelector('#button-text-color');
-        const windowTintColorPicker = this.windowEl.querySelector('#window-tint-color');
         const colorResetBtns = this.windowEl.querySelectorAll('.color-reset');
 
+        // Font color
         fontColorPicker.addEventListener('input', (e) => {
             this.changeFontColor(e.target.value);
         });
 
-        buttonBgColorPicker.addEventListener('input', (e) => {
-            this.changeButtonBgColor(e.target.value);
+        // Primary button controls
+        primaryColorPicker.addEventListener('input', (e) => {
+            this.changePrimaryButtonColor(e.target.value);
         });
 
-        buttonTextColorPicker.addEventListener('input', (e) => {
-            this.changeButtonTextColor(e.target.value);
+        primaryGradientStart.addEventListener('input', (e) => {
+            this.changePrimaryGradient();
         });
 
+        primaryGradientEnd.addEventListener('input', (e) => {
+            this.changePrimaryGradient();
+        });
+
+        primaryTextPicker.addEventListener('input', (e) => {
+            this.changePrimaryButtonText(e.target.value);
+        });
+
+        // Secondary button controls
+        secondaryBgPicker.addEventListener('input', (e) => {
+            this.changeSecondaryButtonBg();
+        });
+
+        secondaryOpacitySlider.addEventListener('input', (e) => {
+            this.changeSecondaryButtonBg();
+        });
+
+        secondaryTextPicker.addEventListener('input', (e) => {
+            this.changeSecondaryButtonText(e.target.value);
+        });
+
+        secondaryBorderPicker.addEventListener('input', (e) => {
+            this.changeSecondaryButtonBorder();
+        });
+
+        secondaryBorderOpacity.addEventListener('input', (e) => {
+            this.changeSecondaryButtonBorder();
+        });
+
+        // Window tint
         windowTintColorPicker.addEventListener('input', (e) => {
             this.changeWindowTint(e.target.value);
+        });
+
+        // System settings
+        autoSaveCheck.addEventListener('change', (e) => {
+            this.toggleAutoSave(e.target.checked);
+        });
+
+        showIconsCheck.addEventListener('change', (e) => {
+            this.toggleDesktopIcons(e.target.checked);
         });
 
         // Color reset buttons
@@ -43,28 +132,42 @@ class Settings {
             btn.addEventListener('click', (e) => {
                 const targetId = e.target.dataset.target;
                 const defaultValue = e.target.dataset.default;
-                const targetInput = this.windowEl.querySelector(`#${targetId}`);
+                const resetType = e.target.dataset.type;
                 
-                if (targetInput) {
-                    targetInput.value = defaultValue;
-                    // Trigger the input event to apply the change
-                    targetInput.dispatchEvent(new Event('input'));
+                if (resetType === 'gradient-reset') {
+                    const startColor = e.target.dataset.start;
+                    const endColor = e.target.dataset.end;
+                    this.windowEl.querySelector('#primary-gradient-start').value = startColor;
+                    this.windowEl.querySelector('#primary-gradient-end').value = endColor;
+                    this.changePrimaryGradient();
+                } else if (targetId) {
+                    const targetInput = this.windowEl.querySelector(`#${targetId}`);
+                    if (targetInput) {
+                        targetInput.value = defaultValue;
+                        targetInput.dispatchEvent(new Event('input'));
+                    }
+                    
+                    // Handle opacity resets
+                    if (e.target.dataset.opacity) {
+                        const opacitySlider = this.windowEl.querySelector('#secondary-button-opacity');
+                        if (opacitySlider) {
+                            opacitySlider.value = e.target.dataset.opacity;
+                            this.changeSecondaryButtonBg();
+                        }
+                    }
+                    
+                    if (e.target.dataset.borderOpacity) {
+                        const borderOpacitySlider = this.windowEl.querySelector('#secondary-border-opacity');
+                        if (borderOpacitySlider) {
+                            borderOpacitySlider.value = e.target.dataset.borderOpacity;
+                            this.changeSecondaryButtonBorder();
+                        }
+                    }
                 }
             });
         });
-        
-        bgSelect.addEventListener('change', (e) => {
-            this.changeBackground(e.target.value);
-        });
-        
-        autoSaveCheck.addEventListener('change', (e) => {
-            this.toggleAutoSave(e.target.checked);
-        });
-        
-        showIconsCheck.addEventListener('change', (e) => {
-            this.toggleDesktopIcons(e.target.checked);
-        });
-        
+
+        // Clear all data
         clearBtn.addEventListener('click', async () => {
             const confirmed = await modalManager.confirm(
                 'This will delete all apps, files, and settings. This action cannot be undone.',
@@ -86,19 +189,182 @@ class Settings {
         });
     }
 
+    initializeModuleDropdown(dropdownId, onSelect) {
+        const dropdown = this.windowEl.querySelector(`#${dropdownId}`);
+        const toggle = dropdown.querySelector('.module-dropdown-toggle');
+        const menu = dropdown.querySelector('.module-dropdown-menu');
+        const options = dropdown.querySelectorAll('.module-option');
+        const selectedText = toggle.querySelector('.dropdown-selected-text');
+
+        // Toggle dropdown
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = !menu.classList.contains('hide');
+            
+            // Close all other dropdowns
+            this.windowEl.querySelectorAll('.module-dropdown-menu').forEach(m => {
+                if (m !== menu) m.classList.add('hide');
+            });
+            
+            // Toggle this dropdown
+            menu.classList.toggle('hide', isOpen);
+        });
+
+        // Handle option selection
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.value;
+                const text = option.querySelector('.module-option-name').textContent;
+                
+                // Update selected text
+                selectedText.textContent = text;
+                
+                // Remove previous selection
+                options.forEach(opt => opt.classList.remove('selected'));
+                
+                // Add selection to clicked option
+                option.classList.add('selected');
+                
+                // Close dropdown
+                menu.classList.add('hide');
+                
+                // Call the callback
+                onSelect(value);
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                menu.classList.add('hide');
+            }
+        });
+    }
+
     loadSettings() {
         const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
         
+        // Background
         if (settings.background) {
-            this.windowEl.querySelector('#theme-background').value = settings.background;
+            this.setDropdownValue('background-dropdown', settings.background);
             this.changeBackground(settings.background);
         }
         
+        // Font color
+        if (settings.fontColor) {
+            this.windowEl.querySelector('#font-color').value = settings.fontColor;
+            this.changeFontColor(settings.fontColor);
+        }
+        
+        // Primary button settings
+        if (settings.primaryButtonStyle) {
+            this.setDropdownValue('button-style-dropdown', settings.primaryButtonStyle);
+            this.changePrimaryButtonStyle(settings.primaryButtonStyle);
+        } else {
+            this.changePrimaryButtonStyle('solid');
+        }
+        
+        if (settings.primaryButtonColor) {
+            this.windowEl.querySelector('#primary-button-color').value = settings.primaryButtonColor;
+            this.changePrimaryButtonColor(settings.primaryButtonColor);
+        }
+        
+        if (settings.primaryGradientStart) {
+            this.windowEl.querySelector('#primary-gradient-start').value = settings.primaryGradientStart;
+        }
+        
+        if (settings.primaryGradientEnd) {
+            this.windowEl.querySelector('#primary-gradient-end').value = settings.primaryGradientEnd;
+        }
+        
+        if (settings.primaryGradientStart || settings.primaryGradientEnd) {
+            this.changePrimaryGradient();
+        }
+        
+        if (settings.primaryButtonText) {
+            this.windowEl.querySelector('#primary-button-text').value = settings.primaryButtonText;
+            this.changePrimaryButtonText(settings.primaryButtonText);
+        }
+        
+        // Secondary button settings
+        if (settings.secondaryButtonBg) {
+            this.windowEl.querySelector('#secondary-button-bg').value = settings.secondaryButtonBg;
+        }
+        
+        if (settings.secondaryButtonOpacity !== undefined) {
+            this.windowEl.querySelector('#secondary-button-opacity').value = settings.secondaryButtonOpacity;
+        }
+        
+        if (settings.secondaryButtonBg || settings.secondaryButtonOpacity !== undefined) {
+            this.changeSecondaryButtonBg();
+        }
+        
+        if (settings.secondaryButtonText) {
+            this.windowEl.querySelector('#secondary-button-text').value = settings.secondaryButtonText;
+            this.changeSecondaryButtonText(settings.secondaryButtonText);
+        }
+        
+        if (settings.secondaryButtonBorder) {
+            this.windowEl.querySelector('#secondary-button-border').value = settings.secondaryButtonBorder;
+        }
+        
+        if (settings.secondaryBorderOpacity !== undefined) {
+            this.windowEl.querySelector('#secondary-border-opacity').value = settings.secondaryBorderOpacity;
+        }
+        
+        if (settings.secondaryButtonBorder || settings.secondaryBorderOpacity !== undefined) {
+            this.changeSecondaryButtonBorder();
+        }
+
+        // Window tint
+        if (settings.windowTintColor) {
+            this.windowEl.querySelector('#window-tint-color').value = settings.windowTintColor;
+            this.changeWindowTint(settings.windowTintColor);
+        }
+
+        // System settings
+        if (settings.autoSave !== undefined) {
+            this.windowEl.querySelector('#auto-save').checked = settings.autoSave;
+        }
+
+        if (settings.showIcons !== undefined) {
+            this.windowEl.querySelector('#show-icons').checked = settings.showIcons;
+            this.toggleDesktopIcons(settings.showIcons);
+        }
+    }
+
+    setDropdownValue(dropdownId, value) {
+        const dropdown = this.windowEl.querySelector(`#${dropdownId}`);
+        const options = dropdown.querySelectorAll('.module-option');
+        const selectedText = dropdown.querySelector('.dropdown-selected-text');
+        
+        options.forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.value === value) {
+                option.classList.add('selected');
+                selectedText.textContent = option.querySelector('.module-option-name').textContent;
+            }
+        });
     }
 
     saveSettings() {
+        const backgroundDropdown = this.windowEl.querySelector('#background-dropdown .module-option.selected');
+        const buttonStyleDropdown = this.windowEl.querySelector('#button-style-dropdown .module-option.selected');
+        
         const settings = {
-            background: this.windowEl.querySelector('#theme-background').value,
+            background: backgroundDropdown ? backgroundDropdown.dataset.value : 'gradient1',
+            fontColor: this.windowEl.querySelector('#font-color').value,
+            primaryButtonStyle: buttonStyleDropdown ? buttonStyleDropdown.dataset.value : 'solid',
+            primaryButtonColor: this.windowEl.querySelector('#primary-button-color').value,
+            primaryGradientStart: this.windowEl.querySelector('#primary-gradient-start').value,
+            primaryGradientEnd: this.windowEl.querySelector('#primary-gradient-end').value,
+            primaryButtonText: this.windowEl.querySelector('#primary-button-text').value,
+            secondaryButtonBg: this.windowEl.querySelector('#secondary-button-bg').value,
+            secondaryButtonOpacity: this.windowEl.querySelector('#secondary-button-opacity').value,
+            secondaryButtonText: this.windowEl.querySelector('#secondary-button-text').value,
+            secondaryButtonBorder: this.windowEl.querySelector('#secondary-button-border').value,
+            secondaryBorderOpacity: this.windowEl.querySelector('#secondary-border-opacity').value,
+            windowTintColor: this.windowEl.querySelector('#window-tint-color').value,
             autoSave: this.windowEl.querySelector('#auto-save').checked,
             showIcons: this.windowEl.querySelector('#show-icons').checked
         };
@@ -161,35 +427,11 @@ class Settings {
             gradient50: 'linear-gradient(135deg, #fff1cc 0%, #ffb700 25%, #6d28d9 50%, #2e1065 75%, #0f172a 100%)',
             gradient51: 'linear-gradient(135deg, #fff8f0 0%, #84cc16 25%, #ef4444 50%, #ffe4e6 75%, #fff8f0 100%)',
             gradient52: 'linear-gradient(135deg, #ffffff 0%, #ff0db0 25%, #84cc16 50%, #111827 75%, #f5f5f5 100%)',
-            gradient53: 'linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)',
+            gradient53: 'linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)'
         };
         
         desktop.style.background = gradients[style] || gradients.gradient1;
         this.saveSettings();
-    }
-
-    toggleAutoSave(enabled) {
-        // Auto-save is always on in this implementation
-        this.saveSettings();
-    }
-
-    toggleDesktopIcons(show) {
-        const icons = document.querySelector('.desktop-icons');
-        icons.style.display = show ? 'flex' : 'none';
-        this.saveSettings();
-    }
-
-    initializeColorTheme() {
-        // Set up CSS custom properties for theming
-        const root = document.documentElement;
-        
-        // Default values
-        root.style.setProperty('--font-color', '#ffffff');
-        root.style.setProperty('--button-bg-color', '#667eea');
-        root.style.setProperty('--button-text-color', '#ffffff');
-        root.style.setProperty('--window-tint-color', '#ffffff');
-        root.style.setProperty('--glass-opacity', '0.8');
-        root.style.setProperty('--glass-blur', '10px');
     }
 
     changeFontColor(color) {
@@ -197,21 +439,81 @@ class Settings {
         this.saveSettings();
     }
 
-    changeButtonBgColor(color) {
-        document.documentElement.style.setProperty('--button-bg-color', color);
+    changePrimaryButtonStyle(style) {
+        document.documentElement.style.setProperty('--primary-button-style', style);
+        
+        const solidControls = this.windowEl.querySelector('#primary-solid-controls');
+        const gradientControls = this.windowEl.querySelector('#primary-gradient-controls');
+        
+        if (style === 'gradient') {
+            solidControls.style.display = 'none';
+            gradientControls.style.display = 'flex';
+            document.body.classList.add('gradient-buttons');
+            this.changePrimaryGradient();
+        } else {
+            solidControls.style.display = 'flex';
+            gradientControls.style.display = 'none';
+            document.body.classList.remove('gradient-buttons');
+            this.changePrimaryButtonColor();
+        }
+        
         this.saveSettings();
     }
 
-    changeButtonTextColor(color) {
-        document.documentElement.style.setProperty('--button-text-color', color);
+    changePrimaryButtonColor(color) {
+        if (!color) color = this.windowEl.querySelector('#primary-button-color').value;
+        document.documentElement.style.setProperty('--primary-button-color', color);
+        this.saveSettings();
+    }
+
+    changePrimaryGradient() {
+        const startColor = this.windowEl.querySelector('#primary-gradient-start').value;
+        const endColor = this.windowEl.querySelector('#primary-gradient-end').value;
+        
+        document.documentElement.style.setProperty('--primary-gradient-start', startColor);
+        document.documentElement.style.setProperty('--primary-gradient-end', endColor);
+        this.saveSettings();
+    }
+
+    changePrimaryButtonText(color) {
+        document.documentElement.style.setProperty('--primary-button-text', color);
+        this.saveSettings();
+    }
+
+    changeSecondaryButtonBg() {
+        const color = this.windowEl.querySelector('#secondary-button-bg').value;
+        const opacity = this.windowEl.querySelector('#secondary-button-opacity').value / 100;
+        
+        const rgb = this.hexToRgb(color);
+        if (rgb) {
+            document.documentElement.style.setProperty('--secondary-button-bg', color);
+            document.documentElement.style.setProperty('--secondary-button-opacity', opacity);
+            document.documentElement.style.setProperty('--secondary-button-bg-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+        }
+        this.saveSettings();
+    }
+
+    changeSecondaryButtonText(color) {
+        document.documentElement.style.setProperty('--secondary-button-text', color);
+        this.saveSettings();
+    }
+
+    changeSecondaryButtonBorder() {
+        const color = this.windowEl.querySelector('#secondary-button-border').value;
+        const opacity = this.windowEl.querySelector('#secondary-border-opacity').value / 100;
+        
+        const rgb = this.hexToRgb(color);
+        if (rgb) {
+            document.documentElement.style.setProperty('--secondary-button-border', color);
+            document.documentElement.style.setProperty('--secondary-border-opacity', opacity);
+            document.documentElement.style.setProperty('--secondary-button-border-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+        }
         this.saveSettings();
     }
 
     changeWindowTint(color) {
-        // Convert hex color to RGB for use with CSS filters or overlays
         const rgb = this.hexToRgb(color);
         if (rgb) {
-            // Apply a color overlay to windows using mix-blend-mode or filter
             document.documentElement.style.setProperty('--window-tint-color', color);
             document.documentElement.style.setProperty('--window-tint-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
         }
@@ -225,5 +527,16 @@ class Settings {
             g: parseInt(result[2], 16),
             b: parseInt(result[3], 16)
         } : null;
+    }
+
+    toggleAutoSave(enabled) {
+        // Auto-save is always on in this implementation
+        this.saveSettings();
+    }
+
+    toggleDesktopIcons(show) {
+        const icons = document.querySelector('.desktop-icons');
+        icons.style.display = show ? 'flex' : 'none';
+        this.saveSettings();
     }
 }

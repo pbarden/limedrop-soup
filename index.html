@@ -219,61 +219,317 @@
                     <h3>Theme</h3>
                     <div class="setting-item">
                         <label>Background Style</label>
-                        <select id="theme-background">
-                            <option value="gradient1">Raspberry Lemonade</option>
-                            <option value="gradient2">Blue Java</option>
-                            <option value="gradient3">Mango Sherbert</option>
-                            <option value="gradient4">Black Sesame</option>
-                            <option value="gradient5">Brown Sugar Milk</option>
-                            <option value="gradient6">Matcha Latte</option>
-                            <option value="gradient7">Taro Milk</option>
-                            <option value="gradient8">Thai Tea</option>
-                            <option value="gradient9">Hojicha Latte</option>
-                            <option value="gradient10">Chai Spice</option>
-                            <option value="gradient11">Strawberry Jelly</option>
-                            <option value="gradient12">Mango Jelly</option>
-                            <option value="gradient13">Lychee Rose</option>
-                            <option value="gradient14">Honey Boba</option>
-                            <option value="gradient15">Ube Cream</option>
-                            <option value="gradient16">Coconut Jelly</option>
-                            <option value="gradient17">Grass Jelly</option>
-                            <option value="gradient18">Coffee Jelly</option>
-                            <option value="gradient19">Wintermelon Milk</option>
-                            <option value="gradient20">Oolong Milk Tea</option>
-                            <option value="gradient21">Passionfruit Pop</option>
-                            <option value="gradient22">Red Bean</option>
-                            <option value="gradient23">Pandan Coconut</option>
-                            <option value="gradient24">Chai Latte Layered</option>
-                            <option value="gradient25">Strawberry Matcha</option>
-                            <option value="gradient26">Dirty Matcha</option>
-                            <option value="gradient27">Sea Salt Cheese Foam</option>
-                            <option value="gradient28">Tiger Milk</option>
-                            <option value="gradient29">Sakura Lychee Milk</option>
-                            <option value="gradient30">Charcoal Sesame Latte</option>
-                            <option value="gradient31">Butterfly Pea Lemonade</option>
-                            <option value="gradient32">Kiwi Aloe</option>
-                            <option value="gradient33">Dragonfruit Yakult</option>
-                            <option value="gradient34">Honeydew Melon Milk</option>
-                            <option value="gradient35">Cookies &amp; Cream</option>
-                            <option value="gradient36">Tiramisu Milk Tea</option>
-                            <option value="gradient37">Crème Brûlée Milk</option>
-                            <option value="gradient38">Rose Pistachio Milk</option>
-                            <option value="gradient39">Salted Caramel Cold Foam</option>
-                            <option value="gradient40">Blueberry Lavender Milk</option>
-                            <option value="gradient41">Peach Oolong Cream</option>
-                            <option value="gradient42">Guava Strawberry Cream</option>
-                            <option value="gradient43">Almond Jelly Milk</option>
-                            <option value="gradient44">Guava Mint Charcoal</option>
-                            <option value="gradient45">Blue Raspberry Yakult</option>
-                            <option value="gradient46">Pineapple Matcha Charcoal</option>
-                            <option value="gradient47">Watermelon Basil Fizz</option>
-                            <option value="gradient48">Grapefruit Butterfly Pea</option>
-                            <option value="gradient49">Cocoa Mint Pink Salt</option>
-                            <option value="gradient50">Mango Ube Charcoal Swirl</option>
-                            <option value="gradient51">Kiwi Strawberry Latte</option>
-                            <option value="gradient52">Dragonfruit Lime Cream</option>
-                            <option value="gradient53">Orange Sesame Cream</option>
-                        </select>
+                        <div class="module-dropdown" id="background-dropdown">
+                            <button class="module-dropdown-toggle" type="button">
+                                <span class="dropdown-selected-text">Raspberry Lemonade</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="module-dropdown-menu hide">
+                                <div class="module-option" data-value="gradient1">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)"></div>
+                                    <span class="module-option-name">Raspberry Lemonade</span>
+                                </div>
+                                <div class="module-option" data-value="gradient2">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%)"></div>
+                                    <span class="module-option-name">Blue Java</span>
+                                </div>
+                                <div class="module-option" data-value="gradient3">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #f2994a 0%, #f2c94c 50%, #f29400 100%)"></div>
+                                    <span class="module-option-name">Mango Sherbert</span>
+                                </div>
+                                <div class="module-option" data-value="gradient4">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #2f2f2f 0%, #4a4a4a 35%, #8f8f8f 70%, #dedede 100%)"></div>
+                                    <span class="module-option-name">Black Sesame</span>
+                                </div>
+                                <div class="module-option" data-value="gradient5">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #4e2a12 0%, #8a4f2d 35%, #d29b6e 70%, #f6eadc 100%)"></div>
+                                    <span class="module-option-name">Brown Sugar Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient6">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #1f4d27 0%, #4f7f3f 35%, #8fbd6b 70%, #eef6e7 100%)"></div>
+                                    <span class="module-option-name">Matcha Latte</span>
+                                </div>
+                                <div class="module-option" data-value="gradient7">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #5f4da8 0%, #8c76c9 35%, #c7b5e6 70%, #f1ecff 100%)"></div>
+                                    <span class="module-option-name">Taro Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient8">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #c74a00 0%, #f07f2f 35%, #ffc78e 70%, #fff3df 100%)"></div>
+                                    <span class="module-option-name">Thai Tea</span>
+                                </div>
+                                <div class="module-option" data-value="gradient9">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #4a3324 0%, #7a5a3e 35%, #b69576 70%, #efe3d1 100%)"></div>
+                                    <span class="module-option-name">Hojicha Latte</span>
+                                </div>
+                                <div class="module-option" data-value="gradient10">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #5c3622 0%, #8a5533 35%, #d09a59 70%, #f2e7cf 100%)"></div>
+                                    <span class="module-option-name">Chai Spice</span>
+                                </div>
+                                <div class="module-option" data-value="gradient11">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #d8263f 0%, #ff6b6b 35%, #ff9fb1 70%, #ffe3ec 100%)"></div>
+                                    <span class="module-option-name">Strawberry Jelly</span>
+                                </div>
+                                <div class="module-option" data-value="gradient12">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ff8a00 0%, #ffb84d 35%, #ffd27f 70%, #fff0cc 100%)"></div>
+                                    <span class="module-option-name">Mango Jelly</span>
+                                </div>
+                                <div class="module-option" data-value="gradient13">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff7f7 0%, #fbdde2 35%, #f2b6c3 70%, #d68098 100%)"></div>
+                                    <span class="module-option-name">Lychee Rose</span>
+                                </div>
+                                <div class="module-option" data-value="gradient14">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffd24d 0%, #ffb300 35%, #ff8c00 70%, #5a381e 100%)"></div>
+                                    <span class="module-option-name">Honey Boba</span>
+                                </div>
+                                <div class="module-option" data-value="gradient15">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #452a7a 0%, #6b44b8 35%, #a78bdc 70%, #f2eaff 100%)"></div>
+                                    <span class="module-option-name">Ube Cream</span>
+                                </div>
+                                <div class="module-option" data-value="gradient16">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #f7fbf9 35%, #e6f3f0 70%, #d5ece8 100%)"></div>
+                                    <span class="module-option-name">Coconut Jelly</span>
+                                </div>
+                                <div class="module-option" data-value="gradient17">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #0d1b12 0%, #1a2b22 35%, #2e3c33 70%, #49564c 100%)"></div>
+                                    <span class="module-option-name">Grass Jelly</span>
+                                </div>
+                                <div class="module-option" data-value="gradient18">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #1b0f07 0%, #3b2416 35%, #6b4b31 70%, #a67854 100%)"></div>
+                                    <span class="module-option-name">Coffee Jelly</span>
+                                </div>
+                                <div class="module-option" data-value="gradient19">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #7f864f 0%, #b1b873 35%, #dfe6b0 70%, #f7f5e6 100%)"></div>
+                                    <span class="module-option-name">Wintermelon Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient20">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #7f4f2d 0%, #a4673b 35%, #d59a64 70%, #f4e6d5 100%)"></div>
+                                    <span class="module-option-name">Oolong Milk Tea</span>
+                                </div>
+                                <div class="module-option" data-value="gradient21">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffe94a 0%, #ffb400 35%, #ff6a00 70%, #7a1e5c 100%)"></div>
+                                    <span class="module-option-name">Passionfruit Pop</span>
+                                </div>
+                                <div class="module-option" data-value="gradient22">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #5a0f1b 0%, #8d2b34 35%, #b85a63 70%, #f0d2cf 100%)"></div>
+                                    <span class="module-option-name">Red Bean</span>
+                                </div>
+                                <div class="module-option" data-value="gradient23">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #1e8a44 0%, #56b870 35%, #a6dfbf 70%, #ffffff 100%)"></div>
+                                    <span class="module-option-name">Pandan Coconut</span>
+                                </div>
+                                <div class="module-option" data-value="gradient24">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #8b4a2b 33%, #3b2314 66%, #a0522d 100%)"></div>
+                                    <span class="module-option-name">Chai Latte Layered</span>
+                                </div>
+                                <div class="module-option" data-value="gradient25">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff7fa 0%, #ff7891 22%, #ffdbe6 45%, #b3e6a0 72%, #3e7e3b 100%)"></div>
+                                    <span class="module-option-name">Strawberry Matcha</span>
+                                </div>
+                                <div class="module-option" data-value="gradient26">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fffaf2 0%, #b7d7a8 25%, #3e6b2e 50%, #2b1e14 75%, #f1e6d0 100%)"></div>
+                                    <span class="module-option-name">Dirty Matcha</span>
+                                </div>
+                                <div class="module-option" data-value="gradient27">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #f0e6cf 22%, #d6a15a 45%, #9c5a1d 72%, #3a2515 100%)"></div>
+                                    <span class="module-option-name">Sea Salt Cheese Foam</span>
+                                </div>
+                                <div class="module-option" data-value="gradient28">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff5e6 0%, #f1d3b3 22%, #d1925a 45%, #8a4f2b 72%, #2f1b0a 100%)"></div>
+                                    <span class="module-option-name">Tiger Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient29">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff5f8 0%, #ffd1e8 22%, #ff9ec7 45%, #f15bb5 72%, #ffe6f1 100%)"></div>
+                                    <span class="module-option-name">Sakura Lychee Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient30">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #0f0f0f 0%, #2e2e2e 22%, #777777 45%, #c9b8a4 72%, #f1ece4 100%)"></div>
+                                    <span class="module-option-name">Charcoal Sesame Latte</span>
+                                </div>
+                                <div class="module-option" data-value="gradient31">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #1e3a8a 0%, #3f6bd1 22%, #7fd3f7 45%, #ffd166 72%, #fff7cc 100%)"></div>
+                                    <span class="module-option-name">Butterfly Pea Lemonade</span>
+                                </div>
+                                <div class="module-option" data-value="gradient32">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #eaffea 0%, #c8f7c5 22%, #8bd48a 45%, #5ca86e 72%, #3b6b47 100%)"></div>
+                                    <span class="module-option-name">Kiwi Aloe</span>
+                                </div>
+                                <div class="module-option" data-value="gradient33">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff9f6 0%, #ff2e85 22%, #ff6fb0 45%, #ffd166 72%, #fff1d6 100%)"></div>
+                                    <span class="module-option-name">Dragonfruit Yakult</span>
+                                </div>
+                                <div class="module-option" data-value="gradient34">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #f2fff2 0%, #ccf4d1 22%, #a2e6b3 45%, #79c596 72%, #eaffea 100%)"></div>
+                                    <span class="module-option-name">Honeydew Melon Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient35">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #eaeaea 22%, #c2c2c2 45%, #6e5b4b 72%, #2f251e 100%)"></div>
+                                    <span class="module-option-name">Cookies & Cream</span>
+                                </div>
+                                <div class="module-option" data-value="gradient36">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff8e7 0%, #e6d2b5 22%, #c9a27a 45%, #6f4e37 72%, #3b2e2a 100%)"></div>
+                                    <span class="module-option-name">Tiramisu Milk Tea</span>
+                                </div>
+                                <div class="module-option" data-value="gradient37">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff7e3 0%, #ffe0a3 22%, #ffc371 45%, #c96b2c 72%, #6b3e2e 100%)"></div>
+                                    <span class="module-option-name">Crème Brûlée Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient38">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffe3ec 0%, #f7b6c6 22%, #f0dee1 45%, #9fd3a8 72%, #5b8c5a 100%)"></div>
+                                    <span class="module-option-name">Rose Pistachio Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient39">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #f5e6c8 22%, #d4a373 45%, #8b5e34 72%, #2e1b0f 100%)"></div>
+                                    <span class="module-option-name">Salted Caramel Cold Foam</span>
+                                </div>
+                                <div class="module-option" data-value="gradient40">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #f7f5ff 0%, #dcd7ff 22%, #b7b5e8 45%, #6a78a8 72%, #3d4a78 100%)"></div>
+                                    <span class="module-option-name">Blueberry Lavender Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient41">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff0e1 0%, #ffc49c 22%, #f77f00 45%, #a3663f 72%, #fff7e9 100%)"></div>
+                                    <span class="module-option-name">Peach Oolong Cream</span>
+                                </div>
+                                <div class="module-option" data-value="gradient42">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff5f7 0%, #ffd3de 22%, #ff6b81 45%, #ff3d3d 72%, #ffecee 100%)"></div>
+                                    <span class="module-option-name">Guava Strawberry Cream</span>
+                                </div>
+                                <div class="module-option" data-value="gradient43">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #f4efe7 22%, #e2d7c5 45%, #c7b8a1 72%, #8a7a63 100%)"></div>
+                                    <span class="module-option-name">Almond Jelly Milk</span>
+                                </div>
+                                <div class="module-option" data-value="gradient44">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffe4ec 0%, #ff6f91 25%, #2dd4bf 50%, #111827 75%, #f5f5f5 100%)"></div>
+                                    <span class="module-option-name">Guava Mint Charcoal</span>
+                                </div>
+                                <div class="module-option" data-value="gradient45">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff1e6 0%, #00c6ff 25%, #1e3a8a 50%, #ff4dcf 75%, #ffe5d1 100%)"></div>
+                                    <span class="module-option-name">Blue Raspberry Yakult</span>
+                                </div>
+                                <div class="module-option" data-value="gradient46">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff36d 0%, #8bc34a 25%, #1b5e20 50%, #0b0f10 75%, #f5f7fa 100%)"></div>
+                                    <span class="module-option-name">Pineapple Matcha Charcoal</span>
+                                </div>
+                                <div class="module-option" data-value="gradient47">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fffced 0%, #ff6685 22%, #0e9f6e 50%, #111827 72%, #a7f3d0 100%)"></div>
+                                    <span class="module-option-name">Watermelon Basil Fizz</span>
+                                </div>
+                                <div class="module-option" data-value="gradient48">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff0ea 0%, #ff6b6b 25%, #5b32b4 50%, #86b6ff 75%, #f2e9ff 100%)"></div>
+                                    <span class="module-option-name">Grapefruit Butterfly Pea</span>
+                                </div>
+                                <div class="module-option" data-value="gradient49">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #4e342e 0%, #86efac 25%, #ec4899 50%, #f9a8d4 75%, #fff1f2 100%)"></div>
+                                    <span class="module-option-name">Cocoa Mint Pink Salt</span>
+                                </div>
+                                <div class="module-option" data-value="gradient50">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff1cc 0%, #ffb700 25%, #6d28d9 50%, #2e1065 75%, #0f172a 100%)"></div>
+                                    <span class="module-option-name">Mango Ube Charcoal Swirl</span>
+                                </div>
+                                <div class="module-option" data-value="gradient51">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #fff8f0 0%, #84cc16 25%, #ef4444 50%, #ffe4e6 75%, #fff8f0 100%)"></div>
+                                    <span class="module-option-name">Kiwi Strawberry Latte</span>
+                                </div>
+                                <div class="module-option" data-value="gradient52">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ffffff 0%, #ff0db0 25%, #84cc16 50%, #111827 75%, #f5f5f5 100%)"></div>
+                                    <span class="module-option-name">Dragonfruit Lime Cream</span>
+                                </div>
+                                <div class="module-option" data-value="gradient53">
+                                    <div class="gradient-preview" data-gradient="linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)"></div>
+                                    <span class="module-option-name">Orange Sesame Cream</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Colors</h3>
+                    <div class="setting-item">
+                        <label>Font Color</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="font-color" value="#ffffff">
+                            <button class="color-reset" data-target="font-color" data-default="#ffffff">Reset</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Primary Button Settings -->
+                    <div class="setting-item">
+                        <label>Primary Button Style</label>
+                        <div class="module-dropdown" id="button-style-dropdown">
+                            <button class="module-dropdown-toggle" type="button">
+                                <span class="dropdown-selected-text">Solid Color</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="module-dropdown-menu hide">
+                                <div class="module-option" data-value="solid">
+                                    <span class="module-option-name">Solid Color</span>
+                                </div>
+                                <div class="module-option" data-value="gradient">
+                                    <span class="module-option-name">Gradient</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-item" id="primary-solid-controls">
+                        <label>Primary Button Color</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="primary-button-color" value="#667eea">
+                            <button class="color-reset" data-target="primary-button-color" data-default="#667eea">Reset</button>
+                        </div>
+                    </div>
+                    <div class="setting-item" id="primary-gradient-controls" style="display: none;">
+                        <label>Primary Button Gradient</label>
+                        <div class="gradient-picker-wrapper">
+                            <div class="color-picker-wrapper">
+                                <label class="gradient-label">From:</label>
+                                <input type="color" id="primary-gradient-start" value="#667eea">
+                            </div>
+                            <div class="color-picker-wrapper">
+                                <label class="gradient-label">To:</label>
+                                <input type="color" id="primary-gradient-end" value="#764ba2">
+                            </div>
+                            <button class="color-reset" data-type="gradient-reset" data-start="#667eea" data-end="#764ba2">Reset</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Primary Button Text</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="primary-button-text" value="#ffffff">
+                            <button class="color-reset" data-target="primary-button-text" data-default="#ffffff">Reset</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Secondary Button Settings -->
+                    <div class="setting-item">
+                        <label>Secondary Button Background</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="secondary-button-bg" value="#ffffff">
+                            <input type="range" id="secondary-button-opacity" min="5" max="100" value="10" title="Background Opacity">
+                            <button class="color-reset" data-target="secondary-button-bg" data-default="#ffffff" data-opacity="10">Reset</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Secondary Button Text</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="secondary-button-text" value="#ffffff">
+                            <button class="color-reset" data-target="secondary-button-text" data-default="#ffffff">Reset</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Secondary Button Border</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="secondary-button-border" value="#ffffff">
+                            <input type="range" id="secondary-border-opacity" min="10" max="100" value="20" title="Border Opacity">
+                            <button class="color-reset" data-target="secondary-button-border" data-default="#ffffff" data-border-opacity="20">Reset</button>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label>Window Tint</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="window-tint-color" value="#ffffff">
+                            <button class="color-reset" data-target="window-tint-color" data-default="#ffffff">Reset</button>
+                        </div>
                     </div>
                 </div>
                 
