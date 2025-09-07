@@ -28,9 +28,9 @@ class AppBuilder {
         // referenced when rendering the workflow so that each module can
         // present dedicated drop zones for Input, Processing and Output
         // categories.  The grouping mirrors the sidebar in the builder.
-        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table', 'data-source'];
+        this.inputTypes = ['text-input', 'file-upload', 'canvas', 'rich-text', 'table', 'data-source', 'api-call-input'];
         this.processingTypes = ['ai-prompt', 'data-transform', 'custom-buttons', 'math-operations', 'stats-operations'];
-        this.outputTypes = ['display', 'summary-output', 'chart', 'export'];
+        this.outputTypes = ['display', 'summary-output', 'chart', 'data-visualization', 'export', 'api-call-output'];
         this.init();
 
         // Cache of user-defined data types extracted from files app.
@@ -71,6 +71,9 @@ class AppBuilder {
         this.injectStatsOperationsComponentItem();
         this.injectCustomButtonsComponentItem();
         this.injectSummaryOutputComponentItem();
+        this.injectDataVisualizationComponentItem();
+        this.injectApiCallInputComponentItem();
+        this.injectApiCallOutputComponentItem();
         this.normalizeSidebarItems();
         
         if (this.modules.length === 0) {
@@ -359,6 +362,9 @@ class AppBuilder {
             'display': 'fas fa-tv',
             'summary-output': 'fas fa-info-circle',
             'chart': 'fas fa-chart-bar',
+            'api-call-input': 'fas fa-arrow-down',
+            'api-call-output': 'fas fa-arrow-up',
+            'data-visualization': 'fas fa-chart-area',
             'export': 'fas fa-download'
         };
         
@@ -377,6 +383,9 @@ class AppBuilder {
             'display': 'Display Output',
             'summary-output': 'Summary Output',
             'chart': 'Chart',
+            'api-call-input': 'API Call (Input)',
+            'api-call-output': 'API Call (Output)',
+            'data-visualization': 'Data Visualization',
             'export': 'Export Data'
         };
         
@@ -427,9 +436,12 @@ class AppBuilder {
                 'display': 'fas fa-tv',
                 'summary-output': 'fas fa-info-circle',
                 'chart': 'fas fa-chart-bar',
+                'api-call-input': 'fas fa-arrow-down',
+                'api-call-output': 'fas fa-arrow-up',
+                'data-visualization': 'fas fa-chart-area',
                 'export': 'fas fa-download'
             };
-            
+
             // Define label mappings
             const labelMap = {
                 'text-input': 'Text Input',
@@ -446,6 +458,9 @@ class AppBuilder {
                 'display': 'Display Output',
                 'summary-output': 'Summary Output',
                 'chart': 'Chart',
+                'api-call-input': 'API Call (Input)',
+                'api-call-output': 'API Call (Output)',
+                'data-visualization': 'Data Visualization',
                 'export': 'Export Data'
             };
             
@@ -645,6 +660,61 @@ class AppBuilder {
         
         processingCategory.appendChild(item);
         this.attachComponentEvents(item);
+    }
+
+    injectDataVisualizationComponentItem() {
+    if (this.windowEl.querySelector('.component-item[data-type="data-visualization"]')) return;
+    const reference = this.windowEl.querySelector('.component-item[data-type="chart"]') || this.windowEl.querySelector('.component-item[data-type="display"]');
+    if (!reference) return;
+    const parent = reference.parentElement; if (!parent) return;
+    const item = document.createElement('div');
+    item.className = reference.className;
+    item.setAttribute('draggable','true');
+    item.dataset.type = 'data-visualization';
+    item.innerHTML = `<i class="fas fa-chart-area" style="margin-right:8px;"></i><span>Data Visualization</span>`;
+    parent.appendChild(item);
+    item.addEventListener('dragstart', (e)=>{ e.dataTransfer.effectAllowed='copy'; e.dataTransfer.setData('component-type','data-visualization'); item.classList.add('dragging'); });
+    item.addEventListener('dragend', ()=> item.classList.remove('dragging'));
+    }
+
+    injectApiCallInputComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="api-call-input"]')) return;
+        const reference = this.windowEl.querySelector('.component-item[data-type="text-input"]');
+        if (!reference) return;
+        const parent = reference.parentElement;
+        if (!parent) return;
+        const item = document.createElement('div');
+        item.className = reference.className;
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'api-call-input';
+        item.innerHTML = `<i class="fas fa-plug" style="margin-right:8px;"></i><span>API Call (Input)</span>`;
+        parent.appendChild(item);
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('component-type', 'api-call-input');
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    }
+
+    injectApiCallOutputComponentItem() {
+        if (this.windowEl.querySelector('.component-item[data-type="api-call-output"]')) return;
+        const reference = this.windowEl.querySelector('.component-item[data-type="display"]'); // any output item
+        if (!reference) return;
+        const parent = reference.parentElement;
+        if (!parent) return;
+        const item = document.createElement('div');
+        item.className = reference.className;
+        item.setAttribute('draggable', 'true');
+        item.dataset.type = 'api-call-output';
+        item.innerHTML = `<i class="fas fa-network-wired" style="margin-right:8px;"></i><span>API Call (Output)</span>`;
+        parent.appendChild(item);
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('component-type', 'api-call-output');
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
     }
 
     /**
@@ -873,6 +943,24 @@ class AppBuilder {
                 // Show taskbar toggles the AI options toolbar in the runtime UI.
                 showTaskbar: false
             },
+            'api-call-input': {
+                label: 'API Call (Input)',
+                method: 'GET',            // 'GET' | 'POST'
+                url: '',                  // endpoint
+                headers: '{}',            // JSON object as string
+                queryTemplate: '',        // e.g. "q={{lastStepId}}&lang=en"
+                bodyTemplate: '',         // for POST; string template, see below
+                autoRun: true             // auto execute when step loads
+            },
+            'api-call-output': {
+                label: 'API Call (Output)',
+                method: 'POST',
+                url: '',
+                headers: '{"Content-Type":"application/json"}',
+                queryTemplate: '',
+                bodyTemplate: '{{__all__}}',  // sends entire runtime state by default
+                autoRun: false
+            },
             // Table input for tabular data.  Columns is a comma‑separated list of
             // column names.  Rows defines the number of initial blank rows.
             // Editable determines whether the user can modify cells.
@@ -887,6 +975,27 @@ class AppBuilder {
                 aiOptions: [],
                 // Show taskbar toggles the AI options toolbar in the runtime UI.
                 showTaskbar: false
+            },
+            'data-visualization': {
+            label: 'Data Visualization',
+            template: 'normal-dist',      // 'normal-dist' | 'histogram' | 'scatter' | 'line' | 'bar'
+            sourceMode: 'component',      // 'component' | 'inline'
+            sourceComponentId: '',        // id of prior step providing data
+            inlineData: '[]',             // JSON array if sourceMode='inline'
+
+            // field mapping (used by scatter/line/bar)
+            xField: 'x',
+            yField: 'y',
+
+            // histogram options
+            bins: 20,
+
+            // normal distribution options
+            mean: 0,
+            stdDev: 1,
+            sampleSize: 200,              // number of x points
+            title: 'Visualization',
+            optionsJson: '{}'             // extra Chart.js options as JSON string (merged)
             },
             // Data source component allows the app creator to select a JSON file
             // from the file system as an input.  The dataType determines how
@@ -1172,13 +1281,16 @@ class AppBuilder {
             'data-transform': 'Data Transform',
             'display': 'Display Output',
             'chart': 'Chart',
-            'export': 'Export Data'
-            , 'table': 'Table'
-            , 'data-source': 'Data Source'
-            , 'math-operations': 'Math Operations'
-            , 'stats-operations': 'Statistics Operations'
-            , 'custom-buttons': 'Custom Buttons'
-            , 'summary-output': 'Summary Output'
+            'export': 'Export Data',
+            'table': 'Table',
+            'data-source': 'Data Source',
+            'api-call-input': 'API Call (Input)',
+            'api-call-output': 'API Call (Output)',
+            'data-visualization': 'Data Visualization',
+            'math-operations': 'Math Operations',
+            'stats-operations': 'Statistics Operations',
+            'custom-buttons': 'Custom Buttons',
+            'summary-output': 'Summary Output'
         };
         return labels[component.type] || component.type;
     }
@@ -1252,6 +1364,14 @@ class AppBuilder {
         // Provide a custom property editor for data transform components
         if (component.type === 'data-transform') {
             this.renderDataTransformProperties(container);
+            return;
+        }
+        if (component.type === 'data-visualization') {
+            this.renderDataVisualizationProperties(container);
+            return;
+        }
+        if (component.type === 'api-call-input' || component.type === 'api-call-output') {
+            this.renderApiCallProperties(container);
             return;
         }
         if (component.type === 'math-operations') {
@@ -1555,6 +1675,194 @@ class AppBuilder {
         // Initial render of AI options
         renderAiOptions();
     }
+
+    renderApiCallProperties(container) {
+        container.innerHTML = '';
+        const isInput = this.selectedComponentRef.component.type === 'api-call-input';
+
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" placeholder="${isInput ? 'API Call (Input)' : 'API Call (Output)'}"/>
+            </div>
+            <div class="form-row">
+                <div class="form-col-half">
+                    <label>Method</label>
+                    <select class="config-method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                    </select>
+                </div>
+                <div class="form-col-half">
+                    <label>Auto Run on Step Load</label>
+                    <select class="config-autoRun">
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Endpoint URL</label>
+                <input type="text" class="config-url" placeholder="https://api.example.com/endpoint"/>
+                <small style="font-size:11px;color:rgba(255,255,255,0.6)">Use {{componentId}} or {{__all__}} in templates below.</small>
+            </div>
+            <div class="form-group">
+                <label>Headers (JSON)</label>
+                <textarea class="config-headers" rows="3" placeholder='{"Content-Type":"application/json"}'></textarea>
+            </div>
+            <div class="form-group">
+                <label>Query Template (appended to URL)</label>
+                <input type="text" class="config-queryTemplate" placeholder='q={{prevComponentId}}&lang=en'/>
+            </div>
+            <div class="form-group">
+                <label>Body Template (POST only)</label>
+                <textarea class="config-bodyTemplate" rows="5" placeholder='{{__all__}}'></textarea>
+                <small style="font-size:11px;color:rgba(255,255,255,0.6)">
+                    Templates support {{componentId}} for a single value or {{__all__}} for entire state.
+                </small>
+            </div>
+        `;
+        container.appendChild(form);
+
+        // Bind base config fields and change listeners
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+
+        // Enforce sensible defaults for output if empty
+        const { component } = this.selectedComponentRef;
+        if (component.type === 'api-call-output') {
+            if (!component.config.headers) component.config.headers = '{"Content-Type":"application/json"}';
+            if (!component.config.bodyTemplate) component.config.bodyTemplate = '{{__all__}}';
+        }
+
+        // POST/GET UX: show/hide body template when method changes
+        const methodSel = form.querySelector('.config-method');
+        const bodyGroup = form.querySelector('.config-bodyTemplate')?.closest('.form-group');
+        const toggleBody = () => { if (bodyGroup) bodyGroup.style.display = (methodSel.value === 'POST') ? 'block' : 'none'; };
+        methodSel.addEventListener('change', toggleBody);
+        toggleBody();
+
+        // Coerce autoRun select to boolean on change
+        const autoRunSel = form.querySelector('.config-autoRun');
+        autoRunSel.addEventListener('change', () => {
+            component.config.autoRun = (autoRunSel.value === 'true');
+        });
+    }
+
+    renderDataVisualizationProperties(container) {
+        const { component } = this.selectedComponentRef;
+        component.config = component.config || {};
+        const cfg = component.config;
+
+        container.innerHTML = `
+            <div class="form-row">
+            <label>Label</label>
+            <input class="dv-label" type="text" value="${cfg.label ?? 'Data Visualization'}">
+            </div>
+
+            <div class="form-row">
+            <label>Template</label>
+            <select class="dv-template">
+                <option value="normal-dist"${cfg.template==='normal-dist'?' selected':''}>Normal Distribution</option>
+                <option value="histogram"${cfg.template==='histogram'?' selected':''}>Histogram</option>
+                <option value="scatter"${cfg.template==='scatter'?' selected':''}>Scatter</option>
+                <option value="line"${cfg.template==='line'?' selected':''}>Line</option>
+                <option value="bar"${cfg.template==='bar'?' selected':''}>Bar</option>
+            </select>
+            </div>
+
+            <div class="form-row">
+            <label>Source Mode</label>
+            <select class="dv-sourceMode">
+                <option value="component"${cfg.sourceMode==='component'?' selected':''}>Component</option>
+                <option value="inline"${cfg.sourceMode==='inline'?' selected':''}>Inline JSON</option>
+            </select>
+            </div>
+
+            <div class="form-row dv-source-component">
+            <label>Source Component ID</label>
+            <input class="dv-sourceId" type="text" placeholder="priorComponentId" value="${cfg.sourceComponentId||''}">
+            </div>
+
+            <div class="form-row dv-source-inline" style="display:none">
+            <label>Inline Data (JSON)</label>
+            <textarea class="dv-inline" rows="6" spellcheck="false">${cfg.inlineData || '[]'}</textarea>
+            </div>
+
+            <div class="form-row dv-map">
+            <label>Field Mapping (for scatter/line/bar)</label>
+            <div style="display:flex;gap:8px">
+                <input class="dv-xField" type="text" placeholder="x" value="${cfg.xField ?? 'x'}">
+                <input class="dv-yField" type="text" placeholder="y" value="${cfg.yField ?? 'y'}">
+            </div>
+            </div>
+
+            <div class="form-row dv-hist">
+            <label>Histogram Bins</label>
+            <input class="dv-bins" type="number" min="2" max="200" value="${cfg.bins ?? 20}">
+            </div>
+
+            <div class="form-row dv-normal">
+            <label>Normal Dist Params</label>
+            <div style="display:flex;gap:8px">
+                <input class="dv-mean" type="number" step="0.1" value="${cfg.mean ?? 0}">
+                <input class="dv-std"  type="number" step="0.1" value="${cfg.stdDev ?? 1}">
+                <input class="dv-sz"   type="number" min="20" max="2000" value="${cfg.sampleSize ?? 200}">
+            </div>
+            </div>
+
+            <div class="form-row">
+            <label>Title</label>
+            <input class="dv-title" type="text" value="${cfg.title ?? 'Visualization'}">
+            </div>
+
+            <div class="form-row">
+            <label>Chart.js Options (JSON)</label>
+            <textarea class="dv-options" rows="5" spellcheck="false">${cfg.optionsJson || '{}'}</textarea>
+            </div>
+        `;
+
+        const showBlocks = () => {
+            const t = container.querySelector('.dv-template').value;
+            const mode = container.querySelector('.dv-sourceMode').value;
+            container.querySelector('.dv-source-component').style.display = (mode==='component') ? 'block' : 'none';
+            container.querySelector('.dv-source-inline').style.display    = (mode==='inline')    ? 'block' : 'none';
+            container.querySelector('.dv-map').style.display   = (t==='scatter'||t==='line'||t==='bar') ? 'block' : 'none';
+            container.querySelector('.dv-hist').style.display  = (t==='histogram') ? 'block' : 'none';
+            container.querySelector('.dv-normal').style.display= (t==='normal-dist') ? 'block' : 'none';
+        };
+
+        const bind = (sel, key, fx) => {
+            const el = container.querySelector(sel); if (!el) return;
+            const write = () => {
+            let v = (el.type === 'number') ? +el.value : el.value;
+            component.config[key] = fx ? fx(v) : v;
+            if (key === 'label') this.renderWorkflow();
+            showBlocks();
+            };
+            el.addEventListener('input', write);
+            el.addEventListener('change', write);
+            write();
+        };
+
+        bind('.dv-label','label', v=>String(v||'').trim());
+        bind('.dv-template','template');
+        bind('.dv-sourceMode','sourceMode');
+        bind('.dv-sourceId','sourceComponentId', v=>String(v||'').trim());
+        bind('.dv-inline','inlineData');
+        bind('.dv-xField','xField', v=>String(v||'').trim()||'x');
+        bind('.dv-yField','yField', v=>String(v||'').trim()||'y');
+        bind('.dv-bins','bins', v=>Math.max(2, Math.min(200, +v||20)));
+        bind('.dv-mean','mean', v=>+v||0);
+        bind('.dv-std','stdDev', v=>Math.max(0.0001, +v||1));
+        bind('.dv-sz','sampleSize', v=>Math.max(20, Math.min(2000, +v||200)));
+        bind('.dv-title','title');
+        bind('.dv-options','optionsJson');
+
+        showBlocks();
+        }
 
     /**
      * Render custom properties UI for the table component.  This includes

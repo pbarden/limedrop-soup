@@ -120,6 +120,12 @@ class AppRuntime {
             this.setupTableAi(component);
             this.setupDataSource(component);
         }
+        if (component.type === 'api-call-input' || component.type === 'api-call-output') {
+        this.setupApiStep(component);
+        }
+        if (component.type === 'data-visualization') {
+        this.setupDataVisualization(component);
+        }
         // Automatically complete data source steps without user interaction
         if (component.type === 'data-source') {
             this.autoCompleteDataSource(component);
@@ -214,6 +220,60 @@ class AppRuntime {
                     </div>` : ''}
                     <ul id="file-preview-list" style="list-style:none; padding-left:0; margin:0 0 8px 0;"></ul>
                     <button class="btn-primary" id="runtime-file-continue" onclick="__runtimeInstance.completeCurrentStep()" disabled>Continue</button>
+                `;
+            }
+            case 'data-visualization':
+            return `
+                <div class="component-card">
+                <div class="component-header">
+                    <i class="fas fa-chart-area"></i>
+                    <span>${this.escapeHtml((component.config||{}).label || 'Data Visualization')}</span>
+                </div>
+                <div class="component-body">
+                    <canvas id="dv-canvas" style="width:100%;height:280px;"></canvas>
+                </div>
+                </div>
+            `;
+            case 'api-call-input': {
+                const cfg = component.config || {};
+                return `
+                    <div class="component-card">
+                        <div class="component-header">
+                            <i class="fas fa-plug"></i>
+                            <span>${this.escapeHtml(cfg.label || 'API Call (Input)')}</span>
+                        </div>
+                        <div class="component-body">
+                            <div style="margin-bottom:8px;">
+                                <div id="api-status" style="font-size:12px;opacity:.7;">Ready</div>
+                                <pre id="api-response" style="max-height:160px;overflow:auto;"></pre>
+                            </div>
+                            <div class="component-actions">
+                                <button class="btn-secondary" id="api-run">Run</button>
+                                <button class="btn-primary" id="api-run-continue">Run & Continue</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            case 'api-call-output': {
+                const cfg = component.config || {};
+                return `
+                    <div class="component-card">
+                        <div class="component-header">
+                            <i class="fas fa-network-wired"></i>
+                            <span>${this.escapeHtml(cfg.label || 'API Call (Output)')}</span>
+                        </div>
+                        <div class="component-body">
+                            <div style="margin-bottom:8px;">
+                                <div id="api-status" style="font-size:12px;opacity:.7;">Ready</div>
+                                <pre id="api-response" style="max-height:160px;overflow:auto;"></pre>
+                            </div>
+                            <div class="component-actions">
+                                <button class="btn-secondary" id="api-run">Run</button>
+                                <button class="btn-primary" id="api-run-continue">Run & Continue</button>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }
             case 'canvas': {
@@ -736,6 +796,101 @@ class AppRuntime {
         this.currentIndex++;
         this.renderCurrentStep();
     }
+
+    expandTemplate(str) {
+        if (!str) return '';
+        // {{__all__}} or {{id}}
+        return String(str).replace(/\{\{([^}]+)\}\}/g, (_m, key) => {
+            key = key.trim();
+            if (key === '__all__') return JSON.stringify(this.state || {});
+            const v = this.state[key];
+            if (v == null) return '';
+            return (typeof v === 'string') ? v : JSON.stringify(v);
+        });
+        }
+
+        buildApiRequest(component) {
+        const cfg = component.config || {};
+        const method = (cfg.method || 'GET').toUpperCase();
+        let url = (cfg.url || '').trim();
+        // headers
+        let headers = {};
+        try { if (cfg.headers) headers = JSON.parse(cfg.headers); } catch(e) { /* ignore */ }
+        // query (GET)
+        const q = this.expandTemplate(cfg.queryTemplate || '');
+        if (q) {
+            const sep = url.includes('?') ? '&' : '?';
+            url = `${url}${sep}${q}`;
+        }
+        const init = { method, headers };
+        // body (POST)
+        if (method === 'POST') {
+            let body = this.expandTemplate(cfg.bodyTemplate || '');
+            // default to entire state if bodyTemplate empty and output type
+            if (!body && component.type === 'api-call-output') {
+            body = JSON.stringify(this.state || {});
+            }
+            // If looks like JSON, leave as string; otherwise send as-is.
+            init.body = body || '';
+        }
+        return { url, init };
+        }
+
+        async invokeApi(component, opts={ autoAdvance:false }) {
+        const statusEl = this.container.querySelector('#api-status');
+        const respEl = this.container.querySelector('#api-response');
+        const nextBtn = this.container.querySelector('#runtime-next');
+        if (statusEl) statusEl.textContent = 'Calling...';
+        if (nextBtn) nextBtn.disabled = true;
+
+        const { url, init } = this.buildApiRequest(component);
+        let result = { ok:false, status:0, data:null, headers:{}, error:null };
+
+        try {
+            const res = await fetch(url, init);
+            result.ok = res.ok;
+            result.status = res.status;
+            // keep small header subset
+            const ct = res.headers.get('content-type') || '';
+            const cl = res.headers.get('content-length') || '';
+            result.headers = { 'content-type': ct, 'content-length': cl };
+            const text = await res.text();
+            try { result.data = JSON.parse(text); }
+            catch { result.data = text; }
+        } catch (err) {
+            result.error = String(err && err.message || err);
+        }
+
+        // record in state under this component's id
+        const entry = this.sequence[this.currentIndex];
+        this.state[entry.component.id] = result;
+
+        if (respEl) {
+            respEl.textContent = JSON.stringify(result, null, 2);
+        }
+        if (statusEl) {
+            statusEl.textContent = result.ok ? 'Success' : 'Failed';
+        }
+        if (nextBtn) nextBtn.disabled = false;
+
+        if (opts.autoAdvance) {
+            await this.completeCurrentStep();
+        }
+        }
+
+        setupApiStep(component) {
+        const runBtn = this.container.querySelector('#api-run');
+        const runContinueBtn = this.container.querySelector('#api-run-continue');
+        if (runBtn) runBtn.addEventListener('click', () => this.invokeApi(component, { autoAdvance:false }));
+        if (runContinueBtn) runContinueBtn.addEventListener('click', () => this.invokeApi(component, { autoAdvance:true }));
+
+        const cfg = component.config || {};
+        if (cfg.autoRun) {
+            // auto-run and do not auto-advance for input by default
+            const autoAdvance = (component.type === 'api-call-output') ? false : false;
+            this.invokeApi(component, { autoAdvance });
+        }
+        }
 
     /**
      * Setup the file upload UI.  This method populates the existing file
@@ -2023,6 +2178,117 @@ class AppRuntime {
                 break;
             // Other component types do not support restoration in this simple implementation
         }
+    }
+
+    setupDataVisualization(component) {
+    const canvas = this.container.querySelector('#dv-canvas');
+    if (!canvas) return;
+    const { data, type } = this.viz_buildDataset(component);
+    const config = this.viz_buildChartConfig(component, type, data);
+    this.viz_renderChart(canvas, config);
+    }
+
+    viz_renderChart(canvas, config) {
+    // Reuse existing chart machinery if present
+    if (typeof this.renderChart === 'function') {
+        // If your Chart component exposes this helper — use it.
+        return this.renderChart(canvas, config);
+    }
+    if (window.LDChart && typeof window.LDChart.render === 'function') {
+        return window.LDChart.render(canvas, config);
+    }
+    // Fallback: raw Chart.js (requires window.Chart to be loaded in the app)
+    if (window.Chart) {
+        // destroy any previous chart stored on canvas
+        if (canvas.__chart) { try { canvas.__chart.destroy(); } catch(_){} }
+        canvas.__chart = new window.Chart(canvas.getContext('2d'), config);
+    }
+    }
+
+    viz_buildDataset(component) {
+    const cfg = component.config || {};
+    const t = cfg.template || 'normal-dist';
+    const mode = cfg.sourceMode || 'component';
+
+    let raw = [];
+    if (t === 'normal-dist') {
+        const mean = +cfg.mean || 0;
+        const sd   = Math.max(0.0001, +cfg.stdDev || 1);
+        const n    = Math.max(20, Math.min(2000, +cfg.sampleSize || 200));
+        const xs = [];
+        const ys = [];
+        const min = mean - 4*sd;
+        const max = mean + 4*sd;
+        const step = (max - min) / (n-1);
+        for (let i=0;i<n;i++){
+        const x = min + i*step;
+        const y = (1/(sd*Math.sqrt(2*Math.PI))) * Math.exp(-0.5*((x-mean)/sd)**2);
+        xs.push(x); ys.push(y);
+        }
+        return { type: 'line', data: { labels: xs, datasets: [{ label: cfg.title || 'Normal PDF', data: ys }] } };
+    }
+
+    if (mode === 'inline') {
+        try { raw = JSON.parse(cfg.inlineData || '[]'); } catch { raw = []; }
+    } else {
+        raw = this.state[cfg.sourceComponentId] || [];
+    }
+
+    // Normalize raw to an array of primitives or objects
+    if (!Array.isArray(raw)) raw = [];
+
+    if (t === 'histogram') {
+        const nums = raw.map(v => (typeof v === 'number') ? v : (typeof v==='object' && v!=null && typeof v[cfg.xField]==='number' ? v[cfg.xField] : NaN)).filter(v => Number.isFinite(v));
+        const bins = Math.max(2, Math.min(200, +cfg.bins || 20));
+        if (nums.length === 0) return { type: 'bar', data: { labels: [], datasets: [{ label: cfg.title||'Histogram', data: [] }] } };
+        const min = Math.min(...nums), max = Math.max(...nums);
+        const width = (max - min) || 1;
+        const step = width / bins;
+        const edges = Array.from({length: bins+1}, (_,i)=> min + i*step);
+        const counts = Array(bins).fill(0);
+        nums.forEach(v => {
+        let idx = Math.floor((v - min) / step);
+        if (idx >= bins) idx = bins-1;
+        if (idx < 0) idx = 0;
+        counts[idx]++;
+        });
+        const labels = counts.map((_,i)=> `${edges[i].toFixed(2)}–${edges[i+1].toFixed(2)}`);
+        return { type: 'bar', data: { labels, datasets: [{ label: cfg.title || 'Histogram', data: counts }] } };
+    }
+
+    if (t === 'scatter') {
+        const xK = cfg.xField || 'x'; const yK = cfg.yField || 'y';
+        const points = raw.map(r => ({ x: +((r||{})[xK]), y: +((r||{})[yK]) })).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+        return { type: 'scatter', data: { datasets: [{ label: cfg.title || 'Scatter', data: points }] } };
+    }
+
+    if (t === 'line' || t === 'bar') {
+        const xK = cfg.xField || 'x'; const yK = cfg.yField || 'y';
+        const rows = raw.map(r => ({ x: (r||{})[xK], y: +((r||{})[yK]) })).filter(p => p.x!=null && Number.isFinite(p.y));
+        const labels = rows.map(r => String(r.x));
+        const values = rows.map(r => r.y);
+        return { type: t, data: { labels, datasets: [{ label: cfg.title || (t==='line'?'Line':'Bar'), data: values }] } };
+    }
+
+    // fallback
+    return { type: 'bar', data: { labels: [], datasets: [{ label: cfg.title || 'Chart', data: [] }] } };
+    }
+
+    viz_buildChartConfig(component, chartType, prebuilt) {
+    const cfg = component.config || {};
+    const base = prebuilt || { type: chartType, data: { labels: [], datasets: [] } };
+    let opts = {};
+    try { if (cfg.optionsJson) opts = JSON.parse(cfg.optionsJson); } catch {}
+    const merged = {
+        type: base.type,
+        data: base.data,
+        options: Object.assign({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { title: { display: !!cfg.title, text: cfg.title || '' } }
+        }, opts)
+    };
+    return merged;
     }
 }
 
