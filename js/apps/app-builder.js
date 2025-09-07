@@ -46,30 +46,33 @@ class AppBuilder {
      * component event registration.
      */
     init() {
-        // Inject module workflow styles to ensure the drop zones match
-        // the look and feel of the application. This is done once per
-        // builder instance and only if the styles have not already
-        // been added to the document.
+        // Find the content that was loaded from the template
+        const content = this.windowEl.querySelector('.window-content');
+        if (!content) {
+            console.error('No window content found');
+            return;
+        }
+
+        // Check if content is already populated from template
+        let appBuilderEl = content.querySelector('.app-builder');
+        if (!appBuilderEl) {
+            console.warn('App Builder template not found, using existing content');
+            // AppBuilder template should always be there, but continue anyway
+        }
+
+        // Continue with existing initialization
         this.setupModuleUI();
         this.setupDragAndDrop();
         this.setupEvents();
         this.initIconPicker();
-        // Dynamically insert a Table component item into the input list if it
-        // does not already exist in the HTML.  This enables dragging
-        // a table component without requiring manual HTML changes.
         this.injectTableComponentItem();
-        // Dynamically insert a Data Source component item into the input list
-        // if it does not already exist.  This ensures the new component
-        // appears in the builder sidebar without manual HTML edits.
         this.injectDataSourceComponentItem();
         this.injectMathOperationsComponentItem();
         this.injectStatsOperationsComponentItem();
-        // Inject new processing and output component items for custom buttons and summary output
         this.injectCustomButtonsComponentItem();
         this.injectSummaryOutputComponentItem();
-        // After injecting sidebar items, normalize their labels for consistent casing
         this.normalizeSidebarItems();
-        // Ensure at least one module exists
+        
         if (this.modules.length === 0) {
             this.addModule();
         }

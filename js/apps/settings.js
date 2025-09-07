@@ -8,6 +8,20 @@ class Settings {
     }
 
     init() {
+        // Find the content that was loaded from the template
+        const content = this.windowEl.querySelector('.window-content');
+        if (!content) {
+            console.error('No window content found');
+            return;
+        }
+
+        // Check if content is already populated from template
+        let settingsEl = content.querySelector('.settings');
+        if (!settingsEl) {
+            console.warn('Settings template not found, using existing content');
+            // Settings template should always be there, but continue anyway
+        }
+
         this.initializeColorTheme();
         this.initializeGradientPreviews();
         this.initializeDropdowns();

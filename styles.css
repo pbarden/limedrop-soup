@@ -341,7 +341,7 @@ i[class*=" fa-"] {
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -400,7 +400,7 @@ textarea:focus::placeholder {
 
 /* Components Panel */
 .components-panel {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     padding: 15px;
     overflow-y: auto;
@@ -455,7 +455,7 @@ textarea:focus::placeholder {
 
 /* Workflow Panel */
 .workflow-panel {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     padding: 15px;
     overflow: hidden;
@@ -546,7 +546,7 @@ textarea:focus::placeholder {
 
 /* Properties Panel */
 .properties-panel {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     padding: 15px;
     overflow-y: auto;
@@ -615,7 +615,7 @@ textarea:focus::placeholder {
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -637,7 +637,7 @@ textarea:focus::placeholder {
 .file-types-panel,
 .files-panel,
 .file-preview-panel {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 15px;
     overflow-y: auto;
@@ -1666,6 +1666,7 @@ textarea:focus::placeholder {
     flex: 1;
     display: flex;
     flex-direction: column;
+    padding-bottom: 20px;
 }
 
 .runtime-content {

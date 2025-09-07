@@ -8,9 +8,60 @@ class FileManager {
     }
 
     init() {
-        this.renderFileTypes();
-        this.renderFiles();
-        this.attachEvents();
+        // Find the content that was loaded from the template
+        const content = this.windowEl.querySelector('.window-content');
+        if (!content) {
+            console.error('No window content found');
+            return;
+        }
+
+        // Check if content is already populated from template
+        let fileManagerEl = content.querySelector('.file-manager');
+        if (!fileManagerEl) {
+            // Fallback: create content if template didn't load
+            console.warn('File Manager template not found, creating content manually');
+            this.createContent(content);
+            fileManagerEl = content.querySelector('.file-manager');
+        }
+
+        if (fileManagerEl) {
+            this.renderFileTypes();
+            this.renderFiles();
+            this.attachEvents();
+        }
+    }
+
+    createContent(container) {
+        // Fallback content creation if template fails
+        container.innerHTML = `
+            <div class="file-manager">
+                <div class="file-manager-header">
+                    <h2>File Manager</h2>
+                    <div class="file-manager-controls">
+                        <button class="btn-secondary new-file">New File</button>
+                        <button class="btn-secondary new-type">New Type</button>
+                        <button class="btn-secondary import-file">Import</button>
+                        <button class="btn-primary export-file">Export</button>
+                    </div>
+                </div>
+                <div class="file-manager-body">
+                    <div class="file-types-panel">
+                        <h3>File Types</h3>
+                        <div class="file-types-list" id="file-types-list"></div>
+                    </div>
+                    <div class="files-panel">
+                        <h3>Files</h3>
+                        <div class="files-grid" id="files-grid"></div>
+                    </div>
+                    <div class="file-preview-panel">
+                        <h3>Preview</h3>
+                        <div class="file-preview-content" id="file-preview-content">
+                            <p class="preview-placeholder">Select a file to preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     renderFileTypes() {
