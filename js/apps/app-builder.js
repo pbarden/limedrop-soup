@@ -32,6 +32,13 @@ class AppBuilder {
         this.processingTypes = ['ai-prompt', 'data-transform'];
         this.outputTypes = ['display', 'chart', 'export'];
         this.init();
+
+        // Cache of user-defined data types extracted from files app.
+        // This improves performance by avoiding repeated scans of the
+        // file system when rendering the Data Transform panel.  The
+        // signature tracks the list of files to detect changes.
+        this.cachedUserTypes = null;
+        this.cachedFileListSignature = '';
     }
 
     /**
@@ -1442,13 +1449,12 @@ class AppBuilder {
         // Bind values to config
         this.populateConfig(container);
         this.attachConfigListeners(container);
-        // Populate additional user‑defined types from files app
+        // Populate additional user‑defined types using a cached list from the files app.
         const select = form.querySelector('.config-targetType');
         if (select) {
             const builtIn = new Set(['text', 'table', 'image']);
             const addOption = (typeName) => {
                 if (!typeName || builtIn.has(typeName)) return;
-                // Avoid duplicates
                 if (Array.from(select.options).some(opt => opt.value === typeName)) return;
                 const opt = document.createElement('option');
                 opt.value = typeName;
@@ -1456,46 +1462,8 @@ class AppBuilder {
                 select.appendChild(opt);
             };
             try {
-                let files = [];
-                if (typeof fileSystem !== 'undefined') {
-                    if (typeof fileSystem.listFiles === 'function') {
-                        files = fileSystem.listFiles();
-                    } else if (typeof fileSystem.getFiles === 'function') {
-                        files = fileSystem.getFiles();
-                    } else if (Array.isArray(fileSystem.files)) {
-                        files = fileSystem.files;
-                    }
-                }
-                files.forEach(f => {
-                    let content;
-                    let id;
-                    if (typeof f === 'string') {
-                        id = f;
-                    } else {
-                        id = f.id || f.name;
-                    }
-                    // Read file content
-                    try {
-                        if (typeof fileSystem.readFile === 'function') {
-                            content = fileSystem.readFile(id);
-                        } else if (typeof fileSystem.getFileContent === 'function') {
-                            content = fileSystem.getFileContent(id);
-                        } else if (typeof fileSystem.getFile === 'function') {
-                            const fileObj = fileSystem.getFile(id);
-                            content = fileObj ? (fileObj.content || fileObj.data || fileObj.body) : null;
-                        }
-                        if (content && typeof content === 'string') {
-                            try {
-                                const json = JSON.parse(content);
-                                if (json && typeof json.type === 'string') {
-                                    addOption(json.type);
-                                }
-                            } catch {}
-                        } else if (content && typeof content === 'object' && typeof content.type === 'string') {
-                            addOption(content.type);
-                        }
-                    } catch {}
-                });
+                const types = this.fetchUserTypes();
+                types.forEach(t => addOption(t));
             } catch (err) {
                 console.warn('Failed to populate user types', err);
             }
@@ -1636,6 +1604,80 @@ class AppBuilder {
                 });
             }
         }
+    }
+
+    /**
+     * Retrieve the list of custom type strings defined in JSON files.
+     * This method reads the file system only when necessary and caches
+     * the results along with a simple signature of the file list.  If
+     * the signature has not changed, the cached list is returned to
+     * improve performance when the Data Transform panel is opened
+     * repeatedly.
+     *
+     * @returns {string[]} array of custom type names
+     */
+    fetchUserTypes() {
+        const builtIn = new Set(['text', 'table', 'image']);
+        // Helper to compute a simple signature for file list
+        const computeSignature = (list) => {
+            if (!Array.isArray(list)) return '';
+            return list.map(f => (typeof f === 'string' ? f : (f.id || f.name || ''))).sort().join('|');
+        };
+        let files = [];
+        try {
+            if (typeof fileSystem !== 'undefined') {
+                if (typeof fileSystem.listFiles === 'function') {
+                    files = fileSystem.listFiles();
+                } else if (typeof fileSystem.getFiles === 'function') {
+                    files = fileSystem.getFiles();
+                } else if (Array.isArray(fileSystem.files)) {
+                    files = fileSystem.files;
+                }
+            }
+        } catch {
+            files = [];
+        }
+        const signature = computeSignature(files);
+        if (this.cachedUserTypes && this.cachedFileListSignature === signature) {
+            return this.cachedUserTypes.slice();
+        }
+        const types = [];
+        const addType = (t) => {
+            if (!t || builtIn.has(t)) return;
+            if (!types.includes(t)) types.push(t);
+        };
+        files.forEach((f) => {
+            let id;
+            if (typeof f === 'string') {
+                id = f;
+            } else {
+                id = f.id || f.name;
+            }
+            try {
+                let content;
+                if (typeof fileSystem.readFile === 'function') {
+                    content = fileSystem.readFile(id);
+                } else if (typeof fileSystem.getFileContent === 'function') {
+                    content = fileSystem.getFileContent(id);
+                } else if (typeof fileSystem.getFile === 'function') {
+                    const fileObj = fileSystem.getFile(id);
+                    content = fileObj ? (fileObj.content || fileObj.data || fileObj.body) : null;
+                }
+                if (content && typeof content === 'string') {
+                    try {
+                        const json = JSON.parse(content);
+                        if (json && typeof json.type === 'string') {
+                            addType(json.type);
+                        }
+                    } catch {}
+                } else if (content && typeof content === 'object' && typeof content.type === 'string') {
+                    addType(content.type);
+                }
+            } catch {}
+        });
+        this.cachedUserTypes = types;
+        this.cachedFileListSignature = signature;
+        return types.slice();
     }
 
     /**

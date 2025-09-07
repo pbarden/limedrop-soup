@@ -28,6 +28,18 @@ class AppRuntime {
                 this.sequence.push({ moduleIndex: 0, component: component, componentIndex: idx });
             });
         }
+
+        // Build a quick lookup table from component id to component.  This
+        // improves performance when needing to fetch a component by id
+        // (e.g. when updating state for targeted display outputs).  It is
+        // constructed once during initialization.
+        this.componentById = {};
+        this.sequence.forEach(entry => {
+            const comp = entry.component;
+            if (comp && comp.id) {
+                this.componentById[comp.id] = comp;
+            }
+        });
         this.currentIndex = 0;
     }
 
