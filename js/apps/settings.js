@@ -11,8 +11,8 @@ class Settings {
         this.initializeColorTheme();
         this.initializeGradientPreviews();
         this.initializeDropdowns();
-        this.attachColorEvents();
         this.initializeWindowControlSettings();
+        this.attachColorEvents();
         this.loadSettings();
         this.isInitializing = false; 
     }
@@ -714,27 +714,45 @@ class Settings {
         }
     }
 
-    // Window Controls Settings - Add these methods to your Settings class
-
 initializeWindowControlSettings() {
-    // Create IconPicker instances like everywhere else
-    this.minimizePicker = new IconPicker(
-        this.windowEl.querySelector('#minimize-icon-picker'),
-        'fas fa-minus',
-        (iconClass) => this.applyControlIcon('minimize', iconClass)
-    );
+    console.log('Initializing window control settings...');
     
-    this.maximizePicker = new IconPicker(
-        this.windowEl.querySelector('#maximize-icon-picker'),
-        'fas fa-square',
-        (iconClass) => this.applyControlIcon('maximize', iconClass)
-    );
+    const minimizeContainer = this.windowEl.querySelector('#minimize-icon-picker');
+    const maximizeContainer = this.windowEl.querySelector('#maximize-icon-picker');
+    const closeContainer = this.windowEl.querySelector('#close-icon-picker');
     
-    this.closePicker = new IconPicker(
-        this.windowEl.querySelector('#close-icon-picker'),
-        'fas fa-times',
-        (iconClass) => this.applyControlIcon('close', iconClass)
-    );
+    console.log('Containers found:', {
+        minimize: !!minimizeContainer,
+        maximize: !!maximizeContainer,
+        close: !!closeContainer
+    });
+    
+    if (minimizeContainer) {
+        this.minimizePicker = new IconPicker(
+            minimizeContainer,
+            'fas fa-minus',
+            (iconClass) => this.applyControlIcon('minimize', iconClass)
+        );
+        console.log('Created minimize picker:', !!this.minimizePicker);
+    }
+    
+    if (maximizeContainer) {
+        this.maximizePicker = new IconPicker(
+            maximizeContainer,
+            'fas fa-square',
+            (iconClass) => this.applyControlIcon('maximize', iconClass)
+        );
+        console.log('Created maximize picker:', !!this.maximizePicker);
+    }
+    
+    if (closeContainer) {
+        this.closePicker = new IconPicker(
+            closeContainer,
+            'fas fa-times',
+            (iconClass) => this.applyControlIcon('close', iconClass)
+        );
+        console.log('Created close picker:', !!this.closePicker);
+    }
 }
 
 applyControlIcon(controlType, iconClass) {
@@ -746,7 +764,11 @@ applyControlIcon(controlType, iconClass) {
             control.innerHTML = `<i class="${iconClass}"></i>`;
         }
     });
-    this.saveSettings();
+    
+    // Store the value directly
+    const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
+    settings[`${controlType}Icon`] = iconClass;
+    localStorage.setItem('limedrop-settings', JSON.stringify(settings));
 }
 
 initializeWindowControlIconPickers() {
@@ -1035,16 +1057,19 @@ getDefaultSymbol(controlType) {
 loadWindowControlSettings() {
     const settings = JSON.parse(localStorage.getItem('limedrop-settings') || '{}');
     
-    // Load individual icons using IconPicker setValue()
-    if (settings.minimizeIcon && this.minimizePicker) {
-        this.minimizePicker.setValue(settings.minimizeIcon);
-    }
-    if (settings.maximizeIcon && this.maximizePicker) {
-        this.maximizePicker.setValue(settings.maximizeIcon);
-    }
-    if (settings.closeIcon && this.closePicker) {
-        this.closePicker.setValue(settings.closeIcon);
-    }
+    // Apply saved icons directly to windows
+    ['minimize', 'maximize', 'close'].forEach(controlType => {
+        const iconClass = settings[`${controlType}Icon`];
+        if (iconClass) {
+            const windows = document.querySelectorAll('.window');
+            windows.forEach(window => {
+                const control = window.querySelector(`.window-control.${controlType}`);
+                if (control) {
+                    control.innerHTML = `<i class="${iconClass}"></i>`;
+                }
+            });
+        }
+    });
 }
 
 // Save window control settings (update existing saveSettings method)
