@@ -1931,3 +1931,524 @@ select:focus:not(:focus-visible),
 textarea:focus:not(:focus-visible) {
     outline: none;
 }
+
+/* Add these styles to your existing styles.css file */
+
+/* Workflow item components - these classes are referenced in JavaScript but missing */
+.workflow-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    margin-right: 10px;
+}
+
+.workflow-label {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+}
+
+/* Module container styles - move from JS injection to CSS */
+.module-container {
+    margin-bottom: 15px;
+}
+
+.module-header {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Module workflow group styles */
+.workflow-group {
+    margin-bottom: 20px;
+}
+
+.workflow-group-header {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.workflow-group-body {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.workflow-group-body.drag-over {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.workflow-empty {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    text-align: center;
+    padding: 10px 0;
+}
+
+/* Module dropdown styles */
+.module-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.module-dropdown-toggle {
+    width: 100%;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.module-dropdown-toggle:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.module-dropdown-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.module-dropdown-menu.hide {
+    display: none;
+}
+
+.module-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.module-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.module-option.selected {
+    background: rgba(255, 255, 255, 0.15);
+    border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.module-option-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.module-option-actions button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    padding: 2px 4px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.module-option-actions button:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.module-add-option {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.module-add-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.module-menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 4px 0;
+}
+
+.module-option-count {
+    margin-left: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+}
+
+.module-option-name {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Runtime component fixes */
+.runtime-content input[type="text"],
+.runtime-content input[type="email"],
+.runtime-content input[type="number"],
+.runtime-content input[type="password"],
+.runtime-content input[type="tel"],
+.runtime-content input[type="url"],
+.runtime-content select,
+.runtime-content textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.runtime-content input:focus,
+.runtime-content select:focus,
+.runtime-content textarea:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Canvas runtime controls */
+#canvas-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+#canvas-controls label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#canvas-taskbar {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+.canvas-tool-btn,
+.ai-filter-btn {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.canvas-tool-btn:hover,
+.ai-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.canvas-tool-btn.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: transparent;
+}
+
+/* Rich text editor */
+#runtime-rich-editor {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 12px;
+    color: white;
+    min-height: 150px;
+    overflow-y: auto;
+    outline: none;
+    line-height: 1.5;
+}
+
+#runtime-rich-editor:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+#runtime-rich-editor[data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+}
+
+#rich-text-toolbar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+.rich-btn {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 28px;
+    text-align: center;
+}
+
+.rich-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Table runtime styles */
+.runtime-output-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.runtime-output-table th,
+.runtime-output-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.runtime-output-table th {
+    background: rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+}
+
+.table-cell-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.table-cell-input:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    outline: none;
+}
+
+/* Data source controls */
+.data-source {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.data-source label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+/* AI options configuration */
+.ai-option-row {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.rich-ai-btn,
+.table-ai-btn {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rich-ai-btn:hover,
+.table-ai-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* App Manager specific styles */
+.app-manager-container {
+    padding: 20px;
+}
+
+.app-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.app-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Custom button configuration */
+.custom-btn-row {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+/* Error message styling */
+.runtime-text-error,
+.runtime-rich-error {
+    color: rgba(255, 67, 54, 0.8);
+    font-size: 12px;
+    margin-top: 4px;
+    min-height: 16px;
+}
+
+/* File upload preview */
+#file-preview-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+}
+
+#file-preview-list li {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Checkbox group improvements */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-group label {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 13px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.checkbox-group input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+}
+
+.checkbox-group input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    left: 2px;
+    top: -1px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Display output improvements */
+#runtime-display-output {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#runtime-display-message {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}

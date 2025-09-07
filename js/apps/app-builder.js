@@ -50,7 +50,6 @@ class AppBuilder {
         // the look and feel of the application. This is done once per
         // builder instance and only if the styles have not already
         // been added to the document.
-        this.injectModuleStyles();
         this.setupModuleUI();
         this.setupDragAndDrop();
         this.setupEvents();
@@ -388,254 +387,6 @@ class AppBuilder {
     }
 
     /**
-     * Dynamically inject CSS rules for module workflow groups. Because
-     * the original Limedrop application loads its global styles from a
-     * separate file that we cannot modify directly in this environment,
-     * we embed the necessary styles here. The CSS mirrors the
-     * application’s translucent backgrounds, dashed borders and
-     * typography. It is added only once per page.
-     */
-    injectModuleStyles() {
-        const styleId = 'module-workflow-styles';
-        if (document.getElementById(styleId)) return;
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            /* Module Workflow Group Styles */
-            .workflow-group {
-                margin-bottom: 20px;
-            }
-            .workflow-group-header {
-                font-size: 12px;
-                font-weight: 600;
-                text-transform: uppercase;
-                margin-bottom: 6px;
-                color: rgba(255, 255, 255, 0.7);
-            }
-            .workflow-group-body {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px dashed rgba(255, 255, 255, 0.2);
-                border-radius: 6px;
-                padding: 8px;
-                min-height: 60px;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                transition: background 0.3s ease, border-color 0.3s ease;
-            }
-            .workflow-group-body.drag-over {
-                background: rgba(255, 255, 255, 0.08);
-                border-color: rgba(255, 255, 255, 0.3);
-            }
-            .workflow-empty {
-                color: rgba(255, 255, 255, 0.5);
-                font-size: 12px;
-                text-align: center;
-                padding: 10px 0;
-            }
-
-            /* Sidebar component item alignment: ensure icons and labels are consistently spaced */
-            .component-item {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .component-item i {
-                margin-right: 0 !important;
-            }
-            .component-item span {
-                flex-grow: 1;
-            }
-
-            /* Checkbox group layout */
-            .checkbox-group {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .checkbox-group label {
-                flex-grow: 1;
-                margin: 0;
-            }
-            .checkbox-group input[type="checkbox"] {
-                appearance: none;
-                -webkit-appearance: none;
-                width: 20px;
-                height: 20px;
-                border-radius: 6px;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                position: relative;
-                cursor: pointer;
-                display: inline-block;
-            }
-            .checkbox-group input[type="checkbox"]::after {
-                content: '';
-                position: absolute;
-                left: 5px;
-                top: 2px;
-                width: 6px;
-                height: 10px;
-                border: solid rgba(255, 255, 255, 0.8);
-                border-width: 0 2px 2px 0;
-                transform: rotate(45deg);
-                opacity: 0;
-                transition: opacity 0.2s ease;
-            }
-            .checkbox-group input[type="checkbox"]:checked {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-color: transparent;
-            }
-            .checkbox-group input[type="checkbox"]:checked::after {
-                opacity: 1;
-            }
-
-            /* Module dropdown styles */
-            .module-dropdown {
-                position: relative;
-                display: inline-block;
-                width: 100%;
-            }
-            .module-dropdown-toggle {
-                width: 100%;
-                padding: 10px 12px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: #fff;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                cursor: pointer;
-                text-align: left;
-            }
-            .module-dropdown-toggle:after {
-                content: '';
-            }
-            .module-dropdown-menu {
-                position: absolute;
-                left: 0;
-                right: 0;
-                top: 100%;
-                margin-top: 5px;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 8px;
-                backdrop-filter: blur(20px);
-                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-                z-index: 1000;
-                max-height: 250px;
-                overflow-y: auto;
-            }
-            .module-dropdown-menu.hide {
-                display: none;
-            }
-            .module-option {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 8px 12px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: background 0.2s ease;
-            }
-            .module-option:hover {
-                background: rgba(255, 255, 255, 0.1);
-            }
-            .module-option.selected {
-                background: rgba(255, 255, 255, 0.15);
-                border-left: 3px solid rgba(255, 255, 255, 0.4);
-            }
-            .module-option-actions {
-                display: flex;
-                gap: 4px;
-            }
-            .module-option-actions button {
-                background: none;
-                border: none;
-                color: rgba(255, 255, 255, 0.7);
-                font-size: 12px;
-                padding: 2px 4px;
-                cursor: pointer;
-            }
-            .module-option-actions button:hover {
-                color: rgba(255, 255, 255, 0.9);
-            }
-            .module-add-option {
-                padding: 10px 12px;
-                font-size: 14px;
-                color: rgba(255, 255, 255, 0.8);
-                cursor: pointer;
-            }
-            .module-add-option:hover {
-                background: rgba(255, 255, 255, 0.1);
-            }
-            .module-menu-divider {
-                height: 1px;
-                background: rgba(255, 255, 255, 0.1);
-                margin: 4px 0;
-            }
-            .module-option-count {
-                margin-left: 6px;
-                color: rgba(255, 255, 255, 0.6);
-                font-size: 12px;
-            }
-            .module-option-name {
-                flex: 1;
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-            }
-
-            /* Custom input modal for renaming modules */
-            .custom-modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.4);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 2000;
-            }
-            .custom-modal {
-                background: rgba(255, 255, 255, 0.08);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 8px;
-                padding: 20px;
-                min-width: 280px;
-                backdrop-filter: blur(20px);
-                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            }
-            .custom-modal h3 {
-                margin: 0 0 12px 0;
-                font-size: 18px;
-                color: #fff;
-            }
-            .custom-modal-input {
-                width: 100%;
-                padding: 8px 10px;
-                margin-bottom: 12px;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 4px;
-                color: #fff;
-            }
-            .custom-modal-actions {
-                display: flex;
-                justify-content: flex-end;
-                gap: 8px;
-            }
-            .custom-modal-actions .btn-primary,
-            .custom-modal-actions .btn-secondary {
-                font-size: 14px;
-                padding: 6px 12px;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    /**
      * Create the UI elements for managing modules.  This method replaces
      * the previous list and standalone add button with a custom dropdown
      * control.  The dropdown displays the currently selected module and
@@ -644,6 +395,7 @@ class AppBuilder {
     setupModuleUI() {
         // Locate the workflow container which exists in the original layout
         const workflowContainer = this.windowEl.querySelector('#workflow-container');
+        
         // Create a container for modules
         const moduleContainer = document.createElement('div');
         moduleContainer.id = 'module-container';
@@ -2321,7 +2073,10 @@ class AppBuilder {
      */
     renderWorkflow() {
         const container = this.windowEl.querySelector('#workflow-container');
-        if (!container) return;
+            if (!container) {
+        console.warn('Workflow container not found');
+            return;
+        }
         const module = this.modules[this.selectedModuleIndex];
         // Clear any existing content
         container.innerHTML = '';

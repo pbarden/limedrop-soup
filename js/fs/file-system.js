@@ -146,23 +146,58 @@ class FileSystem {
     }
 
     saveToStorage() {
-        const data = {
-            files: Array.from(this.files.entries()),
-            fileTypes: Array.from(this.fileTypes.entries())
-        };
-        localStorage.setItem('limedrop-filesystem', JSON.stringify(data));
+        try {
+            const data = {
+                files: Array.from(this.files.entries()),
+                fileTypes: Array.from(this.fileTypes.entries())
+            };
+            const serialized = JSON.stringify(data);
+            localStorage.setItem('limedrop-filesystem', serialized);
+        } catch (error) {
+            console.error('Failed to save filesystem to storage:', error);
+            // Try to save a simplified version
+            try {
+                const simpleData = {
+                    files: [],
+                    fileTypes: Array.from(this.fileTypes.entries())
+                };
+                localStorage.setItem('limedrop-filesystem', JSON.stringify(simpleData));
+                console.warn('Saved simplified filesystem data');
+            } catch (fallbackError) {
+                console.error('Failed to save even simplified data:', fallbackError);
+            }
+        }
     }
 
+    // In file-system.js, improve loadFromStorage method:
     loadFromStorage() {
-        const stored = localStorage.getItem('limedrop-filesystem');
-        if (stored) {
-            try {
+        try {
+            const stored = localStorage.getItem('limedrop-filesystem');
+            if (stored) {
                 const data = JSON.parse(stored);
-                this.files = new Map(data.files || []);
-                this.fileTypes = new Map(data.fileTypes || []);
-            } catch (error) {
-                console.error('Failed to load filesystem:', error);
+                
+                // Validate data structure
+                if (data && typeof data === 'object') {
+                    if (Array.isArray(data.files)) {
+                        this.files = new Map(data.files);
+                    } else {
+                        console.warn('Invalid files data in storage');
+                        this.files = new Map();
+                    }
+                    
+                    if (Array.isArray(data.fileTypes)) {
+                        this.fileTypes = new Map(data.fileTypes);
+                    } else {
+                        console.warn('Invalid fileTypes data in storage');
+                        // Keep current fileTypes if invalid
+                    }
+                }
             }
+        } catch (error) {
+            console.error('Failed to load filesystem from storage:', error);
+            // Initialize with defaults
+            this.files = new Map();
+            // Don't reset fileTypes as they might have been initialized
         }
     }
 }

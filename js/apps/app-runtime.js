@@ -883,14 +883,25 @@ class AppRuntime {
      * transformations to the image.  Undo and redo are implemented via
      * an array of data URLs stored on the runtime instance.
      */
+ 
     setupCanvas(component) {
         const cfg = component.config || {};
         const canvas = this.container.querySelector('#runtime-canvas');
-        if (!canvas) return;
+        if (!canvas) {
+            console.warn('Canvas element not found');
+            return;
+        }
+        
         const ctx = canvas.getContext('2d');
-        // Initialise history stack for undo/redo
-        this.canvasHistory = [];
-        this.historyIndex = -1;
+        if (!ctx) {
+            console.warn('Canvas context not available');
+            return;
+        }
+        
+        // Initialize history stack for undo/redo
+        this.canvasHistory = this.canvasHistory || [];
+        this.historyIndex = this.historyIndex || -1;
+        
         const saveState = () => {
             try {
                 const dataURL = canvas.toDataURL();
@@ -898,36 +909,61 @@ class AppRuntime {
                 this.canvasHistory = this.canvasHistory.slice(0, this.historyIndex + 1);
                 this.canvasHistory.push(dataURL);
                 this.historyIndex = this.canvasHistory.length - 1;
+                
+                // Limit history to prevent memory issues
+                if (this.canvasHistory.length > 50) {
+                    this.canvasHistory = this.canvasHistory.slice(-25);
+                    this.historyIndex = this.canvasHistory.length - 1;
+                }
             } catch (err) {
                 console.warn('Failed to save canvas state', err);
             }
         };
+        
         const restoreState = (index) => {
             if (index < 0 || index >= this.canvasHistory.length) return;
-            const img = new Image();
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-            };
-            img.src = this.canvasHistory[index];
+            try {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.onerror = () => {
+                    console.warn('Failed to load canvas state');
+                };
+                img.src = this.canvasHistory[index];
+            } catch (err) {
+                console.warn('Failed to restore canvas state', err);
+            }
         };
+        
         // Save initial blank state
         saveState();
+        
         // Drawing variables
         let drawing = false;
         let brushSize = cfg.brushSize || 5;
         let brushColor = cfg.brushColor || '#000000';
         let eraseMode = false;
         let fillMode = false;
+        
         const startDrawing = (e) => {
+            if (!cfg.editable) return;
             drawing = true;
             ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            ctx.moveTo(x, y);
         };
+        
         const draw = (e) => {
-            if (!drawing) return;
-            ctx.lineTo(e.offsetX, e.offsetY);
-            // Set composite operation based on erase mode
+            if (!drawing || !cfg.editable) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            ctx.lineTo(x, y);
             ctx.globalCompositeOperation = eraseMode ? 'destination-out' : 'source-over';
             ctx.strokeStyle = eraseMode ? 'rgba(0,0,0,1)' : brushColor;
             ctx.lineWidth = brushSize;
@@ -935,6 +971,7 @@ class AppRuntime {
             ctx.lineJoin = 'round';
             ctx.stroke();
         };
+        
         const stopDrawing = () => {
             if (drawing) {
                 drawing = false;
@@ -942,30 +979,63 @@ class AppRuntime {
                 saveState();
             }
         };
-        if (cfg.editable !== false) {
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        // Brush controls with null checks
+        const sizeInput = this.container.querySelector('#brush-size');
+        const colorInput = this.container.querySelector('#brush-color');
+        
+        if (sizeInput) {
+            sizeInput.addEventListener('input', (e) => {
+                const size = parseInt(e.target.value, 10);
+                brushSize = isNaN(size) ? 5 : Math.max(1, Math.min(50, size));
+            });
         }
-        // Brush controls
-        if (cfg.showBrushControls !== false) {
-            const sizeInput = this.container.querySelector('#brush-size');
-            const colorInput = this.container.querySelector('#brush-color');
-            if (sizeInput) {
-                sizeInput.addEventListener('input', (e) => {
-                    brushSize = parseInt(e.target.value, 10) || 1;
-                });
-            }
-            if (colorInput) {
-                colorInput.addEventListener('input', (e) => {
-                    brushColor = e.target.value || '#000000';
-                });
-            }
+        
+        if (colorInput) {
+            colorInput.addEventListener('input', (e) => {
+                brushColor = e.target.value || '#000000';
+            });
         }
-        // Canvas tool buttons and AI option handlers
-        // Undo and redo buttons exist whenever the taskbar is shown
+        
+        // Tool buttons with null checks
         const undoBtn = this.container.querySelector('#undo-btn');
+        const redoBtn = this.container.querySelector('#redo-btn');
+        const fillBtn = this.container.querySelector('#fill-btn');
+        const eraseBtn = this.container.querySelector('#erase-btn');
+        
         if (undoBtn) {
             undoBtn.addEventListener('click', () => {
                 if (this.historyIndex > 0) {
@@ -974,7 +1044,7 @@ class AppRuntime {
                 }
             });
         }
-        const redoBtn = this.container.querySelector('#redo-btn');
+        
         if (redoBtn) {
             redoBtn.addEventListener('click', () => {
                 if (this.historyIndex < this.canvasHistory.length - 1) {
@@ -983,29 +1053,64 @@ class AppRuntime {
                 }
             });
         }
-        // AI option buttons
+        
+        if (fillBtn) {
+            fillBtn.addEventListener('click', () => {
+                fillMode = !fillMode;
+                if (fillMode) {
+                    eraseMode = false;
+                    fillBtn.classList.add('active');
+                    if (eraseBtn) eraseBtn.classList.remove('active');
+                } else {
+                    fillBtn.classList.remove('active');
+                }
+            });
+        }
+        
+        if (eraseBtn) {
+            eraseBtn.addEventListener('click', () => {
+                eraseMode = !eraseMode;
+                if (eraseMode) {
+                    fillMode = false;
+                    eraseBtn.classList.add('active');
+                    if (fillBtn) fillBtn.classList.remove('active');
+                } else {
+                    eraseBtn.classList.remove('active');
+                }
+            });
+        }
+        
+        // AI filter buttons with error handling
         const aiButtons = this.container.querySelectorAll('.ai-filter-btn');
         if (aiButtons && aiButtons.length > 0) {
+            // Get AI options
+            let options = [];
+            if (Array.isArray(cfg.aiOptions)) {
+                options = cfg.aiOptions;
+            } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
+                options = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean)
+                    .map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
+            }
+            
             aiButtons.forEach((btn) => {
                 const index = parseInt(btn.getAttribute('data-filter-index'), 10);
+                if (isNaN(index) || index < 0 || index >= options.length) return;
+                
                 btn.addEventListener('click', () => {
-                    // Determine options (support legacy aiPrompts)
-                    let options = [];
-                    if (Array.isArray(cfg.aiOptions)) {
-                        options = cfg.aiOptions;
-                    } else if (typeof cfg.aiPrompts === 'string' && cfg.aiPrompts.trim().length > 0) {
-                        options = cfg.aiPrompts.split(',').map(s => s.trim()).filter(Boolean).map(p => ({ label: p, prompt: p, icon: 'fas fa-magic' }));
-                    }
                     const opt = options[index];
                     if (!opt) return;
+                    
                     try {
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         const data = imageData.data;
                         const label = (opt.label || '') + ' ' + (opt.prompt || '');
+                        
+                        // Apply simple filters based on keywords
                         for (let i = 0; i < data.length; i += 4) {
                             const r = data[i];
                             const g = data[i + 1];
                             const b = data[i + 2];
+                            
                             if (/watercolor/i.test(label)) {
                                 data[i] = Math.min(255, r * 1.1);
                                 data[i + 1] = Math.min(255, g * 1.1);
@@ -1014,11 +1119,13 @@ class AppRuntime {
                                 const avg = (r + g + b) / 3;
                                 data[i] = data[i + 1] = data[i + 2] = avg;
                             } else {
+                                // Invert colors
                                 data[i] = 255 - r;
                                 data[i + 1] = 255 - g;
                                 data[i + 2] = 255 - b;
                             }
                         }
+                        
                         ctx.putImageData(imageData, 0, 0);
                         saveState();
                     } catch (err) {
@@ -1027,131 +1134,98 @@ class AppRuntime {
                 });
             });
         }
-        // Fill button (toggle). When active, clicking on the canvas will flood fill
-        const fillBtn = this.container.querySelector('#fill-btn');
-        if (fillBtn) {
-            fillBtn.addEventListener('click', () => {
-                // toggle fill mode
-                fillMode = !fillMode;
-                // ensure erase mode off
-                if (fillMode && eraseMode) {
-                    eraseMode = false;
-                    const eb = this.container.querySelector('#erase-btn');
-                    if (eb) eb.classList.remove('active');
-                }
-                // update button states
-                if (fillMode) {
-                    fillBtn.classList.add('active');
-                } else {
-                    fillBtn.classList.remove('active');
-                }
-            });
-        }
-        // Erase button (toggle). When active, drawing acts as eraser
-        const eraseBtn = this.container.querySelector('#erase-btn');
-        if (eraseBtn) {
-            eraseBtn.addEventListener('click', () => {
-                eraseMode = !eraseMode;
-                // disable fill mode if toggling erase
-                if (eraseMode && fillMode) {
-                    fillMode = false;
-                    if (fillBtn) fillBtn.classList.remove('active');
-                }
-                // Visually indicate toggle state
-                if (eraseMode) {
-                    eraseBtn.classList.add('active');
-                } else {
-                    eraseBtn.classList.remove('active');
-                }
-            });
-        }
-
-        // Flood fill function used when fillMode is active and canvas clicked
-        function floodFill(x, y, fillColor) {
-            try {
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-                const width = canvas.width;
-                const height = canvas.height;
-                // Helper to get index in data array
-                const indexOf = (x, y) => (y * width + x) * 4;
-                // Convert fillColor to RGB
-                const hexToRgb = (hex) => {
-                    hex = hex.replace('#', '');
-                    if (hex.length === 3) {
-                        hex = hex.split('').map(c => c + c).join('');
-                    }
-                    const num = parseInt(hex, 16);
-                    return {
-                        r: (num >> 16) & 255,
-                        g: (num >> 8) & 255,
-                        b: num & 255
-                    };
-                };
-                const targetColor = {
-                    r: data[indexOf(x, y)],
-                    g: data[indexOf(x, y) + 1],
-                    b: data[indexOf(x, y) + 2]
-                };
-                const replacement = hexToRgb(fillColor);
-                // If target equals replacement, nothing to fill
-                if (targetColor.r === replacement.r && targetColor.g === replacement.g && targetColor.b === replacement.b) {
-                    return;
-                }
-                const matchColor = (i) => {
-                    return data[i] === targetColor.r && data[i + 1] === targetColor.g && data[i + 2] === targetColor.b;
-                };
-                const queue = [];
-                queue.push({ x, y });
-                while (queue.length > 0) {
-                    const { x: cx, y: cy } = queue.pop();
-                    let idx = indexOf(cx, cy);
-                    // Skip if not match
-                    if (!matchColor(idx)) continue;
-                    // Move west until color mismatch
-                    let west = cx;
-                    while (west >= 0 && matchColor(indexOf(west, cy))) {
-                        west--;
-                    }
-                        west++;
-                    // Move east until color mismatch
-                    let east = cx;
-                    while (east < width && matchColor(indexOf(east, cy))) {
-                        east++;
-                    }
-                    east--;
-                    // Fill span
-                    for (let i = west; i <= east; i++) {
-                        const pos = indexOf(i, cy);
-                        data[pos] = replacement.r;
-                        data[pos + 1] = replacement.g;
-                        data[pos + 2] = replacement.b;
-                    }
-                    // Check neighboring rows
-                    for (let nx = west; nx <= east; nx++) {
-                        if (cy > 0 && matchColor(indexOf(nx, cy - 1))) {
-                            queue.push({ x: nx, y: cy - 1 });
-                        }
-                        if (cy < height - 1 && matchColor(indexOf(nx, cy + 1))) {
-                            queue.push({ x: nx, y: cy + 1 });
-                        }
-                    }
-                }
-                ctx.putImageData(imageData, 0, 0);
-            } catch (err) {
-                console.warn('Failed to perform flood fill', err);
-            }
-        }
-
-        // When fillMode is active, clicking on canvas triggers flood fill
+        
+        // Flood fill implementation with error handling
         canvas.addEventListener('click', (e) => {
             if (!fillMode) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
-            const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
-            floodFill(x, y, brushColor);
-            saveState();
+            
+            try {
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+                const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+                
+                if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
+                
+                this.floodFill(ctx, x, y, brushColor, canvas.width, canvas.height);
+                saveState();
+            } catch (err) {
+                console.warn('Flood fill failed', err);
+            }
         });
+    }
+
+    // Add flood fill helper method to app-runtime.js:
+    floodFill(ctx, startX, startY, fillColor, width, height) {
+        try {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            const indexOf = (x, y) => (y * width + x) * 4;
+            
+            // Convert hex color to RGB
+            const hexToRgb = (hex) => {
+                hex = hex.replace('#', '');
+                if (hex.length === 3) {
+                    hex = hex.split('').map(c => c + c).join('');
+                }
+                const num = parseInt(hex, 16);
+                return {
+                    r: (num >> 16) & 255,
+                    g: (num >> 8) & 255,
+                    b: num & 255
+                };
+            };
+            
+            const startIndex = indexOf(startX, startY);
+            const targetColor = {
+                r: data[startIndex],
+                g: data[startIndex + 1],
+                b: data[startIndex + 2]
+            };
+            
+            const replacement = hexToRgb(fillColor);
+            
+            // If colors are the same, no fill needed
+            if (targetColor.r === replacement.r && 
+                targetColor.g === replacement.g && 
+                targetColor.b === replacement.b) {
+                return;
+            }
+            
+            const matchesTarget = (index) => {
+                return data[index] === targetColor.r && 
+                    data[index + 1] === targetColor.g && 
+                    data[index + 2] === targetColor.b;
+            };
+            
+            const stack = [{x: startX, y: startY}];
+            const visited = new Set();
+            
+            while (stack.length > 0) {
+                const {x, y} = stack.pop();
+                
+                if (x < 0 || x >= width || y < 0 || y >= height) continue;
+                
+                const key = y * width + x;
+                if (visited.has(key)) continue;
+                visited.add(key);
+                
+                const index = indexOf(x, y);
+                if (!matchesTarget(index)) continue;
+                
+                // Fill pixel
+                data[index] = replacement.r;
+                data[index + 1] = replacement.g;
+                data[index + 2] = replacement.b;
+                
+                // Add neighbors
+                stack.push({x: x + 1, y}, {x: x - 1, y}, {x, y: y + 1}, {x, y: y - 1});
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        } catch (err) {
+            console.warn('Flood fill operation failed', err);
+        }
     }
 
     /**

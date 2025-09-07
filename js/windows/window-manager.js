@@ -10,45 +10,214 @@ class WindowManager {
     createWindow(appId, title, contentTemplate, width = 800, height = 600) {
         const windowId = `window-${Date.now()}`;
         const template = document.getElementById('window-template');
+        if (!template) {
+            console.error('Window template not found');
+            return null;
+        }
+        
         const windowEl = template.content.cloneNode(true).querySelector('.window');
+        if (!windowEl) {
+            console.error('Window element not found in template');
+            return null;
+        }
+        
+        // Ensure dimensions are within reasonable bounds
+        const maxWidth = window.innerWidth - 100;
+        const maxHeight = window.innerHeight - 150;
+        width = Math.min(width, maxWidth);
+        height = Math.min(height, maxHeight);
+        
+        // Calculate center position with offset for multiple windows
+        const offset = (this.windows.size % 5) * 30;
+        const left = Math.max(20, (window.innerWidth - width) / 2 + offset);
+        const top = Math.max(20, (window.innerHeight - height) / 2 + offset);
         
         windowEl.id = windowId;
         windowEl.style.width = `${width}px`;
         windowEl.style.height = `${height}px`;
-        windowEl.style.left = `${(window.innerWidth - width) / 2}px`;
-        windowEl.style.top = `${(window.innerHeight - height) / 2}px`;
+        windowEl.style.left = `${left}px`;
+        windowEl.style.top = `${top}px`;
         windowEl.style.zIndex = this.zIndex++;
         
-        windowEl.querySelector('.window-title').textContent = title;
+        const titleEl = windowEl.querySelector('.window-title');
+        if (titleEl) {
+            titleEl.textContent = title;
+        }
         
         const contentEl = windowEl.querySelector('.window-content');
-        if (contentTemplate) {
+        if (contentTemplate && contentEl) {
             const content = document.getElementById(contentTemplate);
             if (content) {
                 contentEl.appendChild(content.content.cloneNode(true));
+            } else {
+                console.warn(`Content template '${contentTemplate}' not found`);
             }
+        }
+        
+        if (!this.container) {
+            console.error('Windows container not found');
+            return null;
         }
         
         this.container.appendChild(windowEl);
         
-        this.windows.set(windowId, {
+        const windowObj = {
             element: windowEl,
             appId: appId,
             title: title,
             minimized: false,
             maximized: false
-        });
+        };
+        
+        this.windows.set(windowId, windowObj);
         
         this.attachWindowEvents(windowEl, windowId);
         this.focusWindow(windowId);
         
-        // Update dock
-        const dockItem = document.querySelector(`.dock-item[data-app="${appId}"]`);
-        if (dockItem) {
-            dockItem.classList.add('active');
+        // Update dock with error handling
+        try {
+            const dockItem = document.querySelector(`.dock-item[data-app="${appId}"]`);
+            if (dockItem) {
+                dockItem.classList.add('active');
+            }
+        } catch (err) {
+            console.warn('Failed to update dock item', err);
         }
         
         return windowId;
+    }
+
+    // In window-manager.js, improve attachWindowEvents method:
+    attachWindowEvents(windowEl, windowId) {
+        const header = windowEl.querySelector('.window-header');
+        const minimizeBtn = windowEl.querySelector('.window-control.minimize');
+        const maximizeBtn = windowEl.querySelector('.window-control.maximize');
+        const closeBtn = windowEl.querySelector('.window-control.close');
+        const resizeHandle = windowEl.querySelector('.window-resize-handle');
+        
+        if (!header) {
+            console.warn('Window header not found');
+            return;
+        }
+        
+        // Window dragging with bounds checking
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('window-control')) return;
+            isDragging = true;
+            dragOffset = {
+                x: e.clientX - windowEl.offsetLeft,
+                y: e.clientY - windowEl.offsetTop
+            };
+            this.focusWindow(windowId);
+            e.preventDefault();
+        });
+        
+        const handleMouseMove = (e) => {
+            if (isDragging && !this.windows.get(windowId)?.maximized) {
+                // Keep window within viewport bounds
+                const newLeft = Math.max(0, Math.min(
+                    window.innerWidth - windowEl.offsetWidth, 
+                    e.clientX - dragOffset.x
+                ));
+                const newTop = Math.max(0, Math.min(
+                    window.innerHeight - windowEl.offsetHeight,
+                    e.clientY - dragOffset.y
+                ));
+                
+                windowEl.style.left = `${newLeft}px`;
+                windowEl.style.top = `${newTop}px`;
+            }
+        };
+        
+        const handleMouseUp = () => {
+            isDragging = false;
+        };
+        
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        
+        // Window resizing with minimum size constraints
+        if (resizeHandle) {
+            let isResizing = false;
+            let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
+            
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                resizeStart = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    width: windowEl.offsetWidth,
+                    height: windowEl.offsetHeight
+                };
+                e.preventDefault();
+            });
+            
+            const handleResizeMove = (e) => {
+                if (isResizing && !this.windows.get(windowId)?.maximized) {
+                    const newWidth = Math.max(300, Math.min(
+                        window.innerWidth - windowEl.offsetLeft,
+                        resizeStart.width + (e.clientX - resizeStart.x)
+                    ));
+                    const newHeight = Math.max(200, Math.min(
+                        window.innerHeight - windowEl.offsetTop,
+                        resizeStart.height + (e.clientY - resizeStart.y)
+                    ));
+                    
+                    windowEl.style.width = `${newWidth}px`;
+                    windowEl.style.height = `${newHeight}px`;
+                }
+            };
+            
+            const handleResizeUp = () => {
+                isResizing = false;
+            };
+            
+            document.addEventListener('mousemove', handleResizeMove);
+            document.addEventListener('mouseup', handleResizeUp);
+        }
+        
+        // Window controls with error handling
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => {
+                try {
+                    this.minimizeWindow(windowId);
+                } catch (err) {
+                    console.warn('Failed to minimize window', err);
+                }
+            });
+        }
+        
+        if (maximizeBtn) {
+            maximizeBtn.addEventListener('click', () => {
+                try {
+                    this.toggleMaximize(windowId);
+                } catch (err) {
+                    console.warn('Failed to toggle maximize', err);
+                }
+            });
+        }
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                try {
+                    this.closeWindow(windowId);
+                } catch (err) {
+                    console.warn('Failed to close window', err);
+                }
+            });
+        }
+        
+        // Focus on click
+        windowEl.addEventListener('mousedown', () => {
+            try {
+                this.focusWindow(windowId);
+            } catch (err) {
+                console.warn('Failed to focus window', err);
+            }
+        });
     }
 
     attachWindowEvents(windowEl, windowId) {
