@@ -319,12 +319,72 @@ class AppRuntime {
                         <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                     `;
                 }
-            case 'display':
+            case 'display': {
+                const cfg = component.config || {};
+                const lbl = cfg.label || 'Display Output';
+                const text = cfg.displayText || '';
+                const target = cfg.targetComponentId || '';
+                const labelHtml = lbl ? `<label>${lbl}</label><br/>` : '';
+                const textHtml = text ? `<p style="margin:4px 0 8px 0;">${text}</p>` : '';
+                // Determine previous value for immediate rendering
+                let prevVal = null;
+                if (this.currentIndex > 0) {
+                    const prevEntry = this.sequence[this.currentIndex - 1];
+                    if (prevEntry && prevEntry.component) {
+                        prevVal = this.state[prevEntry.component.id];
+                    }
+                }
+                let contentHtml = '';
+                if (target && String(target).trim().length > 0) {
+                    // Show notice about in‑place update when a target is specified
+                    contentHtml = `<div id="runtime-display-message" style="font-size:13px; color: rgba(255,255,255,0.8); margin-bottom:8px;">Output will be updated in the selected component.</div>`;
+                } else {
+                    // Render the previous value as preview
+                    let outputHtml = '';
+                    if (prevVal == null || typeof prevVal === 'undefined') {
+                        outputHtml = '';
+                    } else if (typeof prevVal === 'string' && /^data:image\//i.test(prevVal)) {
+                        outputHtml = `<img src="${prevVal}" style="max-width:100%; height:auto; border-radius:4px;"/>`;
+                    } else if (Array.isArray(prevVal)) {
+                        // Render table structure
+                        let html = '<table class="runtime-output-table" style="width:100%; border-collapse:collapse;">';
+                        if (prevVal.length > 0) {
+                            if (typeof prevVal[0] === 'object' && !Array.isArray(prevVal[0])) {
+                                const keys = Object.keys(prevVal[0]);
+                                html += '<thead><tr>' + keys.map(k => `<th style="padding:4px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.2);">${k}</th>`).join('') + '</tr></thead><tbody>';
+                                prevVal.forEach(row => {
+                                    html += '<tr>' + keys.map(k => `<td style="padding:4px; border-bottom:1px solid rgba(255,255,255,0.1);">${row[k] != null ? row[k] : ''}</td>`).join('') + '</tr>';
+                                });
+                                html += '</tbody>';
+                            } else {
+                                html += '<tbody>';
+                                prevVal.forEach(arr => {
+                                    html += '<tr>' + arr.map(v => `<td style="padding:4px; border-bottom:1px solid rgba(255,255,255,0.1);">${v}</td>`).join('') + '</tr>';
+                                });
+                                html += '</tbody>';
+                            }
+                        }
+                        html += '</table>';
+                        outputHtml = html;
+                    } else {
+                        const valStr = String(prevVal);
+                        if (/<[a-z][\s\S]*>/i.test(valStr)) {
+                            outputHtml = valStr;
+                        } else {
+                            // Escape HTML characters for plain text
+                            const escaped = valStr.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            outputHtml = escaped;
+                        }
+                    }
+                    contentHtml = `<div id="runtime-display-output" style="white-space:pre-wrap; background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.1);">${outputHtml}</div>`;
+                }
                 return `
-                    <label>${component.config.label || 'Display Output'}</label><br/>
-                    <pre id="runtime-display-output"></pre><br/>
+                    ${labelHtml}
+                    ${textHtml}
+                    ${contentHtml}<br/>
                     <button class="btn-primary" onclick="__runtimeInstance.completeCurrentStep()">Continue</button>
                 `;
+            }
             case 'chart':
                 return `
                     <p>${component.config.title || 'Chart'}</p>
@@ -472,6 +532,28 @@ class AppRuntime {
                     });
                 }
                 value = dataRows;
+                break;
+            }
+            case 'display': {
+                // Display steps pass along the previous step's value.  If
+                // a target component ID is set, update that component's
+                // state so the new value is used in subsequent steps.  No
+                // additional UI updates occur here since the display
+                // component renders the previous value when the step is
+                // initially shown.
+                const cfg = component.config || {};
+                let prevVal = null;
+                if (this.currentIndex > 0) {
+                    const prevEntry = this.sequence[this.currentIndex - 1];
+                    if (prevEntry && prevEntry.component) {
+                        prevVal = this.state[prevEntry.component.id];
+                    }
+                }
+                const targetId = cfg.targetComponentId || '';
+                if (targetId && String(targetId).trim().length > 0) {
+                    this.state[targetId] = prevVal;
+                }
+                value = prevVal;
                 break;
             }
             case 'data-transform': {

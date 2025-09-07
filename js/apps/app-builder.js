@@ -544,7 +544,13 @@ class AppBuilder {
                 // Legacy transformation field for backwards compatibility (not used in new UI)
                 transformation: 'custom'
             },
-            'display': { label: 'Output Display' },
+            'display': {
+                label: 'Output Display',
+                // Optional text to display to the user during this step
+                displayText: '',
+                // Target component id for in‑place output.  Leave empty to show output in its own area.
+                targetComponentId: ''
+            },
             'chart': { type: 'bar', title: 'Chart' },
             'export': { format: 'json', filename: 'export' }
         };
@@ -776,6 +782,12 @@ class AppBuilder {
         // Provide a custom property editor for AI prompt components
         if (component.type === 'ai-prompt') {
             this.renderAiPromptProperties(container);
+            return;
+        }
+
+        // Provide a custom property editor for display output components
+        if (component.type === 'display') {
+            this.renderDisplayProperties(container);
             return;
         }
         const templateId = `${component.type}-config`;
@@ -1565,6 +1577,64 @@ class AppBuilder {
         } else {
             modelSelect.value = component.config.model || 'gpt-3.5';
             modelCustom.style.display = 'none';
+        }
+    }
+
+    /**
+     * Render custom properties UI for the display output component.  This
+     * includes fields for label, optional display text shown to the user
+     * during the step, and a dropdown to select a target component within
+     * the current module.  If a target is selected, the runtime will
+     * insert the output into that component instead of showing it in a
+     * separate area.  After building the form, populateConfig and
+     * attachConfigListeners are invoked to bind config values and
+     * listeners.  The target component list is constructed dynamically
+     * from the current module's components and includes only those
+     * components capable of displaying data (text inputs, rich text,
+     * canvas and table).
+     */
+    renderDisplayProperties(container) {
+        container.innerHTML = '';
+        const form = document.createElement('div');
+        form.className = 'config-form';
+        form.innerHTML = `
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" class="config-label" />
+            </div>
+            <div class="form-group">
+                <label>Display Text</label>
+                <textarea rows="3" class="config-displayText" placeholder="Optional text to display during this step..."></textarea>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">This text is shown to the user when this step is reached.</small>
+            </div>
+            <div class="form-group">
+                <label>Target Component</label>
+                <select class="config-targetComponentId">
+                    <option value="">-- Show in New Section --</option>
+                </select>
+                <small style="font-size:11px; color: rgba(255,255,255,0.6); display:block; margin-top:2px;">Choose an existing component to display the output in-place.</small>
+            </div>
+        `;
+        container.appendChild(form);
+        // Bind base config fields
+        this.populateConfig(container);
+        this.attachConfigListeners(container);
+        // Populate the target component dropdown with eligible components
+        const select = form.querySelector('.config-targetComponentId');
+        if (select) {
+            const module = this.modules[this.selectedModuleIndex];
+            if (module && Array.isArray(module.components)) {
+                module.components.forEach((comp) => {
+                    const type = comp.type;
+                    if (['text-input','rich-text','canvas','table'].includes(type)) {
+                        const opt = document.createElement('option');
+                        opt.value = comp.id;
+                        const lbl = (comp.config && comp.config.label) ? comp.config.label : this.getComponentLabel(comp);
+                        opt.textContent = `${lbl}`;
+                        select.appendChild(opt);
+                    }
+                });
+            }
         }
     }
 
