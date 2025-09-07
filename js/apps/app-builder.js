@@ -163,6 +163,20 @@ class AppBuilder {
      * @param {Object} def The app definition object to load
      */
     loadAppDefinition(def) {
+        if (!def) return;
+        
+        // 1. Load the app name
+        const nameInput = this.windowEl.querySelector('.app-name-input');
+        if (nameInput) nameInput.value = def.name || '';
+        
+        // 2. Load the app icon  
+        if (this.iconPicker && def.icon) {
+            this.iconPicker.setValue(def.icon);
+        }
+        
+        // 3. Change header text
+        const headerTitle = this.windowEl.querySelector('.app-builder-header h2');
+        if (headerTitle) headerTitle.textContent = 'Edit App';
         if (!def || !Array.isArray(def.modules)) return;
         // Deep clone modules and components to avoid mutating the
         // original definition.  Assign new ids where missing.

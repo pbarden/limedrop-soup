@@ -156,45 +156,40 @@ class AppRegistry {
     editUserApp(appId) {
         const definition = this.userApps.get(appId);
         if (!definition) return;
-        // Create a builder window and load the app definition
+        
+        // Create a builder window with the correct template
         const windowId = windowManager.createWindow(
             'app-builder',
             `Edit ${definition.name}`,
-            null,
+            'app-builder-template',  // ← This was missing
             900,
             600
         );
+        
         const windowObj = windowManager.windows.get(windowId);
         const content = windowObj.element;
         const builder = new AppBuilder(content);
-        if (typeof builder.loadAppDefinition === 'function') {
+        
+        // Load the app data after a small delay
+        setTimeout(() => {
             builder.loadAppDefinition(definition);
-        }
-
-        // Mark corresponding dock item as active when editing an app
-        const dockItem = document.querySelector(`#dock-apps [data-app="${appId}"]`);
-        if (dockItem) {
-            dockItem.classList.add('active');
-        }
+        }, 100);
     }
 
     addToDock(appId, definition) {
-        const dockApps = document.getElementById('dock-apps');
-        if (!dockApps) return;
+        const dockFavorites = document.getElementById('dock-favorites');
+        if (!dockFavorites) return;
         
         // Check if already exists
-        const existing = dockApps.querySelector(`[data-app="${appId}"]`);
+        const existing = dockFavorites.querySelector(`[data-app="${appId}"]`);
         if (existing) return;
         
-        const separator = dockApps.querySelector('.dock-separator');
         const dockItem = document.createElement('div');
         dockItem.className = 'dock-item';
         dockItem.dataset.app = appId;
         
-        // Get the icon class - ensure it has a default
         const iconClass = definition.icon || 'fas fa-cube';
         
-        // Create consistent dock item structure
         dockItem.innerHTML = `
             <div class="dock-icon">
                 <i class="${iconClass}"></i>
@@ -202,17 +197,18 @@ class AppRegistry {
             <div class="dock-tooltip">${definition.name}</div>
         `;
         
-        // Insert before separator (or at end if no separator)
-        if (separator) {
-            dockApps.insertBefore(dockItem, separator);
-        } else {
-            dockApps.appendChild(dockItem);
-        }
+        dockFavorites.appendChild(dockItem);
         
         // Add click handler
         dockItem.addEventListener('click', () => {
             this.launchApp(appId);
         });
+        
+        // Show separator if this is the first favorite
+        if (dockFavorites.children.length === 1) {
+            const separator = document.getElementById('dock-separator-2');
+            if (separator) separator.style.display = '';
+        }
     }
 
     getApp(appId) {

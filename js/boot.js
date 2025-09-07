@@ -7,26 +7,7 @@ const appRegistry = new AppRegistry();
 
 // Initialize Desktop
 document.addEventListener('DOMContentLoaded', () => {
-    try {
-        // Clock with error handling
-        function updateClock() {
-            try {
-                const clock = document.getElementById('clock');
-                if (clock) {
-                    const now = new Date();
-                    clock.textContent = now.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
-                }
-            } catch (err) {
-                console.warn('Clock update failed:', err);
-            }
-        }
-        
-        updateClock();
-        setInterval(updateClock, 1000);
-        
+    try {        
         // Desktop icon clicks with error handling
         document.querySelectorAll('.desktop-icon').forEach(icon => {
             icon.addEventListener('dblclick', () => {

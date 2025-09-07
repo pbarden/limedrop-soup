@@ -83,7 +83,8 @@ class WindowManager {
         } catch (err) {
             console.warn('Failed to update dock item', err);
         }
-        
+        this.updateDockRunning();
+
         return windowId;
     }
 
@@ -344,11 +345,77 @@ class WindowManager {
         // Update dock
         const dockItem = document.querySelector(`.dock-item[data-app="${window.appId}"]`);
         if (dockItem) {
-            // Check if any other windows of this app are open
-            const hasOtherWindows = Array.from(this.windows.values()).some(w => w.appId === window.appId);
-            if (!hasOtherWindows) {
-                dockItem.classList.remove('active');
+        // Check if any other windows of this app are open
+        const hasOtherWindows = Array.from(this.windows.values()).some(w => w.appId === window.appId);
+        if (!hasOtherWindows) {
+            dockItem.classList.remove('active');
+            
+            // Remove from running dock if not a favorite
+            const dockRunning = document.getElementById('dock-running');
+            if (dockRunning && window.appId.startsWith('user-app-')) {
+                const app = appRegistry.userApps.get(window.appId);
+                if (app && !app.favorite) {
+                    const runningItem = dockRunning.querySelector(`[data-app="${window.appId}"]`);
+                    if (runningItem) runningItem.remove();
+                }
             }
+        }
+    }
+
+    // Update dock running section
+    this.updateDockRunning();
+
+    }
+
+    updateDockRunning() {
+        const dockRunning = document.getElementById('dock-running');
+        if (!dockRunning) return;
+        
+        // Clear current running apps
+        dockRunning.innerHTML = '';
+        
+        // Get all open windows that aren't favorites
+        this.windows.forEach((windowObj, windowId) => {
+            const appId = windowObj.appId;
+            
+            // Skip system apps and check if it's a favorite
+            if (!appId.startsWith('user-app-')) return;
+            
+            const app = appRegistry.userApps.get(appId);
+            if (!app || app.favorite) return; // Skip favorites
+            
+            // Check if already in running dock
+            const existing = dockRunning.querySelector(`[data-app="${appId}"]`);
+            if (existing) return;
+            
+            const dockItem = document.createElement('div');
+            dockItem.className = 'dock-item';
+            dockItem.dataset.app = appId;
+            
+            const iconClass = app.icon || 'fas fa-cube';
+            
+            dockItem.innerHTML = `
+                <div class="dock-icon">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="dock-tooltip">${app.name}</div>
+            `;
+            
+            // Add click handler
+            dockItem.addEventListener('click', () => {
+                this.focusWindow(windowId);
+            });
+            
+            dockRunning.appendChild(dockItem);
+        });
+        
+        // Show/hide separator based on running apps
+        const separator = document.getElementById('dock-separator-2');
+        const hasFavorites = document.getElementById('dock-favorites').children.length > 0;
+        const hasRunning = dockRunning.children.length > 0;
+        
+        if (separator) {
+            separator.style.display = (hasFavorites && hasRunning) ? '' : 'none';
         }
     }
 
