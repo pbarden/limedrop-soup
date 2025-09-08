@@ -1,0 +1,243 @@
+.userMenu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+}
+
+.userButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--window-tint-rgb), 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  border-radius: 24px;
+  padding: 6px 12px 6px 6px;
+  color: var(--font-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  min-width: 0;
+  max-width: 200px;
+}
+
+.userButton:hover {
+  background: rgba(var(--window-tint-rgb), 0.15);
+  border-color: rgba(var(--window-tint-rgb), 0.3);
+  transform: translateY(-1px);
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-button-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-button-text);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.userAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+}
+
+.userName {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.userRole {
+  font-size: 11px;
+  color: rgba(var(--font-color), 0.7);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chevron {
+  color: rgba(var(--font-color), 0.6);
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: rgba(var(--window-tint-rgb), 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  min-width: 220px;
+  overflow: hidden;
+  animation: dropdownIn 0.2s ease-out;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.userProfile {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(var(--window-tint-rgb), 0.05);
+}
+
+.profileAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-button-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-button-text);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.profileAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.profileName {
+  font-weight: 600;
+  color: var(--font-color);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileEmail {
+  font-size: 12px;
+  color: rgba(var(--font-color), 0.7);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileRole {
+  font-size: 11px;
+  color: rgba(var(--font-color), 0.6);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menuDivider {
+  height: 1px;
+  background: rgba(var(--window-tint-rgb), 0.1);
+  margin: 0;
+}
+
+.menuItems {
+  padding: 8px 0;
+}
+
+.menuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  color: var(--font-color);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 13px;
+  text-align: left;
+}
+
+.menuItem:hover {
+  background: rgba(var(--window-tint-rgb), 0.1);
+}
+
+.menuItem i {
+  width: 16px;
+  text-align: center;
+  color: rgba(var(--font-color), 0.7);
+}
+
+.menuItem span {
+  flex: 1;
+}
+
+.logoutItem {
+  color: #dc3545;
+}
+
+.logoutItem:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.logoutItem i {
+  color: #dc3545;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .userMenu {
+    top: 12px;
+    right: 12px;
+  }
+
+  .userButton {
+    padding: 6px 8px 6px 6px;
+    border-radius: 20px;
+  }
+
+  .userInfo {
+    display: none;
+  }
+
+  .chevron {
+    display: none;
+  }
+
+  .dropdown {
+    right: -8px;
+    min-width: 200px;
+  }
+}

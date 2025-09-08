@@ -1,0 +1,13 @@
+.notificationContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+.notificationContainer > * {
+  pointer-events: auto;
+}

@@ -1,0 +1,286 @@
+.loginContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.backgroundPattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.1;
+  z-index: 0;
+}
+
+.pattern {
+  width: 100%;
+  height: 100%;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px),
+    repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px);
+}
+
+.loginCard {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 0;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  overflow: hidden;
+}
+
+.loginHeader {
+  text-align: center;
+  padding: 32px 32px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
+  color: white;
+}
+
+.loginHeader h1 {
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.loginHeader p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin: 0;
+}
+
+.loginForm {
+  padding: 32px;
+}
+
+.loginForm h2 {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.inputGroup {
+  margin-bottom: 20px;
+}
+
+.inputGroup label {
+  display: block;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.inputGroup input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.inputGroup input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.inputGroup input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.inputGroup input.error {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.inputGroup input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fieldError {
+  color: #ff9999;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.errorMessage {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ff9999;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.errorMessage i {
+  font-size: 16px;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.formActions {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  text-decoration: underline;
+}
+
+.linkButton:hover:not(:disabled) {
+  color: white;
+}
+
+.linkButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.demoSection {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+  text-align: center;
+}
+
+.demoLabel {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.demoButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.demoButton {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.demoButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.demoButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.demoButton i {
+  font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .loginContainer {
+    padding: 16px;
+  }
+  
+  .loginCard {
+    max-width: none;
+  }
+  
+  .loginHeader {
+    padding: 24px 24px 16px;
+  }
+  
+  .loginForm {
+    padding: 24px;
+  }
+  
+  .demoButtons {
+    flex-direction: column;
+  }
+}

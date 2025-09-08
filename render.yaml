@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: limedrop-desktop-os
+    env: docker
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: DATABASE_URL
+        value: file:./data/database.sqlite
+    disk:
+      name: limedrop-data
+      mountPath: /app/server/data
+      sizeGB: 1
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases: []
+
+previewsEnabled: true
+previewsExpireAfterDays: 7
+
+pullRequestPreviewsEnabled: true

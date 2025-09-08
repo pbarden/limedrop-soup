@@ -1,0 +1,55 @@
+.desktopIcons {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: grid;
+  grid-template-rows: repeat(auto-fit, 80px);
+  gap: 16px;
+  z-index: 50;
+}
+
+.desktopIcon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.desktopIcon:hover {
+  background: rgba(var(--window-tint-rgb), 0.1);
+  transform: scale(1.05);
+}
+
+.desktopIcon:active {
+  transform: scale(0.95);
+}
+
+.iconImage {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--primary-button-color), 0.1);
+  border-radius: 6px;
+  color: var(--primary-button-color);
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.iconLabel {
+  color: var(--font-color);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,179 @@
+/* Global styles for Limedrop Desktop OS */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--background-style, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+  color: var(--font-color, #ffffff);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* CSS Custom Properties - Default Values */
+:root {
+  /* Typography */
+  --font-color: #ffffff;
+  --desktop-font-color: #ffffff;
+  --window-font-color: #ffffff;
+  --header-font-color: #ffffff;
+  --font-size: 14px;
+  --desktop-font-size: 12px;
+  --window-font-size: 14px;
+  --header-font-size: 13px;
+  --font-family: system-ui;
+  
+  /* Primary Elements */
+  --primary-button-style: solid;
+  --primary-button-color: #667eea;
+  --primary-button-rgb: 102, 126, 234;
+  --primary-gradient-start: #667eea;
+  --primary-gradient-end: #764ba2;
+  --primary-button-text: #ffffff;
+  --primary-icon-color: #667eea;
+  
+  /* Secondary Elements */
+  --secondary-button-bg: #ffffff;
+  --secondary-button-opacity: 0.1;
+  --secondary-button-text: #ffffff;
+  --secondary-button-border: #ffffff;
+  --secondary-border-opacity: 0.2;
+  --secondary-icon-color: #ffffff;
+  
+  /* Window System */
+  --window-tint-color: #ffffff;
+  --window-tint-rgb: 255, 255, 255;
+  --glass-opacity: 0.8;
+  --glass-blur: 10px;
+  --window-header-color: #ffffff;
+  --window-header-rgb: 255, 255, 255;
+  --window-header-opacity: 0.15;
+  --window-header-text: #ffffff;
+  --window-header-border-opacity: 0.1;
+  --window-border-color: #ffffff;
+  --window-border-opacity: 0.2;
+  
+  /* Desktop */
+  --desktop-icon-color: #ffffff;
+  --desktop-icon-size: 48px;
+  --dock-color: #000000;
+  --dock-rgb: 0, 0, 0;
+  --dock-opacity: 0.3;
+  --dock-blur: 20px;
+  
+  /* System */
+  --auto-save: 1;
+  --show-icons: 1;
+  --animation-speed: normal;
+  --animation-duration: 0.25s;
+  --minimize-icon: default;
+  --maximize-icon: default;
+  --close-icon: default;
+  --background-style: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Common button styles */
+.btn-primary {
+  background: var(--primary-button-color);
+  color: var(--primary-button-text);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: rgba(var(--window-tint-rgb), var(--secondary-button-opacity));
+  color: var(--secondary-button-text);
+  border: 1px solid rgba(var(--window-tint-rgb), var(--secondary-border-opacity));
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(var(--window-tint-rgb), 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Form elements */
+input, select, textarea {
+  background: rgba(var(--window-tint-rgb), 0.1);
+  color: var(--font-color);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary-button-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-button-color), 0.2);
+}
+
+/* Glass effect utility classes */
+.glass {
+  background: rgba(var(--window-tint-rgb), var(--glass-opacity));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(var(--window-tint-rgb), var(--window-header-border-opacity));
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

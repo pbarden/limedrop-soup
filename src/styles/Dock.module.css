@@ -1,0 +1,81 @@
+.dock {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--window-tint-rgb), 0.2);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.3);
+  border-radius: 16px;
+  padding: 8px 12px;
+  z-index: 1000;
+}
+
+.dockSystem {
+  display: flex;
+  gap: 8px;
+}
+
+.dockSeparator {
+  width: 1px;
+  height: 32px;
+  background: rgba(var(--window-tint-rgb), 0.3);
+  margin: 0 4px;
+}
+
+.dockFavorites,
+.dockRunning {
+  display: flex;
+  gap: 8px;
+}
+
+.dockItem {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--window-tint-rgb), 0.1);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.dockItem:hover {
+  background: rgba(var(--window-tint-rgb), 0.2);
+  transform: translateY(-4px) scale(1.05);
+}
+
+.dockItem:hover .dockTooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+.dockIcon {
+  color: var(--font-color);
+  font-size: 20px;
+}
+
+.dockTooltip {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0px);
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--desktop-font-color);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1001;
+}

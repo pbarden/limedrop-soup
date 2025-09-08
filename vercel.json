@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "name": "limedrop-desktop-os",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "dist/**",
+          "server/**",
+          "prisma/**",
+          "data/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/auth/(.*)",
+      "dest": "/server/index.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/index.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/server/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server/index.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "JWT_SECRET": "@jwt_secret",
+    "ADMIN_TOKEN": "@admin_token",
+    "DATABASE_URL": "file:./data/database.sqlite"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "server/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "outputDirectory": "dist"
+}

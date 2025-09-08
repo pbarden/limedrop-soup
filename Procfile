@@ -1,0 +1,1 @@
+web: npx http-server dist -p $PORT -c 3600

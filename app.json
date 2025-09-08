@@ -1,0 +1,64 @@
+{
+  "name": "LimeDrop Desktop OS",
+  "description": "A modern, React-based desktop environment simulation with multi-user support and comprehensive application management.",
+  "keywords": [
+    "react",
+    "desktop-os",
+    "window-manager",
+    "express",
+    "sqlite",
+    "authentication"
+  ],
+  "website": "https://github.com/yourusername/limedrop-soup",
+  "repository": "https://github.com/yourusername/limedrop-soup",
+  "logo": "https://raw.githubusercontent.com/yourusername/limedrop-soup/main/public/logo.png",
+  "success_url": "/",
+  "scripts": {
+    "postdeploy": "npm run db:setup && npm run db:seed"
+  },
+  "env": {
+    "NODE_ENV": {
+      "description": "The Node.js environment (should be 'production')",
+      "value": "production",
+      "required": true
+    },
+    "JWT_SECRET": {
+      "description": "Secret key for JWT token signing (auto-generated)",
+      "generator": "secret",
+      "required": true
+    },
+    "ADMIN_TOKEN": {
+      "description": "Token for admin access (auto-generated)",
+      "generator": "secret",
+      "required": true
+    },
+    "DATABASE_URL": {
+      "description": "SQLite database file path",
+      "value": "file:./data/database.sqlite",
+      "required": true
+    },
+    "PORT": {
+      "description": "Port for the web server",
+      "value": "3000",
+      "required": false
+    },
+    "CORS_ORIGIN": {
+      "description": "Allowed CORS origin (leave blank for auto-detection)",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "image": "heroku/nodejs",
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "addons": []
+}

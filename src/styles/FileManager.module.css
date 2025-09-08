@@ -1,0 +1,219 @@
+.fileManager {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--window-content-bg, rgba(var(--window-tint-rgb), 0.05));
+}
+
+.fileManagerHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fileManagerHeader h2 {
+  color: var(--font-color);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.fileManagerControls {
+  display: flex;
+  gap: 8px;
+}
+
+.fileManagerBody {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;
+  gap: 1px;
+  background: rgba(var(--window-tint-rgb), 0.1);
+}
+
+.fileTypesPanel,
+.filesPanel,
+.fileEditor {
+  background: rgba(var(--window-tint-rgb), 0.02);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.fileTypesPanel h3,
+.filesPanel h3,
+.fileEditor h3 {
+  color: var(--font-color);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.fileTypesList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileType {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--font-color);
+  font-size: 13px;
+}
+
+.fileType:hover {
+  background: rgba(var(--window-tint-rgb), 0.1);
+}
+
+.fileType.selected {
+  background: rgba(var(--primary-button-color), 0.2);
+  color: var(--primary-button-color);
+}
+
+.filesList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileItem {
+  padding: 12px;
+  border: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+  background: rgba(var(--window-tint-rgb), 0.05);
+  border-color: rgba(var(--window-tint-rgb), 0.2);
+}
+
+.fileItem.selected {
+  background: rgba(var(--primary-button-color), 0.1);
+  border-color: var(--primary-button-color);
+}
+
+.fileName {
+  color: var(--font-color);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.fileInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fileInfo span {
+  color: rgba(var(--font-color), 0.6);
+  font-size: 12px;
+}
+
+.fileActions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  color: rgba(var(--font-color), 0.6);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.actionBtn:hover {
+  background: rgba(var(--window-tint-rgb), 0.1);
+  color: var(--font-color);
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.fileContent {
+  width: 100%;
+  min-height: 200px;
+  background: rgba(var(--window-tint-rgb), 0.05);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  border-radius: 6px;
+  padding: 12px;
+  color: var(--font-color);
+  font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.editorActions {
+  display: flex;
+  gap: 8px;
+}
+
+.fileStats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(var(--window-tint-rgb), 0.05);
+  border-radius: 4px;
+  font-size: 12px;
+  color: rgba(var(--font-color), 0.6);
+}
+
+.noSelection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(var(--font-color), 0.5);
+  text-align: center;
+  gap: 8px;
+}
+
+.noSelection i {
+  font-size: 48px;
+  opacity: 0.3;
+}
