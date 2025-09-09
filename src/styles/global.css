@@ -40,12 +40,14 @@ body {
   --primary-gradient-start: #667eea;
   --primary-gradient-end: #764ba2;
   --primary-button-text: #ffffff;
+  --primary-button-text-color: #ffffff;
   --primary-icon-color: #667eea;
   
   /* Secondary Elements */
   --secondary-button-bg: #ffffff;
   --secondary-button-opacity: 0.1;
   --secondary-button-text: #ffffff;
+  --secondary-button-text-color: #ffffff;
   --secondary-button-border: #ffffff;
   --secondary-border-opacity: 0.2;
   --secondary-icon-color: #ffffff;
@@ -85,7 +87,7 @@ body {
 /* Common button styles */
 .btn-primary {
   background: var(--primary-button-color);
-  color: var(--primary-button-text);
+  color: var(--primary-button-text-color);
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
@@ -100,8 +102,8 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(var(--window-tint-rgb), var(--secondary-button-opacity));
-  color: var(--secondary-button-text);
+  background: var(--secondary-button-bg);
+  color: var(--secondary-button-text-color);
   border: 1px solid rgba(var(--window-tint-rgb), var(--secondary-border-opacity));
   padding: 10px 20px;
   border-radius: 6px;

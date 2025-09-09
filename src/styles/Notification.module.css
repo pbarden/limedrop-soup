@@ -75,7 +75,7 @@
   font-weight: 600;
   font-size: 14px;
   margin-bottom: 4px;
-  color: var(--font-color);
+  color: var(--desktop-font-color);
 }
 
 .notificationMessage {
@@ -102,5 +102,5 @@
 
 .notificationClose:hover {
   background: rgba(var(--window-tint-rgb), 0.1);
-  color: var(--font-color);
+  color: var(--desktop-font-color);
 }

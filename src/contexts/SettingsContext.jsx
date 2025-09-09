@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
 const defaultSettings = {
   fontColor: '#ffffff',
@@ -11,7 +11,10 @@ const defaultSettings = {
   primaryGradientStart: '#667eea',
   primaryGradientEnd: '#764ba2',
   primaryButtonText: '#ffffff',
+  primaryButtonTextColor: '#ffffff',
+  matchDesktopTheme: false,
   secondaryButtonBg: '#ffffff',
+  secondaryButtonTextColor: '#ffffff',
   secondaryButtonOpacity: '0.1',
   secondaryButtonText: '#ffffff',
   secondaryButtonBorder: '#ffffff',
@@ -40,7 +43,9 @@ const defaultSettings = {
   animationStyle: 'gradientFlow'
 }
 
-export function useSettings() {
+const SettingsContext = createContext()
+
+export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(defaultSettings)
 
   // Load settings from localStorage on mount
@@ -56,12 +61,14 @@ export function useSettings() {
   const loadSettings = useCallback(() => {
     try {
       const savedSettings = localStorage.getItem('limedrop-settings')
+      console.log('🔄 Loading settings from localStorage:', savedSettings)
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings)
         setSettings(prev => ({ ...prev, ...parsed }))
+        console.log('✅ Settings loaded successfully')
       }
     } catch (error) {
-      console.warn('Failed to load settings from localStorage:', error)
+      console.warn('❌ Failed to load settings from localStorage:', error)
     }
   }, [])
 
@@ -69,14 +76,16 @@ export function useSettings() {
     try {
       const updatedSettings = { ...settings, ...newSettings }
       setSettings(updatedSettings)
+      console.log('💾 Saving settings:', newSettings)
       
       if (updatedSettings.autoSave !== false) {
         localStorage.setItem('limedrop-settings', JSON.stringify(updatedSettings))
+        console.log('✅ Settings saved to localStorage')
       }
       
       return updatedSettings
     } catch (error) {
-      console.warn('Failed to save settings to localStorage:', error)
+      console.warn('❌ Failed to save settings to localStorage:', error)
       return settings
     }
   }, [settings])
@@ -112,6 +121,23 @@ export function useSettings() {
         if (key === 'headerFontColor' && typeof value === 'string') {
           root.style.setProperty('--header-font-color', value)
         }
+        if (key === 'primaryButtonTextColor' && typeof value === 'string') {
+          root.style.setProperty('--primary-button-text-color', value)
+        }
+        if (key === 'secondaryButtonTextColor' && typeof value === 'string') {
+          root.style.setProperty('--secondary-button-text-color', value)
+        }
+        
+        // Handle match desktop theme setting
+        if (key === 'matchDesktopTheme' && typeof value === 'boolean') {
+          if (value) {
+            // Use the desktop background as button background
+            root.style.setProperty('--primary-button-color', settings.backgroundStyle || defaultSettings.backgroundStyle)
+          } else {
+            // Use the regular primary button color
+            root.style.setProperty('--primary-button-color', settings.primaryButtonColor)
+          }
+        }
         
         // Convert hex colors to RGB for rgba usage
         if (key.includes('Color') && typeof value === 'string' && value.startsWith('#')) {
@@ -124,6 +150,10 @@ export function useSettings() {
             // Special handling for specific colors that need exact RGB variable names
             if (key === 'primaryButtonColor') {
               root.style.setProperty('--primary-button-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
+            }
+            if (key === 'secondaryButtonBg') {
+              root.style.setProperty('--secondary-button-bg', value)
+              root.style.setProperty('--secondary-button-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
             }
             if (key === 'windowTintColor') {
               root.style.setProperty('--window-tint-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
@@ -149,79 +179,54 @@ export function useSettings() {
   }, [settings])
 
   const updateSetting = useCallback((key, value) => {
+    console.log(`⚙️ updateSetting called: ${key} = ${value}`)
     return saveSettings({ [key]: value })
   }, [saveSettings])
 
   const resetSettings = useCallback(() => {
     try {
+      console.log('🔄 Resetting settings to defaults')
       setSettings(defaultSettings)
       localStorage.removeItem('limedrop-settings')
       return defaultSettings
     } catch (error) {
-      console.warn('Failed to reset settings:', error)
+      console.warn('❌ Failed to reset settings:', error)
       return settings
     }
   }, [settings])
 
-  const exportSettings = useCallback(() => {
-    try {
-      const dataStr = JSON.stringify(settings, null, 2)
-      const dataBlob = new Blob([dataStr], { type: 'application/json' })
-      const url = URL.createObjectURL(dataBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'limedrop-settings.json'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.warn('Failed to export settings:', error)
-    }
-  }, [settings])
+  // Utility function to convert hex to RGB
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null
+  }
 
-  const importSettings = useCallback((file) => {
-    return new Promise((resolve, reject) => {
-      try {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          try {
-            const imported = JSON.parse(e.target.result)
-            const newSettings = { ...defaultSettings, ...imported }
-            saveSettings(newSettings)
-            resolve(newSettings)
-          } catch (parseError) {
-            reject(new Error('Invalid settings file format'))
-          }
-        }
-        reader.onerror = () => reject(new Error('Failed to read file'))
-        reader.readAsText(file)
-      } catch (error) {
-        reject(error)
-      }
-    })
-  }, [saveSettings])
-
-  return {
+  const value = {
     settings,
     updateSetting,
     saveSettings,
     loadSettings,
     resetSettings,
-    exportSettings,
-    importSettings,
     applySettings
   }
+
+  return (
+    <SettingsContext.Provider value={value}>
+      {children}
+    </SettingsContext.Provider>
+  )
 }
 
-// Utility function to convert hex to RGB
-function hexToRgb(hex) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : null
+export function useSettings() {
+  const context = useContext(SettingsContext)
+  if (!context) {
+    throw new Error('useSettings must be used within a SettingsProvider')
+  }
+  return context
 }
 
-export default useSettings
+export default SettingsContext

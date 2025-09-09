@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSettings } from '../../hooks/useSettings'
+import { useSettings } from '../../contexts/SettingsContext'
 import styles from '../../styles/Settings.module.css'
 
 function Settings() {
@@ -25,11 +25,23 @@ function Settings() {
   ]
 
   const handleColorChange = (key, value) => {
-    updateSetting(key, value)
+    console.log(`🎨 handleColorChange: ${key} = ${value}`)
+    console.log('Current settings before change:', settings[key])
+    const result = updateSetting(key, value)
+    console.log('updateSetting result:', result)
+    setTimeout(() => {
+      console.log('Settings after change:', settings[key])
+    }, 100)
   }
 
   const handleSliderChange = (key, value) => {
-    updateSetting(key, value)
+    console.log(`🎚️ handleSliderChange: ${key} = ${value}`)
+    console.log('Current settings before change:', settings[key])
+    const result = updateSetting(key, value)
+    console.log('updateSetting result:', result)
+    setTimeout(() => {
+      console.log('Settings after change:', settings[key])
+    }, 100)
   }
 
   const handleBackgroundChange = (gradient) => {
@@ -38,14 +50,43 @@ function Settings() {
 
   const testCSSVariables = () => {
     const root = document.documentElement
-    const testColor = '#ff0000' // Red
-    root.style.setProperty('--primary-button-color', testColor)
-    console.log('🧪 Test: Set --primary-button-color to red')
-    console.log('Current CSS vars:', {
-      'primary-button-color': getComputedStyle(root).getPropertyValue('--primary-button-color'),
-      'font-color': getComputedStyle(root).getPropertyValue('--font-color'),
-      'window-tint-rgb': getComputedStyle(root).getPropertyValue('--window-tint-rgb')
+    console.log('🧪 === CRITICAL SETTINGS DEBUG ===')
+    
+    // Check localStorage directly
+    const rawStorage = localStorage.getItem('limedrop-settings')
+    console.log('Raw localStorage:', rawStorage)
+    const parsedStorage = rawStorage ? JSON.parse(rawStorage) : null
+    console.log('Parsed localStorage:', parsedStorage)
+    
+    // Check current settings object
+    console.log('Current settings object:', settings)
+    console.log('Settings object length:', Object.keys(settings).length)
+    
+    // Check specific values
+    console.log('Font colors in settings:', {
+      fontColor: settings.fontColor,
+      desktopFontColor: settings.desktopFontColor,
+      windowFontColor: settings.windowFontColor,
+      headerFontColor: settings.headerFontColor
     })
+    
+    // Check CSS variables
+    const criticalVars = [
+      'font-color', 'desktop-font-color', 'window-font-color', 'header-font-color',
+      'primary-button-color', 'background-style', 'window-tint-color', 'window-tint-rgb'
+    ]
+    console.log('CSS Variables:')
+    criticalVars.forEach(varName => {
+      const value = getComputedStyle(root).getPropertyValue(`--${varName}`).trim()
+      console.log(`  --${varName}: "${value}"`)
+    })
+    
+    // Test manual setting
+    console.log('🔧 Testing manual CSS variable setting...')
+    root.style.setProperty('--font-color', '#ff0000')
+    root.style.setProperty('--desktop-font-color', '#00ff00') 
+    root.style.setProperty('--window-font-color', '#0000ff')
+    console.log('Set font colors to red/green/blue manually')
   }
 
   const clearStorage = () => {
@@ -68,11 +109,38 @@ function Settings() {
           <h3>Typography</h3>
           
           <div className={styles.colorControl}>
-            <label>Font Color:</label>
+            <label>General Font Color:</label>
             <input 
               type="color"
               value={settings.fontColor}
               onChange={(e) => handleColorChange('fontColor', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.colorControl}>
+            <label>Desktop Font Color:</label>
+            <input 
+              type="color"
+              value={settings.desktopFontColor}
+              onChange={(e) => handleColorChange('desktopFontColor', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.colorControl}>
+            <label>Window Font Color:</label>
+            <input 
+              type="color"
+              value={settings.windowFontColor}
+              onChange={(e) => handleColorChange('windowFontColor', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.colorControl}>
+            <label>Header Font Color:</label>
+            <input 
+              type="color"
+              value={settings.headerFontColor}
+              onChange={(e) => handleColorChange('headerFontColor', e.target.value)}
             />
           </div>
 
@@ -91,11 +159,40 @@ function Settings() {
           </div>
 
           <div className={styles.colorControl}>
+            <label>Button Font Color:</label>
+            <input 
+              type="color"
+              value={settings.primaryButtonTextColor}
+              onChange={(e) => handleColorChange('primaryButtonTextColor', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.checkboxControl}>
+            <label>
+              <input 
+                type="checkbox"
+                checked={settings.matchDesktopTheme}
+                onChange={(e) => updateSetting('matchDesktopTheme', e.target.checked)}
+              />
+              Match Desktop Theme
+            </label>
+          </div>
+
+          <div className={styles.colorControl}>
             <label>Secondary Button Color:</label>
             <input 
               type="color"
               value={settings.secondaryButtonBg}
               onChange={(e) => handleColorChange('secondaryButtonBg', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.colorControl}>
+            <label>Secondary Button Font Color:</label>
+            <input 
+              type="color"
+              value={settings.secondaryButtonTextColor}
+              onChange={(e) => handleColorChange('secondaryButtonTextColor', e.target.value)}
             />
           </div>
         </div>
@@ -121,8 +218,52 @@ function Settings() {
             />
           </div>
 
+          <div className={styles.colorControl}>
+            <label>Window Border Color:</label>
+            <input 
+              type="color"
+              value={settings.windowBorderColor}
+              onChange={(e) => handleColorChange('windowBorderColor', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.sliderControl}>
+            <label>Window Border Opacity: {settings.windowBorderOpacity}</label>
+            <input 
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={parseFloat(settings.windowBorderOpacity)}
+              onChange={(e) => handleSliderChange('windowBorderOpacity', e.target.value)}
+            />
+          </div>
         </div>
 
+        <div className={styles.settingsSection}>
+          <h3>Desktop & Icons</h3>
+          
+          <div className={styles.colorControl}>
+            <label>Desktop Icon Color:</label>
+            <input 
+              type="color"
+              value={settings.desktopIconColor}
+              onChange={(e) => handleColorChange('desktopIconColor', e.target.value)}
+            />
+          </div>
+
+          <div className={styles.sliderControl}>
+            <label>Desktop Icon Size: {settings.desktopIconSize}</label>
+            <input 
+              type="range"
+              min="32"
+              max="64"
+              step="4"
+              value={parseInt(settings.desktopIconSize)}
+              onChange={(e) => handleSliderChange('desktopIconSize', e.target.value + 'px')}
+            />
+          </div>
+        </div>
 
         <div className={styles.settingsSection}>
           <h3>Window Transparency</h3>

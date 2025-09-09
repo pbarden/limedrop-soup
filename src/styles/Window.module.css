@@ -27,7 +27,7 @@
 
 .windowHeader {
   background: rgba(var(--window-header-rgb), var(--window-header-opacity));
-  color: var(--window-header-text);
+  color: var(--header-font-color);
   padding: 12px 16px;
   border-bottom: 1px solid rgba(var(--window-tint-rgb), var(--window-header-border-opacity));
   display: flex;

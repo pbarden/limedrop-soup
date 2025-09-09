@@ -38,7 +38,7 @@
 
 .modalHeader {
   background: rgba(var(--window-header-rgb), var(--window-header-opacity));
-  color: var(--window-header-text);
+  color: var(--header-font-color);
   padding: 16px 20px;
   border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.2);
   display: flex;
@@ -57,7 +57,7 @@
   height: 28px;
   border: none;
   background: none;
-  color: var(--font-color);
+  color: var(--window-font-color);
   cursor: pointer;
   border-radius: 6px;
   display: flex;
@@ -73,7 +73,7 @@
 
 .modalBody {
   padding: 20px;
-  color: var(--font-color);
+  color: var(--window-font-color);
   max-height: 60vh;
   overflow-y: auto;
 }

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useSettings } from '../hooks/useSettings'
+import { useSettings } from '../contexts/SettingsContext'
 import styles from '../styles/DesktopBackground.module.css'
 
 function DesktopBackground() {

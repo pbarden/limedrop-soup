@@ -1,4 +1,4 @@
-import { useModal } from '../hooks/useModal'
+import { useModal } from '../hooks/useModal.jsx'
 import styles from '../styles/ModalOverlay.module.css'
 
 function ModalOverlay() {

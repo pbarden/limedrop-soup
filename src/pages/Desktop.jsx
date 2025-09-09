@@ -5,7 +5,7 @@ import Dock from '../components/Dock'
 import UserMenu from '../components/UserMenu'
 import ModalOverlay from '../components/ModalOverlay'
 import NotificationContainer from '../components/NotificationContainer'
-import { useSettings } from '../hooks/useSettings'
+import { useSettings } from '../contexts/SettingsContext'
 import styles from '../styles/Desktop.module.css'
 
 function Desktop() {
