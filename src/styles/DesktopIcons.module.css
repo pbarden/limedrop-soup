@@ -35,10 +35,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--primary-button-color), 0.1);
+  background: rgba(var(--desktop-icon-color), 0.1);
   border-radius: 6px;
-  color: var(--primary-button-color);
-  font-size: 20px;
+  color: var(--desktop-icon-color);
+  font-size: var(--desktop-icon-font-size, 1.2rem);
   margin-bottom: 4px;
 }
 

@@ -19,24 +19,16 @@ const defaultSettings = {
   secondaryButtonText: '#ffffff',
   secondaryButtonBorder: '#ffffff',
   secondaryBorderOpacity: '0.2',
-  windowTintColor: '#ffffff',
-  windowTintRgb: '255, 255, 255',
   glassOpacity: '0.8',
   glassBlur: '10px',
-  windowHeaderColor: '#ffffff',
-  windowHeaderRgb: '255, 255, 255',
   windowHeaderOpacity: '0.15',
-  windowHeaderText: '#ffffff',
-  windowHeaderBorderOpacity: '0.1',
-  windowBorderColor: '#ffffff',
-  windowBorderOpacity: '0.2',
   desktopIconColor: '#ffffff',
-  desktopIconSize: '48px',
+  desktopIconSize: '1.2rem',
   autoSave: true,
   showIcons: true,
-  minimizeIcon: 'default',
-  maximizeIcon: 'default',
-  closeIcon: 'default',
+  minimizeIcon: 'fas fa-minus',
+  maximizeIcon: 'fas fa-expand-alt',
+  closeIcon: 'fas fa-times',
   backgroundStyle: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   background: 'gradient1',
   backgroundAnimation: false,
@@ -127,6 +119,14 @@ export function SettingsProvider({ children }) {
         if (key === 'secondaryButtonTextColor' && typeof value === 'string') {
           root.style.setProperty('--secondary-button-text-color', value)
         }
+        if (key === 'desktopIconColor' && typeof value === 'string') {
+          root.style.setProperty('--desktop-icon-color', value)
+          root.style.setProperty('--icon-color', value)
+          root.style.setProperty('--primary-icon-color', value)
+        }
+        if (key === 'desktopIconSize' && typeof value === 'string') {
+          root.style.setProperty('--desktop-icon-font-size', value)
+        }
         
         // Handle match desktop theme setting
         if (key === 'matchDesktopTheme' && typeof value === 'boolean') {
@@ -154,12 +154,6 @@ export function SettingsProvider({ children }) {
             if (key === 'secondaryButtonBg') {
               root.style.setProperty('--secondary-button-bg', value)
               root.style.setProperty('--secondary-button-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
-            }
-            if (key === 'windowTintColor') {
-              root.style.setProperty('--window-tint-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
-            }
-            if (key === 'windowHeaderColor') {
-              root.style.setProperty('--window-header-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
             }
           }
         }

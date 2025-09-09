@@ -16,12 +16,31 @@ function Settings() {
     'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
   ]
 
-  const windowControlIcons = [
+  const minimizeIcons = [
     { id: 'default', name: 'Default', symbol: '−' },
-    { id: 'fas fa-minus', name: 'Minus', symbol: '−' },
-    { id: 'fas fa-window-minimize', name: 'Window', symbol: '' },
-    { id: 'fas fa-chevron-down', name: 'Chevron Down', symbol: '' },
-    { id: 'fas fa-angle-down', name: 'Angle Down', symbol: '' }
+    { id: 'fas fa-minus', name: 'Minus' },
+    { id: 'fas fa-window-minimize', name: 'Window Minimize' },
+    { id: 'fas fa-chevron-down', name: 'Chevron Down' },
+    { id: 'fas fa-angle-down', name: 'Angle Down' },
+    { id: 'fas fa-compress-alt', name: 'Compress' }
+  ]
+
+  const maximizeIcons = [
+    { id: 'default', name: 'Default', symbol: '□' },
+    { id: 'fas fa-expand-alt', name: 'Expand' },
+    { id: 'fas fa-external-link-alt', name: 'External Link' },
+    { id: 'fas fa-arrows-alt', name: 'Arrows' },
+    { id: 'fas fa-maximize', name: 'Maximize' },
+    { id: 'fas fa-square', name: 'Square' }
+  ]
+
+  const closeIcons = [
+    { id: 'default', name: 'Default', symbol: '×' },
+    { id: 'fas fa-times', name: 'X Close' },
+    { id: 'fas fa-times-circle', name: 'Circle X' },
+    { id: 'fas fa-ban', name: 'Ban' },
+    { id: 'fas fa-skull-crossbones', name: 'Skull' },
+    { id: 'fas fa-bomb', name: 'Bomb' }
   ]
 
   const handleColorChange = (key, value) => {
@@ -197,54 +216,12 @@ function Settings() {
           </div>
         </div>
 
-        <div className={styles.settingsSection}>
-          <h3>Windows</h3>
-          
-          <div className={styles.colorControl}>
-            <label>Window Tint Color:</label>
-            <input 
-              type="color"
-              value={settings.windowTintColor}
-              onChange={(e) => handleColorChange('windowTintColor', e.target.value)}
-            />
-          </div>
-
-          <div className={styles.colorControl}>
-            <label>Window Header Color:</label>
-            <input 
-              type="color"
-              value={settings.windowHeaderColor}
-              onChange={(e) => handleColorChange('windowHeaderColor', e.target.value)}
-            />
-          </div>
-
-          <div className={styles.colorControl}>
-            <label>Window Border Color:</label>
-            <input 
-              type="color"
-              value={settings.windowBorderColor}
-              onChange={(e) => handleColorChange('windowBorderColor', e.target.value)}
-            />
-          </div>
-
-          <div className={styles.sliderControl}>
-            <label>Window Border Opacity: {settings.windowBorderOpacity}</label>
-            <input 
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={parseFloat(settings.windowBorderOpacity)}
-              onChange={(e) => handleSliderChange('windowBorderOpacity', e.target.value)}
-            />
-          </div>
-        </div>
 
         <div className={styles.settingsSection}>
           <h3>Desktop & Icons</h3>
           
           <div className={styles.colorControl}>
-            <label>Desktop Icon Color:</label>
+            <label>Icon Color:</label>
             <input 
               type="color"
               value={settings.desktopIconColor}
@@ -256,11 +233,11 @@ function Settings() {
             <label>Desktop Icon Size: {settings.desktopIconSize}</label>
             <input 
               type="range"
-              min="32"
-              max="64"
-              step="4"
-              value={parseInt(settings.desktopIconSize)}
-              onChange={(e) => handleSliderChange('desktopIconSize', e.target.value + 'px')}
+              min="0.8"
+              max="3.0"
+              step="0.1"
+              value={parseFloat(settings.desktopIconSize)}
+              onChange={(e) => handleSliderChange('desktopIconSize', e.target.value + 'rem')}
             />
           </div>
         </div>
@@ -323,46 +300,52 @@ function Settings() {
         <div className={styles.settingsSection}>
           <h3>Window Controls</h3>
           
-          <div className={styles.windowControl}>
-            <label>Minimize Icon:</label>
-            <select 
-              value={settings.minimizeIcon}
-              onChange={(e) => updateSetting('minimizeIcon', e.target.value)}
-            >
-              {windowControlIcons.map(icon => (
-                <option key={icon.id} value={icon.id}>
-                  {icon.name}
-                </option>
+          <div className={styles.iconControlGroup}>
+            <label className={styles.iconControlLabel}>Minimize Icon:</label>
+            <div className={styles.iconButtonGroup}>
+              {minimizeIcons.map(icon => (
+                <button
+                  key={icon.id}
+                  className={`${styles.iconButton} ${settings.minimizeIcon === icon.id ? styles.selected : ''}`}
+                  onClick={() => updateSetting('minimizeIcon', icon.id)}
+                  title={icon.name}
+                >
+                  {icon.id === 'default' ? icon.symbol : <i className={icon.id}></i>}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
           
-          <div className={styles.windowControl}>
-            <label>Maximize Icon:</label>
-            <select 
-              value={settings.maximizeIcon}
-              onChange={(e) => updateSetting('maximizeIcon', e.target.value)}
-            >
-              {windowControlIcons.map(icon => (
-                <option key={icon.id} value={icon.id}>
-                  {icon.name}
-                </option>
+          <div className={styles.iconControlGroup}>
+            <label className={styles.iconControlLabel}>Maximize Icon:</label>
+            <div className={styles.iconButtonGroup}>
+              {maximizeIcons.map(icon => (
+                <button
+                  key={icon.id}
+                  className={`${styles.iconButton} ${settings.maximizeIcon === icon.id ? styles.selected : ''}`}
+                  onClick={() => updateSetting('maximizeIcon', icon.id)}
+                  title={icon.name}
+                >
+                  {icon.id === 'default' ? icon.symbol : <i className={icon.id}></i>}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
           
-          <div className={styles.windowControl}>
-            <label>Close Icon:</label>
-            <select 
-              value={settings.closeIcon}
-              onChange={(e) => updateSetting('closeIcon', e.target.value)}
-            >
-              {windowControlIcons.map(icon => (
-                <option key={icon.id} value={icon.id}>
-                  {icon.name}
-                </option>
+          <div className={styles.iconControlGroup}>
+            <label className={styles.iconControlLabel}>Close Icon:</label>
+            <div className={styles.iconButtonGroup}>
+              {closeIcons.map(icon => (
+                <button
+                  key={icon.id}
+                  className={`${styles.iconButton} ${settings.closeIcon === icon.id ? styles.selected : ''}`}
+                  onClick={() => updateSetting('closeIcon', icon.id)}
+                  title={icon.name}
+                >
+                  {icon.id === 'default' ? icon.symbol : <i className={icon.id}></i>}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         </div>
 

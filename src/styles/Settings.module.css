@@ -227,3 +227,54 @@
   font-size: 13px;
   margin-top: 8px;
 }
+
+.iconButtonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.iconButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--window-tint-rgb), 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--window-font-color);
+  font-size: 12px;
+}
+
+.iconButton:hover {
+  background: rgba(var(--window-tint-rgb), 0.2);
+  border-color: rgba(var(--window-tint-rgb), 0.3);
+  transform: translateY(-1px);
+}
+
+.iconButton.selected {
+  background: var(--primary-button-color);
+  border-color: var(--primary-button-color);
+  color: var(--primary-button-text-color);
+}
+
+.iconButton.selected:hover {
+  opacity: 0.9;
+}
+
+.iconControlGroup {
+  margin-bottom: 16px;
+}
+
+.iconControlLabel {
+  color: var(--window-font-color);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}

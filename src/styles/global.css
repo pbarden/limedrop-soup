@@ -52,7 +52,7 @@ body {
   --secondary-border-opacity: 0.2;
   --secondary-icon-color: #ffffff;
   
-  /* Window System */
+  /* Window System - Modern Glassmorphism */
   --window-tint-color: #ffffff;
   --window-tint-rgb: 255, 255, 255;
   --glass-opacity: 0.8;
@@ -67,7 +67,7 @@ body {
   
   /* Desktop */
   --desktop-icon-color: #ffffff;
-  --desktop-icon-size: 48px;
+  --desktop-icon-font-size: 1.2rem;
   --dock-color: #000000;
   --dock-rgb: 0, 0, 0;
   --dock-opacity: 0.3;
