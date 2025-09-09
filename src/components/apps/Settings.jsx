@@ -174,7 +174,73 @@ function Settings() {
     { id: 'gradient50', name: 'Mango Ube Charcoal Swirl', gradient: 'linear-gradient(135deg, #fff1cc 0%, #ffb700 25%, #6d28d9 50%, #2e1065 75%, #0f172a 100%)' },
     { id: 'gradient51', name: 'Kiwi Strawberry Latte', gradient: 'linear-gradient(135deg, #fff8f0 0%, #84cc16 25%, #ef4444 50%, #ffe4e6 75%, #fff8f0 100%)' },
     { id: 'gradient52', name: 'Dragonfruit Lime Cream', gradient: 'linear-gradient(135deg, #ffffff 0%, #ff0db0 25%, #84cc16 50%, #111827 75%, #f5f5f5 100%)' },
-    { id: 'gradient53', name: 'Orange Sesame Cream', gradient: 'linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)' }
+    { id: 'gradient53', name: 'Orange Sesame Cream', gradient: 'linear-gradient(135deg, #ff7a00 0%, #ffd29c 25%, #b3a08a 50%, #2f2f2f 75%, #fffaf2 100%)' },
+    
+    // Layered Cake Themes
+    { id: 'gradient54', name: 'Red Velvet Layered Cake', gradient: 'linear-gradient(135deg, #8b0000 0%, #dc143c 20%, #f5f5dc 40%, #dc143c 60%, #8b0000 80%, #2f1b14 100%)' },
+    { id: 'gradient55', name: 'Rainbow Layer Cake', gradient: 'linear-gradient(135deg, #ff0066 0%, #ff9900 16%, #ffff00 33%, #00ff00 50%, #0099ff 66%, #9900ff 83%, #ffffff 100%)' },
+    { id: 'gradient56', name: 'Chocolate Vanilla Marble', gradient: 'linear-gradient(135deg, #3b2f2f 0%, #8b4513 20%, #fff8dc 40%, #8b4513 60%, #3b2f2f 80%, #f5f5dc 100%)' },
+    { id: 'gradient57', name: 'Strawberry Shortcake Layers', gradient: 'linear-gradient(135deg, #ff69b4 0%, #ffb6c1 25%, #fff8dc 50%, #ff69b4 75%, #ffb6c1 100%)' },
+    { id: 'gradient58', name: 'Lemon Blueberry Stack', gradient: 'linear-gradient(135deg, #4169e1 0%, #87ceeb 20%, #fffacd 40%, #4169e1 60%, #87ceeb 80%, #fffacd 100%)' },
+    { id: 'gradient59', name: 'Neapolitan Ice Cream Cake', gradient: 'linear-gradient(135deg, #d2691e 0%, #f5deb3 33%, #ff1493 66%, #f5deb3 100%)' },
+    { id: 'gradient60', name: 'Black Forest Layers', gradient: 'linear-gradient(135deg, #2f1b14 0%, #8b0000 25%, #f5f5dc 50%, #8b0000 75%, #2f1b14 100%)' },
+    { id: 'gradient61', name: 'Funfetti Birthday Cake', gradient: 'linear-gradient(135deg, #fff8dc 0%, #ff69b4 10%, #fff8dc 20%, #00bfff 30%, #fff8dc 40%, #32cd32 50%, #fff8dc 60%, #ffa500 70%, #fff8dc 80%, #9370db 90%, #fff8dc 100%)' },
+    
+    // Layered Dessert Themes
+    { id: 'gradient62', name: 'Tiramisu Layers', gradient: 'linear-gradient(135deg, #8b4513 0%, #d2b48c 25%, #f5f5dc 50%, #8b4513 75%, #2f1b14 100%)' },
+    { id: 'gradient63', name: 'Tres Leches Gradient', gradient: 'linear-gradient(135deg, #fff8dc 0%, #f0e68c 25%, #daa520 50%, #f0e68c 75%, #fff8dc 100%)' },
+    { id: 'gradient64', name: 'Opera Cake Stripes', gradient: 'linear-gradient(135deg, #2f1b14 0%, #daa520 20%, #8b4513 40%, #f5deb3 60%, #2f1b14 80%, #daa520 100%)' },
+    { id: 'gradient65', name: 'Baklava Honey Layers', gradient: 'linear-gradient(135deg, #daa520 0%, #f4a460 20%, #ffd700 40%, #cd853f 60%, #d2691e 80%, #8b4513 100%)' },
+    { id: 'gradient66', name: 'Mille-feuille Napoleon', gradient: 'linear-gradient(135deg, #f5deb3 0%, #daa520 15%, #f5deb3 30%, #daa520 45%, #f5deb3 60%, #daa520 75%, #f5deb3 90%, #8b4513 100%)' },
+    { id: 'gradient67', name: 'Parfait Glass Layers', gradient: 'linear-gradient(135deg, #ff69b4 0%, #f5f5dc 20%, #9370db 40%, #f5f5dc 60%, #ff1493 80%, #f5f5dc 100%)' },
+    { id: 'gradient68', name: 'Trifle Bowl Layers', gradient: 'linear-gradient(135deg, #8b0000 0%, #f5f5dc 16%, #ffd700 33%, #f5f5dc 50%, #32cd32 66%, #f5f5dc 83%, #8b0000 100%)' },
+    { id: 'gradient69', name: 'Cheesecake Swirl', gradient: 'linear-gradient(135deg, #f5f5dc 0%, #ff69b4 25%, #f5f5dc 50%, #8b4513 75%, #f5f5dc 100%)' },
+    
+    // Layered Boba/Bubble Tea Themes
+    { id: 'gradient70', name: 'Brown Sugar Boba Layers', gradient: 'linear-gradient(135deg, #2f1b14 0%, #8b4513 20%, #d2691e 40%, #f4a460 60%, #f5deb3 80%, #fff8dc 100%)' },
+    { id: 'gradient71', name: 'Taro Milk Tea Gradient', gradient: 'linear-gradient(135deg, #4b0082 0%, #8a2be2 25%, #dda0dd 50%, #f8f8ff 75%, #e6e6fa 100%)' },
+    { id: 'gradient72', name: 'Matcha Latte Foam', gradient: 'linear-gradient(135deg, #2f4f2f 0%, #556b2f 25%, #9acd32 50%, #f0fff0 75%, #ffffff 100%)' },
+    { id: 'gradient73', name: 'Thai Tea Sunset', gradient: 'linear-gradient(135deg, #d2691e 0%, #ff8c00 25%, #ffa500 50%, #f5deb3 75%, #fff8dc 100%)' },
+    { id: 'gradient74', name: 'Honeydew Milk Foam', gradient: 'linear-gradient(135deg, #98fb98 0%, #90ee90 25%, #f0fff0 50%, #ffffff 75%, #f5fffa 100%)' },
+    { id: 'gradient75', name: 'Purple Sweet Potato Layers', gradient: 'linear-gradient(135deg, #483d8b 0%, #8a2be2 25%, #dda0dd 50%, #f5f0ff 75%, #ffffff 100%)' },
+    { id: 'gradient76', name: 'Black Sesame Milk', gradient: 'linear-gradient(135deg, #2f2f2f 0%, #696969 25%, #a9a9a9 50%, #f5f5f5 75%, #ffffff 100%)' },
+    { id: 'gradient77', name: 'Rose Milk Tea', gradient: 'linear-gradient(135deg, #8b008b 0%, #ff1493 25%, #ffb6c1 50%, #fff0f5 75%, #ffffff 100%)' },
+    
+    // Layered Fruit Themes
+    { id: 'gradient78', name: 'Watermelon Rind to Flesh', gradient: 'linear-gradient(135deg, #228b22 0%, #90ee90 25%, #fff8dc 50%, #ff69b4 75%, #dc143c 100%)' },
+    { id: 'gradient79', name: 'Orange Peel to Pulp', gradient: 'linear-gradient(135deg, #ff8c00 0%, #ffa500 25%, #fff8dc 50%, #ffd700 75%, #ffff99 100%)' },
+    { id: 'gradient80', name: 'Avocado Layers', gradient: 'linear-gradient(135deg, #2f4f2f 0%, #556b2f 25%, #9acd32 50%, #f0fff0 75%, #fffacd 100%)' },
+    { id: 'gradient81', name: 'Dragon Fruit Cross Section', gradient: 'linear-gradient(135deg, #ff1493 0%, #ff69b4 25%, #fff8dc 50%, #2f2f2f 75%, #fff8dc 100%)' },
+    { id: 'gradient82', name: 'Kiwi Fruit Slice', gradient: 'linear-gradient(135deg, #8b4513 0%, #d2b48c 20%, #32cd32 40%, #f0fff0 60%, #fff8dc 80%, #2f2f2f 100%)' },
+    { id: 'gradient83', name: 'Pomegranate Arils', gradient: 'linear-gradient(135deg, #8b0000 0%, #dc143c 25%, #ff69b4 50%, #fff8dc 75%, #ff1493 100%)' },
+    { id: 'gradient84', name: 'Mango Layers', gradient: 'linear-gradient(135deg, #ff8c00 0%, #ffd700 25%, #ffff99 50%, #fffacd 75%, #fff8dc 100%)' },
+    { id: 'gradient85', name: 'Coconut Cross Section', gradient: 'linear-gradient(135deg, #8b4513 0%, #d2b48c 25%, #fff8dc 50%, #f0fff0 75%, #ffffff 100%)' },
+    
+    // Additional Layered Milk Tea Variations
+    { id: 'gradient86', name: 'Ube Cheese Foam', gradient: 'linear-gradient(135deg, #4b0082 0%, #8a2be2 20%, #dda0dd 40%, #fff8dc 60%, #f5f5dc 80%, #ffffff 100%)' },
+    { id: 'gradient87', name: 'Hokkaido Milk Bread Tea', gradient: 'linear-gradient(135deg, #f5deb3 0%, #daa520 20%, #fff8dc 40%, #f0e68c 60%, #ffffff 80%, #f5f5f5 100%)' },
+    { id: 'gradient88', name: 'Butterfly Pea Lemon', gradient: 'linear-gradient(135deg, #4169e1 0%, #87ceeb 20%, #add8e6 40%, #fffacd 60%, #ffff99 80%, #f0fff0 100%)' },
+    { id: 'gradient89', name: 'Winter Melon Milk', gradient: 'linear-gradient(135deg, #556b2f 0%, #9acd32 25%, #f0fff0 50%, #fff8dc 75%, #ffffff 100%)' },
+    { id: 'gradient90', name: 'Okinawa Brown Sugar', gradient: 'linear-gradient(135deg, #2f1b14 0%, #8b4513 16%, #cd853f 33%, #daa520 50%, #f4a460 66%, #f5deb3 83%, #fff8dc 100%)' },
+    
+    // Sophisticated Dessert Layers
+    { id: 'gradient91', name: 'Macaron Tower', gradient: 'linear-gradient(135deg, #ff1493 0%, #ff69b4 14%, #00bfff 28%, #87ceeb 42%, #32cd32 57%, #9acd32 71%, #ffd700 85%, #fff8dc 100%)' },
+    { id: 'gradient92', name: 'Creme Brulee Torch', gradient: 'linear-gradient(135deg, #2f1b14 0%, #8b4513 25%, #cd853f 50%, #f4a460 75%, #fffacd 100%)' },
+    { id: 'gradient93', name: 'Panna Cotta Berry', gradient: 'linear-gradient(135deg, #fff8dc 0%, #f0f8ff 20%, #8b0000 40%, #dc143c 60%, #fff8dc 80%, #f5f5f5 100%)' },
+    { id: 'gradient94', name: 'Mochi Ice Cream', gradient: 'linear-gradient(135deg, #f5f5dc 0%, #98fb98 25%, #fff8dc 50%, #ff69b4 75%, #f5f5dc 100%)' },
+    { id: 'gradient95', name: 'Gelato Neapolitan', gradient: 'linear-gradient(135deg, #8b4513 0%, #d2b48c 20%, #fff8dc 40%, #ff1493 60%, #ffb6c1 80%, #f0fff0 100%)' },
+    
+    // Premium Fruit Combinations
+    { id: 'gradient96', name: 'Passion Fruit Interior', gradient: 'linear-gradient(135deg, #8b008b 0%, #ff1493 25%, #ffd700 50%, #ffff99 75%, #2f2f2f 100%)' },
+    { id: 'gradient97', name: 'Lychee Flesh', gradient: 'linear-gradient(135deg, #d2b48c 0%, #f5deb3 25%, #fff8dc 50%, #f0fff0 75%, #ffffff 100%)' },
+    { id: 'gradient98', name: 'Star Fruit Layers', gradient: 'linear-gradient(135deg, #9acd32 0%, #adff2f 25%, #f0fff0 50%, #fffacd 75%, #ffff99 100%)' },
+    { id: 'gradient99', name: 'Rambutan Cross Section', gradient: 'linear-gradient(135deg, #dc143c 0%, #ff69b4 25%, #fff8dc 50%, #f0fff0 75%, #2f2f2f 100%)' },
+    
+    // Complex Layered Compositions
+    { id: 'gradient100', name: 'Seven Layer Bar', gradient: 'linear-gradient(135deg, #8b4513 0%, #d2b48c 14%, #32cd32 28%, #fff8dc 42%, #ffd700 57%, #8b0000 71%, #2f1b14 85%, #f5f5dc 100%)' },
+    { id: 'gradient101', name: 'Rainbow Crepe Cake', gradient: 'linear-gradient(135deg, #ff0066 0%, #ff3366 12%, #ff9900 25%, #ffcc00 37%, #99ff00 50%, #00ff99 62%, #0099ff 75%, #9900ff 87%, #fff8dc 100%)' },
+    { id: 'gradient102', name: 'Ombre Rose Latte', gradient: 'linear-gradient(135deg, #8b008b 0%, #da70d6 16%, #dda0dd 33%, #e6e6fa 50%, #f0f8ff 66%, #fff0f5 83%, #ffffff 100%)' },
+    { id: 'gradient103', name: 'Sunset Gradient Smoothie', gradient: 'linear-gradient(135deg, #ff4500 0%, #ff8c00 20%, #ffd700 40%, #ffff99 60%, #f0fff0 80%, #e0ffff 100%)' }
   ]
 
   const minimizeIcons = [
