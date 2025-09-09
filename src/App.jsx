@@ -25,7 +25,7 @@ function AppContent() {
       }}>
         <div style={{ textAlign: 'center' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '32px', marginBottom: '16px' }}></i>
-          <div>Loading LimeDrop Desktop OS...</div>
+          <div>Loading ChaiQ App Builder...</div>
         </div>
       </div>
     )

@@ -11,7 +11,6 @@
   border: 1px solid rgba(var(--window-tint-rgb), 0.3);
   border-radius: 16px;
   padding: 8px 12px;
-  z-index: 1000;
 }
 
 .dockSystem {
@@ -77,5 +76,20 @@
   opacity: 0;
   transition: all 0.2s ease;
   pointer-events: none;
-  z-index: 1001;
+}
+
+.dockItem.minimized {
+  opacity: 0.6;
+}
+
+.dockItem.minimized::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: #ffbd2e;
+  border-radius: 50%;
 }

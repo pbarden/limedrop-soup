@@ -1,8 +1,8 @@
-import { useModal } from '../hooks/useModal.jsx'
+import { useApp } from '../contexts/AppContext'
 import styles from '../styles/ModalOverlay.module.css'
 
 function ModalOverlay() {
-  const { activeModal, closeModal } = useModal()
+  const { activeModal, closeModal } = useApp()
 
   if (!activeModal) return null
 
@@ -12,7 +12,7 @@ function ModalOverlay() {
       className={`${styles.modalOverlay} ${styles.active}`}
       onClick={closeModal}
     >
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+      <div className={`${styles.modal} ${activeModal.size === 'large' ? styles.modalLarge : ''}`} onClick={e => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <div className={styles.modalTitle}>{activeModal.title}</div>
           <button className={styles.modalClose} onClick={closeModal}>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * LimeDrop Desktop OS - Maintenance Cleanup Script
+ * ChaiQ App Builder - Maintenance Cleanup Script
  * 
  * This script performs routine cleanup and maintenance tasks:
  * - Removes old log files
@@ -19,7 +19,7 @@ const DATA_DIR = path.join(__dirname, '..', 'server', 'data');
 const TEMP_DIR = path.join(__dirname, '..', 'temp');
 
 async function cleanup() {
-  console.log('🧹 Starting LimeDrop maintenance cleanup...\n');
+  console.log('🧹 Starting ChaiQ v0.9 Limedrop maintenance cleanup...\n');
 
   try {
     // 1. Clean old log files (older than 30 days)

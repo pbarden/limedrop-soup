@@ -1,9 +1,11 @@
 import { useState, useCallback, useRef } from 'react'
+import { useMobile } from './useMobile'
 
 export function useWindowManager() {
   const [windows, setWindows] = useState([])
   const [activeWindowId, setActiveWindowId] = useState(null)
   const nextZIndex = useRef(1000)
+  const isMobile = useMobile()
 
   const generateWindowId = useCallback(() => {
     return `window-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -45,7 +47,7 @@ export function useWindowManager() {
       left: Math.max(0, window.innerWidth / 2 - 400 + Math.random() * 100),
       top: Math.max(0, window.innerHeight / 2 - 300 + Math.random() * 100),
       minimized: false,
-      maximized: false,
+      maximized: isMobile, // Default to maximized on mobile
       resizable: true,
       ...options
     }
@@ -61,7 +63,7 @@ export function useWindowManager() {
     setActiveWindowId(windowId)
     
     return windowId
-  }, [windows, focusWindow, generateWindowId])
+  }, [windows, focusWindow, generateWindowId, isMobile])
 
   const closeWindow = useCallback((windowId) => {
     setWindows(prev => {

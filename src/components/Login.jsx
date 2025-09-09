@@ -102,13 +102,13 @@ function Login() {
     if (userType === 'admin') {
       setFormData(prev => ({
         ...prev,
-        email: 'admin@limedrop.com',
+        email: 'admin@chaiq.com',
         password: 'admin123'
       }))
     } else {
       setFormData(prev => ({
         ...prev,
-        email: 'demo@limedrop.com',
+        email: 'demo@chaiq.com',
         password: 'demo123'
       }))
     }
@@ -121,7 +121,7 @@ function Login() {
           <div className={styles.logo}>
             <i className="fas fa-desktop"></i>
           </div>
-          <h1>LimeDrop Desktop OS</h1>
+          <h1>ChaiQ App Builder</h1>
           <p>Welcome to your virtual desktop environment</p>
         </div>
 

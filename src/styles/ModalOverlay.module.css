@@ -4,14 +4,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px) saturate(1.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modalOverlay.active {
@@ -19,67 +19,129 @@
 }
 
 .modal {
-  background: rgba(var(--window-tint-rgb), 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.3);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  background: rgba(var(--window-tint-rgb), var(--glass-opacity));
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.25);
+  border-radius: 20px;
+  box-shadow: 
+    0 32px 64px rgba(0, 0, 0, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 85vh;
   width: 90%;
   overflow: hidden;
-  transform: scale(0.9);
-  transition: transform 0.2s ease;
+  transform: scale(0.92) translateY(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modalOverlay.active .modal {
-  transform: scale(1);
+  transform: scale(1) translateY(0);
 }
 
 .modalHeader {
-  background: rgba(var(--window-header-rgb), var(--window-header-opacity));
+  background: rgba(var(--window-header-rgb), calc(var(--window-header-opacity) * 1.2));
+  backdrop-filter: blur(8px);
   color: var(--header-font-color);
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.15);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+}
+
+.modalHeader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    transparent 100%);
 }
 
 .modalTitle {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 18px;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .modalClose {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
-  background: none;
+  background: rgba(var(--window-tint-rgb), 0.1);
   color: var(--window-font-color);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 500;
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(var(--window-tint-rgb), 0.15);
 }
 
 .modalClose:hover {
   background: rgba(var(--window-tint-rgb), 0.2);
+  transform: scale(1.05);
 }
 
 .modalBody {
-  padding: 20px;
+  padding: 24px;
   color: var(--window-font-color);
   max-height: 60vh;
-  overflow-y: auto;
+  position: relative;
+}
+
+.modalBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+  background: rgba(var(--window-tint-rgb), 0.1);
+  border-radius: 3px;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+  background: rgba(var(--window-tint-rgb), 0.3);
+  border-radius: 3px;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--window-tint-rgb), 0.5);
 }
 
 .modalFooter {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(var(--window-tint-rgb), 0.2);
-  background: rgba(var(--window-header-rgb), 0.05);
+  padding: 20px 24px;
+  border-top: 1px solid rgba(var(--window-tint-rgb), 0.15);
+  background: rgba(var(--window-header-rgb), 0.08);
+  backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.modalFooter::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+}
+
+.modalLarge {
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
 }

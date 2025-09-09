@@ -1,4 +1,4 @@
-# LimeDrop App Builder - Comprehensive UX Audit & Enhancement Plan
+# ChaiQ App Builder - Comprehensive UX Audit & Enhancement Plan
 
 ## 🎯 Executive Summary
 

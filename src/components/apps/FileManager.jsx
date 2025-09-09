@@ -12,12 +12,12 @@ function FileManager() {
   }, [])
 
   const loadFiles = () => {
-    const savedFiles = JSON.parse(localStorage.getItem('limedrop-files') || '[]')
+    const savedFiles = JSON.parse(localStorage.getItem('chaiq-files') || '[]')
     setFiles(savedFiles)
   }
 
   const saveFiles = (newFiles) => {
-    localStorage.setItem('limedrop-files', JSON.stringify(newFiles))
+    localStorage.setItem('chaiq-files', JSON.stringify(newFiles))
     setFiles(newFiles)
   }
 

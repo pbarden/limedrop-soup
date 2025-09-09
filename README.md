@@ -1,4 +1,4 @@
-# LimeDrop Desktop OS
+# ChaiQ App Builder
 
 A modern, React-based desktop environment simulation with multi-user support, real-time authentication, and comprehensive application management.
 

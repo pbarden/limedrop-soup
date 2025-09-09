@@ -86,8 +86,8 @@ function AppManager() {
   }, [])
 
   const loadInstalledApps = () => {
-    const saved = JSON.parse(localStorage.getItem('limedrop-apps') || '[]')
-    const builtApps = JSON.parse(localStorage.getItem('limedrop-built-apps') || '[]')
+    const saved = JSON.parse(localStorage.getItem('chaiq-apps') || '[]')
+    const builtApps = JSON.parse(localStorage.getItem('chaiq-built-apps') || '[]')
     
     // Convert built apps to the app manager format
     const builtAppsList = builtApps.map(app => ({
@@ -115,7 +115,7 @@ function AppManager() {
 
   const saveInstalledApps = (apps) => {
     const userApps = apps.filter(app => !app.isSystem && app.installed)
-    localStorage.setItem('limedrop-apps', JSON.stringify(userApps))
+    localStorage.setItem('chaiq-apps', JSON.stringify(userApps))
   }
 
   const installApp = (appId) => {

@@ -29,7 +29,7 @@ const defaultSettings = {
   minimizeIcon: 'fas fa-minus',
   maximizeIcon: 'fas fa-expand-alt',
   closeIcon: 'fas fa-times',
-  backgroundStyle: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  backgroundStyle: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
   background: 'gradient1',
   backgroundAnimation: false,
   animationStyle: 'gradientFlow'
@@ -52,7 +52,7 @@ export function SettingsProvider({ children }) {
 
   const loadSettings = useCallback(() => {
     try {
-      const savedSettings = localStorage.getItem('limedrop-settings')
+      const savedSettings = localStorage.getItem('chaiq-settings')
       console.log('🔄 Loading settings from localStorage:', savedSettings)
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings)
@@ -71,7 +71,7 @@ export function SettingsProvider({ children }) {
       console.log('💾 Saving settings:', newSettings)
       
       if (updatedSettings.autoSave !== false) {
-        localStorage.setItem('limedrop-settings', JSON.stringify(updatedSettings))
+        localStorage.setItem('chaiq-settings', JSON.stringify(updatedSettings))
         console.log('✅ Settings saved to localStorage')
       }
       
@@ -181,7 +181,7 @@ export function SettingsProvider({ children }) {
     try {
       console.log('🔄 Resetting settings to defaults')
       setSettings(defaultSettings)
-      localStorage.removeItem('limedrop-settings')
+      localStorage.removeItem('chaiq-settings')
       return defaultSettings
     } catch (error) {
       console.warn('❌ Failed to reset settings:', error)

@@ -3,12 +3,14 @@ import { useApp } from '../contexts/AppContext'
 import { useWindowDrag } from '../hooks/useWindowDrag'
 import { useWindowResize } from '../hooks/useWindowResize'
 import { useSettings } from '../contexts/SettingsContext'
+import { useMobile } from '../hooks/useMobile'
 import styles from '../styles/Window.module.css'
 
 function Window({ windowId, appId, title, width, height, left, top, zIndex, minimized, maximized, content }) {
   const windowRef = useRef(null)
   const { focusWindow, minimizeWindow, toggleMaximize, closeWindow, activeWindowId } = useApp()
   const { settings } = useSettings()
+  const isMobile = useMobile()
   
   useWindowDrag(windowRef, windowId, { left, top })
   useWindowResize(windowRef, windowId, { width, height })
@@ -69,9 +71,11 @@ function Window({ windowId, appId, title, width, height, left, top, zIndex, mini
           <button className={`${styles.windowControl} ${styles.minimize}`} onClick={(e) => { e.stopPropagation(); handleMinimize(); }}>
             {getControlIcon('minimize', '−')}
           </button>
-          <button className={`${styles.windowControl} ${styles.maximize}`} onClick={(e) => { e.stopPropagation(); handleMaximize(); }}>
-            {getControlIcon('maximize', '□')}
-          </button>
+          {!isMobile && (
+            <button className={`${styles.windowControl} ${styles.maximize}`} onClick={(e) => { e.stopPropagation(); handleMaximize(); }}>
+              {getControlIcon('maximize', '□')}
+            </button>
+          )}
           <button className={`${styles.windowControl} ${styles.close}`} onClick={handleClose}>
             {getControlIcon('close', '×')}
           </button>

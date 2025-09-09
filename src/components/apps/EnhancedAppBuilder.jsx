@@ -198,7 +198,7 @@ function EnhancedAppBuilder() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      const savedApps = JSON.parse(localStorage.getItem('limedrop-enhanced-apps') || '[]')
+      const savedApps = JSON.parse(localStorage.getItem('chaiq-enhanced-apps') || '[]')
       const appIndex = savedApps.findIndex(app => app.id === currentApp.id)
       
       const appToSave = {
@@ -215,7 +215,7 @@ function EnhancedAppBuilder() {
         savedApps.push(appToSave)
       }
       
-      localStorage.setItem('limedrop-enhanced-apps', JSON.stringify(savedApps))
+      localStorage.setItem('chaiq-enhanced-apps', JSON.stringify(savedApps))
       setHasUnsavedChanges(false)
       showNotification(`"${currentApp.name}" saved successfully`, 'success')
       
@@ -235,7 +235,7 @@ function EnhancedAppBuilder() {
 
   // Load app
   const loadApp = useCallback(() => {
-    const savedApps = JSON.parse(localStorage.getItem('limedrop-enhanced-apps') || '[]')
+    const savedApps = JSON.parse(localStorage.getItem('chaiq-enhanced-apps') || '[]')
     
     if (savedApps.length === 0) {
       showNotification('No saved apps found', 'warning')

@@ -72,7 +72,7 @@ function AppBuilder() {
   }
 
   const saveApp = () => {
-    const savedApps = JSON.parse(localStorage.getItem('limedrop-built-apps') || '[]')
+    const savedApps = JSON.parse(localStorage.getItem('chaiq-built-apps') || '[]')
     const appIndex = savedApps.findIndex(app => app.name === currentApp.name)
     
     if (appIndex >= 0) {
@@ -81,12 +81,12 @@ function AppBuilder() {
       savedApps.push({ ...currentApp, created: new Date().toISOString(), lastModified: new Date().toISOString() })
     }
     
-    localStorage.setItem('limedrop-built-apps', JSON.stringify(savedApps))
+    localStorage.setItem('chaiq-built-apps', JSON.stringify(savedApps))
     alert('App saved successfully!')
   }
 
   const loadApp = () => {
-    const savedApps = JSON.parse(localStorage.getItem('limedrop-built-apps') || '[]')
+    const savedApps = JSON.parse(localStorage.getItem('chaiq-built-apps') || '[]')
     if (savedApps.length === 0) {
       alert('No saved apps found')
       return
