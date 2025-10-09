@@ -1,4 +1,4 @@
-# ChaiQ App Builder
+# Limedrop Soup OS
 
 A modern, React-based desktop environment simulation with multi-user support, real-time authentication, and comprehensive application management.
 

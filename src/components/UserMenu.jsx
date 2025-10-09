@@ -119,7 +119,7 @@ function UserMenu() {
 
             <button className={styles.menuItem} onClick={() => setIsOpen(false)}>
               <i className="fas fa-info-circle"></i>
-              <span>About ChaiQ</span>
+              <span>About Limedrop Soup OS</span>
             </button>
 
             <div className={styles.menuDivider}></div>

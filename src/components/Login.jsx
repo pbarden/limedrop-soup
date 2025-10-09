@@ -121,7 +121,7 @@ function Login() {
           <div className={styles.logo}>
             <i className="fas fa-desktop"></i>
           </div>
-          <h1>ChaiQ App Builder</h1>
+          <h1>Limedrop Soup OS</h1>
           <p>Welcome to your virtual desktop environment</p>
         </div>
 
