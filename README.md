@@ -180,13 +180,6 @@ src/
 ├── data/componentLibrary.js  Component metadata
 └── styles/                   global.css tokens + one module per component
 ```
-
-### Two conventions worth knowing
-
-**Canvas geometry is computed, never measured.** Node, port, and edge positions are derived arithmetically from each node's stored position and its port counts (`components/workflow/geometry.js`). Nothing is read from the DOM during render, so the wire layer and the node layer cannot disagree — including on the first paint of a freshly loaded app.
-
-**One token layer.** `styles/global.css` defines a 4px spacing scale, a type scale, and semantic `--surface-*` / `--hairline-*` / `--text-*` tokens. Surfaces and hairlines are derived from the *font* colour via `color-mix()`, not from the window tint — the tint is white and so is the glass behind it, so tint-derived borders were invisible. Modules pick a token instead of inventing their own alpha.
-
 ---
 
 ## Theming
