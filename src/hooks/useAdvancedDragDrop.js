@@ -27,16 +27,21 @@ export function useAdvancedDragDrop({
     }
   }, [gridSize])
 
-  // Find nearest drop zone
+  // Find nearest drop zone.
+  //
+  // Distance is measured to the zone's rectangle, not its centre: a pointer
+  // anywhere inside the zone scores 0. Measuring from the centre meant a large
+  // canvas could only be hit within magneticThreshold px of its exact middle,
+  // so drops almost never registered.
   const findNearestDropZone = useCallback((x, y) => {
     let nearest = null
     let minDistance = Infinity
 
     dragState.dropZones.forEach(zone => {
       const rect = zone.element.getBoundingClientRect()
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
-      const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2)
+      const dx = Math.max(rect.left - x, 0, x - rect.right)
+      const dy = Math.max(rect.top - y, 0, y - rect.bottom)
+      const distance = Math.sqrt(dx * dx + dy * dy)
 
       if (distance < minDistance && distance <= magneticThreshold) {
         minDistance = distance
@@ -44,36 +49,47 @@ export function useAdvancedDragDrop({
       }
     })
 
-    return nearest
+    // handleDragMove reads `distance` to decide on the magnetic highlight.
+    return nearest ? { ...nearest, distance: minDistance } : null
   }, [dragState.dropZones, magneticThreshold])
 
-  // Enhanced drag start
-  const handleDragStart = useCallback((e, item, initialOffset = { x: 0, y: 0 }) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const dragOffset = {
-      x: e.clientX - rect.left - initialOffset.x,
-      y: e.clientY - rect.top - initialOffset.y
-    }
+  // Create enhanced ghost element
+  const createGhostElement = useCallback((originalElement) => {
+    const ghost = originalElement.cloneNode(true)
+    ghost.className = 'drag-ghost'
+    
+    // Enhanced ghost styling
+    Object.assign(ghost.style, {
+      position: 'fixed',
+      pointerEvents: 'none',
+      zIndex: '10000',
+      opacity: '0.8',
+      transform: 'scale(1.05)',
+      transition: `all ${animationDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      borderRadius: '8px',
+      backdropFilter: 'blur(10px)',
+      border: '2px solid var(--primary-button-color)'
+    })
 
-    setDragState(prev => ({
-      ...prev,
-      isDragging: true,
-      draggedItem: item,
-      dragOffset
-    }))
+    // Add glow effect for futuristic feel
+    const glow = document.createElement('div')
+    glow.style.cssText = `
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      background: linear-gradient(45deg, var(--primary-button-color), transparent, var(--primary-button-color));
+      border-radius: 12px;
+      opacity: 0.3;
+      z-index: -1;
+      filter: blur(8px);
+    `
+    ghost.appendChild(glow)
 
-    // Create ghost element
-    const ghost = createGhostElement(e.currentTarget, item)
-    document.body.appendChild(ghost)
-
-    // Add global event listeners
-    document.addEventListener('mousemove', handleDragMove)
-    document.addEventListener('mouseup', handleDragEnd)
-
-    onDragStart?.(item, { x: e.clientX, y: e.clientY })
-
-    e.preventDefault()
-  }, [onDragStart])
+    return ghost
+  }, [animationDuration])
 
   // Enhanced drag move with visual feedback
   const handleDragMove = useCallback((e) => {
@@ -116,6 +132,29 @@ export function useAdvancedDragDrop({
 
     e.preventDefault()
   }, [dragState, snapToGrid, findNearestDropZone, magneticThreshold])
+
+  // Cleanup drag state
+  const cleanupDrag = useCallback(() => {
+    // Remove ghost element
+    const ghost = document.querySelector('.drag-ghost')
+    if (ghost) {
+      document.body.removeChild(ghost)
+    }
+
+    // Clear highlights
+    document.querySelectorAll('.drop-zone-highlight').forEach(el => {
+      el.classList.remove('drop-zone-highlight', 'drop-zone-magnetic')
+    })
+
+    setDragState({
+      isDragging: false,
+      draggedItem: null,
+      dragOffset: { x: 0, y: 0 },
+      dropZones: [],
+      nearestDropZone: null,
+      snapPosition: null
+    })
+  }, [])
 
   // Enhanced drag end with animations
   const handleDragEnd = useCallback((e) => {
@@ -161,74 +200,49 @@ export function useAdvancedDragDrop({
     })
 
     e.preventDefault()
-  }, [dragState, onDrop, onDragEnd, animationDuration])
+  }, [dragState, onDrop, onDragEnd, animationDuration, cleanupDrag])
 
-  // Cleanup drag state
-  const cleanupDrag = useCallback(() => {
-    // Remove ghost element
-    const ghost = document.querySelector('.drag-ghost')
-    if (ghost) {
-      document.body.removeChild(ghost)
+  // Enhanced drag start
+  const handleDragStart = useCallback((e, item, initialOffset = { x: 0, y: 0 }) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const dragOffset = {
+      x: e.clientX - rect.left - initialOffset.x,
+      y: e.clientY - rect.top - initialOffset.y
     }
 
-    // Remove event listeners
-    document.removeEventListener('mousemove', handleDragMove)
-    document.removeEventListener('mouseup', handleDragEnd)
+    setDragState(prev => ({
+      ...prev,
+      isDragging: true,
+      draggedItem: item,
+      dragOffset
+    }))
 
-    // Clear highlights
-    document.querySelectorAll('.drop-zone-highlight').forEach(el => {
-      el.classList.remove('drop-zone-highlight', 'drop-zone-magnetic')
-    })
+    // Create ghost element
+    const ghost = createGhostElement(e.currentTarget)
+    document.body.appendChild(ghost)
 
-    setDragState({
-      isDragging: false,
-      draggedItem: null,
-      dragOffset: { x: 0, y: 0 },
-      dropZones: [],
-      nearestDropZone: null,
-      snapPosition: null
-    })
-  }, [handleDragMove, handleDragEnd])
+    onDragStart?.(item, { x: e.clientX, y: e.clientY })
 
-  // Create enhanced ghost element
-  const createGhostElement = useCallback((originalElement) => {
-    const ghost = originalElement.cloneNode(true)
-    ghost.className = 'drag-ghost'
-    
-    // Enhanced ghost styling
-    Object.assign(ghost.style, {
-      position: 'fixed',
-      pointerEvents: 'none',
-      zIndex: '10000',
-      opacity: '0.8',
-      transform: 'scale(1.05)',
-      transition: `all ${animationDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-      borderRadius: '8px',
-      backdropFilter: 'blur(10px)',
-      border: '2px solid var(--primary-button-color)'
-    })
+    e.preventDefault()
+  }, [onDragStart, createGhostElement])
 
-    // Add glow effect for futuristic feel
-    const glow = document.createElement('div')
-    glow.style.cssText = `
-      position: absolute;
-      top: -4px;
-      left: -4px;
-      right: -4px;
-      bottom: -4px;
-      background: linear-gradient(45deg, var(--primary-button-color), transparent, var(--primary-button-color));
-      border-radius: 12px;
-      opacity: 0.3;
-      z-index: -1;
-      filter: blur(8px);
-    `
-    ghost.appendChild(glow)
+  // Drag listeners live here rather than in handleDragStart so they always
+  // close over the current drag state; handlers registered at mousedown would
+  // capture isDragging === false and immediately bail.
+  useEffect(() => {
+    if (!dragState.isDragging) return
 
-    return ghost
-  }, [animationDuration])
+    document.addEventListener('mousemove', handleDragMove)
+    document.addEventListener('mouseup', handleDragEnd)
 
-  // Register drop zone
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove)
+      document.removeEventListener('mouseup', handleDragEnd)
+    }
+  }, [dragState.isDragging, handleDragMove, handleDragEnd])
+
+
+// Register drop zone
   const registerDropZone = useCallback((element, id, metadata = {}) => {
     if (!element) return
 

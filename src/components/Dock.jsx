@@ -2,15 +2,17 @@ import { memo, useCallback } from 'react'
 import { useApp } from '../contexts/AppContext'
 import styles from '../styles/Dock.module.css'
 
+const systemApps = [
+  { id: 'app-builder', icon: 'fas fa-hammer', tooltip: 'App Builder' },
+  { id: 'app-manager', icon: 'fas fa-th-large', tooltip: 'App Manager' },
+  { id: 'file-manager', icon: 'fas fa-folder', tooltip: 'Files' },
+  { id: 'settings', icon: 'fas fa-cog', tooltip: 'Settings' }
+]
+
+const FALLBACK_ICON = 'fas fa-window-maximize'
+
 function Dock() {
   const { openApp, windows, focusWindow, minimizeWindow } = useApp()
-
-  const systemApps = [
-    { id: 'app-builder', icon: 'fas fa-hammer', tooltip: 'App Builder' },
-    { id: 'app-manager', icon: 'fas fa-th-large', tooltip: 'App Manager' },
-    { id: 'file-manager', icon: 'fas fa-folder', tooltip: 'Files' },
-    { id: 'settings', icon: 'fas fa-cog', tooltip: 'Settings' }
-  ]
 
   const handleRunningAppClick = useCallback((window) => {
     if (window.minimized) {
@@ -21,20 +23,12 @@ function Dock() {
   }, [minimizeWindow, focusWindow])
 
   // Get app icon based on appId
-  const getAppIcon = useCallback((appId) => {
-    const systemApp = systemApps.find(app => app.id === appId)
+  // Built apps carry their own icon on the window record.
+  const getAppIcon = useCallback((windowData) => {
+    const systemApp = systemApps.find(app => app.id === windowData.appId)
     if (systemApp) return systemApp.icon
-    
-    // Default icons for other apps
-    const iconMap = {
-      'calculator': 'fas fa-calculator',
-      'notepad': 'fas fa-sticky-note',
-      'weather': 'fas fa-cloud-sun',
-      'music-player': 'fas fa-music'
-    }
-    
-    return iconMap[appId] || 'fas fa-window-maximize'
-  }, [systemApps])
+    return windowData.builtAppData?.icon || FALLBACK_ICON
+  }, [])
 
   // Get non-system running windows for the running section
   const runningWindows = windows.filter(window => 
@@ -89,7 +83,7 @@ function Dock() {
                 title={window.title}
               >
                 <div className={styles.dockIcon}>
-                  <i className={getAppIcon(window.appId)}></i>
+                  <i className={getAppIcon(window)}></i>
                 </div>
                 <div className={styles.dockTooltip}>
                   {window.title} {window.minimized ? '(Minimized)' : ''}

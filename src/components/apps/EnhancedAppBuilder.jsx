@@ -60,17 +60,6 @@ function EnhancedAppBuilder() {
     magneticThreshold: 15
   })
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (!hasUnsavedChanges) return
-
-    const autoSaveTimeout = setTimeout(() => {
-      handleAutoSave()
-    }, 30000) // Auto-save every 30 seconds
-
-    return () => clearTimeout(autoSaveTimeout)
-  }, [currentApp, hasUnsavedChanges])
-
   // Filtered components based on search and category
   const filteredComponents = React.useMemo(() => {
     let components = Object.values(advancedComponents)
@@ -268,6 +257,18 @@ function EnhancedAppBuilder() {
     saveApp()
   }, [saveApp, hasUnsavedChanges])
 
+  // Auto-save 30s after the last change. handleAutoSave changes identity with
+  // currentApp, so edits restart the timer rather than saving mid-edit.
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+
+    const autoSaveTimeout = setTimeout(() => {
+      handleAutoSave()
+    }, 30000)
+
+    return () => clearTimeout(autoSaveTimeout)
+  }, [hasUnsavedChanges, handleAutoSave])
+
   // Load app
   const loadApp = useCallback(() => {
     const savedApps = listApps()
@@ -308,24 +309,7 @@ function EnhancedAppBuilder() {
   }, [showNotification, showModal, closeModal])
 
   // New app
-  const newApp = useCallback(() => {
-    if (hasUnsavedChanges) {
-      showModal({
-        title: 'Unsaved Changes',
-        message: 'You have unsaved changes. Do you want to save before creating a new app?',
-        type: 'confirm',
-        onConfirm: async () => {
-          await saveApp()
-          createNewApp()
-        },
-        onCancel: createNewApp
-      })
-    } else {
-      createNewApp()
-    }
-  }, [hasUnsavedChanges, saveApp, showModal])
-
-  const createNewApp = () => {
+  const createNewApp = useCallback(() => {
     setCurrentApp({
       id: `app-${Date.now()}`,
       name: 'Untitled App',
@@ -343,7 +327,25 @@ function EnhancedAppBuilder() {
     setSelectedComponent(null)
     setHasUnsavedChanges(false)
     showNotification('New app created', 'success')
-  }
+  }, [showNotification])
+
+  const newApp = useCallback(() => {
+    if (hasUnsavedChanges) {
+      showModal({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. Do you want to save before creating a new app?',
+        type: 'confirm',
+        onConfirm: async () => {
+          await saveApp()
+          createNewApp()
+        },
+        onCancel: createNewApp
+      })
+    } else {
+      createNewApp()
+    }
+  }, [hasUnsavedChanges, saveApp, showModal, createNewApp])
+
 
   // Handle preview interaction
   const handlePreviewInteraction = useCallback((componentId, action) => {
@@ -706,13 +708,25 @@ function EnhancedAppBuilder() {
 // Component Palette Item
 function ComponentPaletteItem({ component, onDragStart, onClick }) {
   const category = componentCategories[component.category]
-  
+  const pressOrigin = useRef(null)
+
+  // mousedown starts a drag, but the browser still fires click afterwards.
+  // Only treat it as a click if the pointer barely moved, otherwise a drag
+  // would add the component twice - once on drop and once on click.
+  const handleClick = (e) => {
+    const origin = pressOrigin.current
+    const moved = origin && Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > 5
+    if (!moved) onClick(component)
+  }
+
   return (
     <div
       className={styles.paletteItem}
-      draggable
-      onDragStart={(e) => onDragStart(e, component)}
-      onClick={() => onClick(component)}
+      onMouseDown={(e) => {
+        pressOrigin.current = { x: e.clientX, y: e.clientY }
+        onDragStart(e, component)
+      }}
+      onClick={handleClick}
       style={{ '--category-color': category?.color || 'var(--primary-button-color)' }}
     >
       <div className={styles.paletteItemIcon}>

@@ -40,16 +40,6 @@ const SettingsContext = createContext()
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(defaultSettings)
 
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    loadSettings()
-  }, [])
-
-  // Apply CSS variables when settings change
-  useEffect(() => {
-    applySettings()
-  }, [settings])
-
   const loadSettings = useCallback(() => {
     try {
       const savedSettings = localStorage.getItem('chaiq-settings')
@@ -171,6 +161,18 @@ export function SettingsProvider({ children }) {
       console.error('❌ Failed to apply settings:', error)
     }
   }, [settings])
+
+  // Load saved settings once on mount.
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  // Re-apply CSS variables whenever settings change. applySettings only writes
+  // to the document root, so depending on it cannot loop.
+  useEffect(() => {
+    applySettings()
+  }, [applySettings])
+
 
   const updateSetting = useCallback((key, value) => {
     console.log(`⚙️ updateSetting called: ${key} = ${value}`)

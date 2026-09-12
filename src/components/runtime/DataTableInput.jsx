@@ -36,7 +36,7 @@ function DataTableInput({ config = {}, rows = [], onChange }) {
   const [sort, setSort] = useState({ column: null, direction: 'asc' })
   const [filter, setFilter] = useState('')
 
-  const safeRows = Array.isArray(rows) ? rows : []
+  const safeRows = useMemo(() => (Array.isArray(rows) ? rows : []), [rows])
 
   // Keep the original index so edits write back to the right row even when the
   // view is sorted or filtered.

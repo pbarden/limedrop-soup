@@ -11,6 +11,12 @@
   transition: all 0.2s ease;
 }
 
+/* The focused window sits visibly above the rest. */
+.window.active {
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
+  border-color: rgba(var(--window-tint-rgb), 0.55);
+}
+
 .window.minimized {
   transform: scale(0.1);
   opacity: 0;

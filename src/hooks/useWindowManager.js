@@ -5,6 +5,16 @@ export function useWindowManager() {
   const [windows, setWindows] = useState([])
   const [activeWindowId, setActiveWindowId] = useState(null)
   const nextZIndex = useRef(1000)
+
+  // Mirrors activeWindowId so callbacks can read the current value without
+  // listing it as a dependency (which would give every consumer a new
+  // function identity on each focus change).
+  const activeWindowIdRef = useRef(null)
+  const setActiveWindow = useCallback((windowId) => {
+    activeWindowIdRef.current = windowId
+    setActiveWindowId(windowId)
+  }, [])
+
   const isMobile = useMobile()
 
   const generateWindowId = useCallback(() => {
@@ -13,7 +23,7 @@ export function useWindowManager() {
 
   const focusWindow = useCallback((windowId) => {
     // Always set as active window first
-    setActiveWindowId(windowId)
+    setActiveWindow(windowId)
     
     setWindows(prev => {
       // Find the window being focused
@@ -29,7 +39,7 @@ export function useWindowManager() {
           : w
       )
     })
-  }, [])
+  }, [setActiveWindow])
 
   const openApp = useCallback((appId, options = {}) => {
     // Check if window for this app is already open
@@ -60,28 +70,26 @@ export function useWindowManager() {
     }
 
     setWindows(prev => [...prev, newWindow])
-    setActiveWindowId(windowId)
+    setActiveWindow(windowId)
     
     return windowId
-  }, [windows, focusWindow, generateWindowId, isMobile])
+  }, [windows, focusWindow, generateWindowId, isMobile, setActiveWindow])
 
   const closeWindow = useCallback((windowId) => {
     setWindows(prev => {
       const remaining = prev.filter(w => w.windowId !== windowId)
       
-      // If closing the active window, find next window to activate
-      if (activeWindowId === windowId && remaining.length > 0) {
-        const nextActive = remaining.reduce((highest, w) => 
-          w.zIndex > highest.zIndex ? w : highest
-        )
-        setActiveWindowId(nextActive.windowId)
-      } else if (activeWindowId === windowId) {
-        setActiveWindowId(null)
+      // If closing the active window, focus whichever window is now on top.
+      if (activeWindowIdRef.current === windowId) {
+        const nextActive = remaining.length > 0
+          ? remaining.reduce((highest, w) => (w.zIndex > highest.zIndex ? w : highest))
+          : null
+        setActiveWindow(nextActive ? nextActive.windowId : null)
       }
-      
+
       return remaining
     })
-  }, [])
+  }, [setActiveWindow])
 
   const minimizeWindow = useCallback((windowId) => {
     setWindows(prev => prev.map(w => 

@@ -63,161 +63,25 @@ function LivePreview({
     }
   }, [])
 
-  // Hot reload system
-  useEffect(() => {
-    if (!enableHotReload || !app) return
 
-    if (hotReloadTimeoutRef.current) {
-      clearTimeout(hotReloadTimeoutRef.current)
+// Update component state
+  const updateComponentState = useCallback((componentId, updates) => {
+    setComponentStates(prev => ({
+      ...prev,
+      [componentId]: { ...prev[componentId], ...updates }
+    }))
+  }, [])
+
+  // Handle component interaction
+  const handleComponentInteraction = useCallback((componentId, action) => {
+    onInteraction?.(componentId, action)
+    
+    if (action === 'test') {
+      showNotification(`Testing component ${componentId}`, 'info')
+      // Simulate test action
+      updateComponentState(componentId, { lastTested: Date.now() })
     }
-
-    hotReloadTimeoutRef.current = setTimeout(() => {
-      handleHotReload()
-    }, 300) // Debounce hot reload
-
-    return () => {
-      if (hotReloadTimeoutRef.current) {
-        clearTimeout(hotReloadTimeoutRef.current)
-      }
-    }
-  }, [app, enableHotReload])
-
-  // Hot reload implementation
-  const handleHotReload = useCallback(async () => {
-    if (!app?.components?.length) return
-
-    try {
-      setIsLoading(true)
-      performance.mark('preview-render-start')
-
-      // Simulate hot reload delay for visual feedback
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Update performance metrics
-      setPerformanceMetrics(prev => ({
-        ...prev,
-        componentCount: app.components.length,
-        memoryUsage: performance.memory ? 
-          Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : 0
-      }))
-
-      performance.mark('preview-render-end')
-      performance.measure('preview-render', 'preview-render-start', 'preview-render-end')
-
-      setPreviewError(null)
-    } catch (error) {
-      console.error('Hot reload error:', error)
-      setPreviewError(error.message)
-      onError?.(error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [app, onError])
-
-  // Generate preview content
-  const previewContent = useMemo(() => {
-    if (!app?.components?.length) {
-      return (
-        <div className={styles.emptyPreview}>
-          <i className="fas fa-eye-slash"></i>
-          <h3>No Preview Available</h3>
-          <p>Add components to your workflow to see the live preview</p>
-        </div>
-      )
-    }
-
-    return app.components.map((component, index) => 
-      renderComponentPreview(component, index)
-    )
-  }, [app, componentStates])
-
-  // Render individual component preview
-  const renderComponentPreview = useCallback((component, index) => {
-    const meta = getComponentById(component.type)
-    if (!meta) return null
-
-    const componentState = componentStates[component.id] || {}
-
-    try {
-      return (
-        <div 
-          key={component.id} 
-          className={styles.previewComponent}
-          data-component-type={component.type}
-          style={{
-            order: index,
-            '--component-color': meta.category ? 
-              `var(--category-${meta.category}-color, var(--primary-button-color))` : 
-              'var(--primary-button-color)'
-          }}
-        >
-          <div className={styles.componentHeader}>
-            <div className={styles.componentMeta}>
-              <i className={meta.icon}></i>
-              <span className={styles.componentName}>{component.name}</span>
-              <span className={styles.componentType}>{meta.name}</span>
-            </div>
-            
-            {isInteractive && (
-              <div className={styles.componentControls}>
-                <button 
-                  className={styles.controlButton}
-                  onClick={() => handleComponentInteraction(component.id, 'configure')}
-                  title="Configure Component"
-                >
-                  <i className="fas fa-cog"></i>
-                </button>
-                <button 
-                  className={styles.controlButton}
-                  onClick={() => handleComponentInteraction(component.id, 'test')}
-                  title="Test Component"
-                >
-                  <i className="fas fa-play"></i>
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className={styles.componentContent}>
-            {renderComponentContent(component, meta, componentState)}
-          </div>
-
-          <div className={styles.componentFooter}>
-            <div className={styles.componentConnections}>
-              {meta.inputs && (
-                <div className={styles.inputs}>
-                  {meta.inputs.map(input => (
-                    <div key={input} className={styles.connectionPoint}>
-                      <span>←</span>
-                      <small>{input}</small>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {meta.outputs && (
-                <div className={styles.outputs}>
-                  {meta.outputs.map(output => (
-                    <div key={output} className={styles.connectionPoint}>
-                      <small>{output}</small>
-                      <span>→</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )
-    } catch (error) {
-      console.error(`Error rendering component ${component.id}:`, error)
-      return (
-        <div key={component.id} className={styles.componentError}>
-          <i className="fas fa-exclamation-triangle"></i>
-          <span>Error rendering {component.name}</span>
-        </div>
-      )
-    }
-  }, [componentStates, isInteractive])
+  }, [onInteraction, showNotification, updateComponentState])
 
   // Render component content based on type
   const renderComponentContent = useCallback((component, meta, state) => {
@@ -344,26 +208,163 @@ function LivePreview({
           </div>
         )
     }
-  }, [isInteractive])
+  }, [isInteractive, updateComponentState])
 
-  // Update component state
-  const updateComponentState = useCallback((componentId, updates) => {
-    setComponentStates(prev => ({
-      ...prev,
-      [componentId]: { ...prev[componentId], ...updates }
-    }))
-  }, [])
+  // Render individual component preview
+  const renderComponentPreview = useCallback((component, index) => {
+    const meta = getComponentById(component.type)
+    if (!meta) return null
 
-  // Handle component interaction
-  const handleComponentInteraction = useCallback((componentId, action) => {
-    onInteraction?.(componentId, action)
-    
-    if (action === 'test') {
-      showNotification(`Testing component ${componentId}`, 'info')
-      // Simulate test action
-      updateComponentState(componentId, { lastTested: Date.now() })
+    const componentState = componentStates[component.id] || {}
+
+    try {
+      return (
+        <div 
+          key={component.id} 
+          className={styles.previewComponent}
+          data-component-type={component.type}
+          style={{
+            order: index,
+            '--component-color': meta.category ? 
+              `var(--category-${meta.category}-color, var(--primary-button-color))` : 
+              'var(--primary-button-color)'
+          }}
+        >
+          <div className={styles.componentHeader}>
+            <div className={styles.componentMeta}>
+              <i className={meta.icon}></i>
+              <span className={styles.componentName}>{component.name}</span>
+              <span className={styles.componentType}>{meta.name}</span>
+            </div>
+            
+            {isInteractive && (
+              <div className={styles.componentControls}>
+                <button 
+                  className={styles.controlButton}
+                  onClick={() => handleComponentInteraction(component.id, 'configure')}
+                  title="Configure Component"
+                >
+                  <i className="fas fa-cog"></i>
+                </button>
+                <button 
+                  className={styles.controlButton}
+                  onClick={() => handleComponentInteraction(component.id, 'test')}
+                  title="Test Component"
+                >
+                  <i className="fas fa-play"></i>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.componentContent}>
+            {renderComponentContent(component, meta, componentState)}
+          </div>
+
+          <div className={styles.componentFooter}>
+            <div className={styles.componentConnections}>
+              {meta.inputs && (
+                <div className={styles.inputs}>
+                  {meta.inputs.map(input => (
+                    <div key={input} className={styles.connectionPoint}>
+                      <span>←</span>
+                      <small>{input}</small>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {meta.outputs && (
+                <div className={styles.outputs}>
+                  {meta.outputs.map(output => (
+                    <div key={output} className={styles.connectionPoint}>
+                      <small>{output}</small>
+                      <span>→</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    } catch (error) {
+      console.error(`Error rendering component ${component.id}:`, error)
+      return (
+        <div key={component.id} className={styles.componentError}>
+          <i className="fas fa-exclamation-triangle"></i>
+          <span>Error rendering {component.name}</span>
+        </div>
+      )
     }
-  }, [onInteraction, showNotification])
+  }, [componentStates, isInteractive, renderComponentContent, handleComponentInteraction])
+
+  // Generate preview content
+  const previewContent = useMemo(() => {
+    if (!app?.components?.length) {
+      return (
+        <div className={styles.emptyPreview}>
+          <i className="fas fa-eye-slash"></i>
+          <h3>No Preview Available</h3>
+          <p>Add components to your workflow to see the live preview</p>
+        </div>
+      )
+    }
+
+    return app.components.map((component, index) => 
+      renderComponentPreview(component, index)
+    )
+  }, [app, renderComponentPreview])
+
+  // Hot reload implementation
+  const handleHotReload = useCallback(async () => {
+    if (!app?.components?.length) return
+
+    try {
+      setIsLoading(true)
+      performance.mark('preview-render-start')
+
+      // Simulate hot reload delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Update performance metrics
+      setPerformanceMetrics(prev => ({
+        ...prev,
+        componentCount: app.components.length,
+        memoryUsage: performance.memory ? 
+          Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : 0
+      }))
+
+      performance.mark('preview-render-end')
+      performance.measure('preview-render', 'preview-render-start', 'preview-render-end')
+
+      setPreviewError(null)
+    } catch (error) {
+      console.error('Hot reload error:', error)
+      setPreviewError(error.message)
+      onError?.(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [app, onError])
+
+  // Hot reload system
+  useEffect(() => {
+    if (!enableHotReload || !app) return
+
+    if (hotReloadTimeoutRef.current) {
+      clearTimeout(hotReloadTimeoutRef.current)
+    }
+
+    hotReloadTimeoutRef.current = setTimeout(() => {
+      handleHotReload()
+    }, 300) // Debounce hot reload
+
+    return () => {
+      if (hotReloadTimeoutRef.current) {
+        clearTimeout(hotReloadTimeoutRef.current)
+      }
+    }
+  }, [app, enableHotReload, handleHotReload])
 
   // Handle device change
   const handleDeviceChange = useCallback((newDevice) => {

@@ -67,6 +67,26 @@ function ConnectionSystem({
     }))
   }, [dragState.isDragging])
 
+  // Validate if connection can be created
+  const canCreateConnection = useCallback((fromComp, fromPort, fromType, toComp, toPort, toType) => {
+    // Can't connect to same component
+    if (fromComp === toComp) return false
+    
+    // Output ports can only connect to input ports
+    if (fromType === 'output' && toType !== 'input') return false
+    if (fromType === 'input' && toType !== 'output') return false
+    
+    // Check if connection already exists
+    const existingConnection = connections.find(conn => 
+      conn.from === fromComp && 
+      conn.fromPort === fromPort && 
+      conn.to === toComp && 
+      conn.toPort === toPort
+    )
+    
+    return !existingConnection
+  }, [connections])
+
   // Handle connection end
   const handleConnectionEnd = useCallback((event) => {
     if (!dragState.isDragging) return
@@ -108,7 +128,7 @@ function ConnectionSystem({
       fromPort: null,
       mousePosition: { x: 0, y: 0 }
     })
-  }, [dragState, onConnectionCreate, connections])
+  }, [dragState, onConnectionCreate, canCreateConnection])
 
   // Attach drag listeners only while a drag is active, so the handlers always
   // close over the current drag state.
@@ -124,25 +144,6 @@ function ConnectionSystem({
     }
   }, [dragState.isDragging, handleConnectionDrag, handleConnectionEnd])
 
-  // Validate if connection can be created
-  const canCreateConnection = (fromComp, fromPort, fromType, toComp, toPort, toType) => {
-    // Can't connect to same component
-    if (fromComp === toComp) return false
-    
-    // Output ports can only connect to input ports
-    if (fromType === 'output' && toType !== 'input') return false
-    if (fromType === 'input' && toType !== 'output') return false
-    
-    // Check if connection already exists
-    const existingConnection = connections.find(conn => 
-      conn.from === fromComp && 
-      conn.fromPort === fromPort && 
-      conn.to === toComp && 
-      conn.toPort === toPort
-    )
-    
-    return !existingConnection
-  }
 
   // Get port position on screen
   const getPortPosition = (componentId, portId) => {
