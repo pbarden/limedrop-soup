@@ -227,16 +227,6 @@ They need rewriting as plain static-site configs, or deleting. `.env.example` is
 
 ---
 
-## Known gaps
-
-- **Auth is decorative.** Credentials are hardcoded in the client; anyone can read them from the bundle.
-- **No undo/redo** in the builder.
-- **HTTP Request is CORS-bound.** Browser requests can't reach an API that doesn't opt in.
-- **User code isn't sandboxed** — see the note in the execution model above.
-- The classic `AppBuilder.jsx` is still registered as a separate app but is superseded by the enhanced builder.
-
----
-
 ## License
 
 No license file is currently present in this repository.
