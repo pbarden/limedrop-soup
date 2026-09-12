@@ -20,6 +20,26 @@ const LEGACY_BUILT = 'chaiq-built-apps'
 const LEGACY_ENHANCED = 'chaiq-enhanced-apps'
 const LEGACY_INSTALLED = 'chaiq-apps'
 
+// Subscribers are notified whenever the app list changes, so the desktop and
+// dock update as soon as an app is installed, renamed, or deleted.
+const listeners = new Set()
+
+export function subscribe(listener) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function notify() {
+  const apps = listApps()
+  listeners.forEach(listener => {
+    try {
+      listener(apps)
+    } catch {
+      // A broken subscriber must not break the write that triggered it.
+    }
+  })
+}
+
 function readJson(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
@@ -141,6 +161,11 @@ export function listApps() {
   return readJson(APPS_KEY, []).map(app => normalizeApp(app))
 }
 
+/** Apps the user has installed, for the desktop and dock. */
+export function listInstalledApps() {
+  return listApps().filter(app => app.installed)
+}
+
 export function getApp(id) {
   return listApps().find(app => app.id === id) || null
 }
@@ -160,12 +185,14 @@ export function saveApp(app) {
   }
 
   localStorage.setItem(APPS_KEY, JSON.stringify(apps))
+  notify()
   return normalized
 }
 
 export function deleteApp(id) {
   const apps = listApps().filter(app => app.id !== id)
   localStorage.setItem(APPS_KEY, JSON.stringify(apps))
+  notify()
   return apps
 }
 
@@ -174,6 +201,7 @@ export function setInstalled(id, installed) {
     app.id === id ? { ...app, installed } : app
   )
   localStorage.setItem(APPS_KEY, JSON.stringify(apps))
+  notify()
   return apps
 }
 

@@ -348,15 +348,6 @@ function EnhancedAppBuilder() {
 
 
   // Handle preview interaction
-  const handlePreviewInteraction = useCallback((componentId, action) => {
-    if (action === 'configure') {
-      const component = currentApp.components.find(c => c.id === componentId)
-      if (component) {
-        setSelectedComponent(component)
-        setViewMode('designer')
-      }
-    }
-  }, [currentApp.components])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -675,12 +666,7 @@ function EnhancedAppBuilder() {
             className={styles.previewArea}
             style={{ width: viewMode === 'split' ? panelSizes.preview : '100%' }}
           >
-            <LivePreview
-              app={currentApp}
-              isVisible={true}
-              onInteraction={handlePreviewInteraction}
-              enableHotReload={true}
-            />
+            <LivePreview app={currentApp} isVisible={true} />
           </div>
         )}
 

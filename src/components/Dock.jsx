@@ -1,5 +1,6 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { useApp } from '../contexts/AppContext'
+import { listInstalledApps, subscribe, appWindowId } from '../storage/appStore'
 import styles from '../styles/Dock.module.css'
 
 const systemApps = [
@@ -13,6 +14,23 @@ const FALLBACK_ICON = 'fas fa-window-maximize'
 
 function Dock() {
   const { openApp, windows, focusWindow, minimizeWindow } = useApp()
+  const [builtApps, setBuiltApps] = useState([])
+
+  // Installed apps live in the favourites slot and refresh on install/delete.
+  useEffect(() => {
+    setBuiltApps(listInstalledApps())
+    return subscribe(() => setBuiltApps(listInstalledApps()))
+  }, [])
+
+  const handleBuiltAppClick = useCallback((app) => {
+    const id = appWindowId(app.id)
+    const existing = windows.find(w => w.appId === id)
+    if (existing?.minimized) {
+      minimizeWindow(existing.windowId)
+    } else {
+      openApp(id, { title: app.name, builtAppData: app })
+    }
+  }, [openApp, windows, minimizeWindow])
 
   const handleRunningAppClick = useCallback((window) => {
     if (window.minimized) {
@@ -31,9 +49,12 @@ function Dock() {
   }, [])
 
   // Get non-system running windows for the running section
-  const runningWindows = windows.filter(window => 
-    !systemApps.some(sysApp => sysApp.id === window.appId)
-  )
+  // The running section must not repeat what the pinned sections already show.
+  const pinnedIds = new Set([
+    ...systemApps.map(app => app.id),
+    ...builtApps.map(app => appWindowId(app.id))
+  ])
+  const runningWindows = windows.filter(window => !pinnedIds.has(window.appId))
 
   // Handle system app clicks - if minimized, restore; if open, minimize or focus
   const handleSystemAppClick = useCallback((appId) => {
@@ -69,8 +90,31 @@ function Dock() {
           )
         })}
       </div>
-      <div className={styles.dockSeparator}></div>
-      <div className={styles.dockFavorites} id="dock-favorites"></div>
+      {builtApps.length > 0 && (
+        <>
+          <div className={styles.dockSeparator}></div>
+          <div className={styles.dockFavorites} id="dock-favorites">
+            {builtApps.map(app => {
+              const appWindow = windows.find(w => w.appId === appWindowId(app.id))
+              return (
+                <div
+                  key={app.id}
+                  className={`${styles.dockItem} ${appWindow?.minimized ? styles.minimized : ''}`}
+                  data-app={appWindowId(app.id)}
+                  onClick={() => handleBuiltAppClick(app)}
+                >
+                  <div className={styles.dockIcon}>
+                    <i className={app.icon}></i>
+                  </div>
+                  <div className={styles.dockTooltip}>
+                    {app.name} {appWindow?.minimized ? '(Minimized)' : ''}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
       {runningWindows.length > 0 && (
         <>
           <div className={styles.dockSeparator}></div>

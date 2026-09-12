@@ -1,7 +1,11 @@
 import { useState } from 'react'
+import { useApp } from '../../contexts/AppContext'
+import { listApps, saveApp as persistApp, normalizeApp } from '../../storage/appStore'
 import styles from '../../styles/AppBuilder.module.css'
 
 function AppBuilder() {
+  const { showNotification, showModal, closeModal } = useApp()
+
   const [currentApp, setCurrentApp] = useState({
     name: 'New App',
     icon: 'fas fa-rocket',
@@ -72,35 +76,54 @@ function AppBuilder() {
     }))
   }
 
+  // Saves through the shared app store so apps built here show up in the App
+  // Manager and run in the same runtime as everything else. normalizeApp turns
+  // the ordered component list into a connected pipeline.
   const saveApp = () => {
-    const savedApps = JSON.parse(localStorage.getItem('chaiq-built-apps') || '[]')
-    const appIndex = savedApps.findIndex(app => app.name === currentApp.name)
-    
-    if (appIndex >= 0) {
-      savedApps[appIndex] = { ...currentApp, lastModified: new Date().toISOString() }
-    } else {
-      savedApps.push({ ...currentApp, created: new Date().toISOString(), lastModified: new Date().toISOString() })
-    }
-    
-    localStorage.setItem('chaiq-built-apps', JSON.stringify(savedApps))
-    alert('App saved successfully!')
+    const existing = listApps().find(app => app.name === currentApp.name)
+    const saved = persistApp(
+      normalizeApp({ ...currentApp, id: existing?.id }, { chainIfUnconnected: true })
+    )
+    setCurrentApp(prev => ({ ...prev, id: saved.id }))
+    showNotification(`"${saved.name}" saved`, 'success')
   }
 
   const loadApp = () => {
-    const savedApps = JSON.parse(localStorage.getItem('chaiq-built-apps') || '[]')
+    const savedApps = listApps()
     if (savedApps.length === 0) {
-      alert('No saved apps found')
+      showNotification('No saved apps found', 'warning')
       return
     }
-    
-    // For now, just load the first app - in a full implementation, 
-    // this would show a selection dialog
-    setCurrentApp(savedApps[0])
+
+    showModal({
+      title: 'Open App',
+      content: (
+        <div className={styles.appPicker}>
+          {savedApps.map(app => (
+            <button
+              key={app.id}
+              className={styles.appPickerItem}
+              onClick={() => {
+                setCurrentApp(app)
+                setSelectedComponent(null)
+                showNotification(`Loaded "${app.name}"`, 'success')
+                closeModal()
+              }}
+            >
+              <i className={app.icon}></i>
+              <span>{app.name}</span>
+              <small>{app.components.length} components</small>
+            </button>
+          ))}
+        </div>
+      ),
+      actions: <button className="btn-secondary" onClick={closeModal}>Cancel</button>
+    })
   }
 
   const newApp = () => {
-    if (currentApp.components.length > 0 && 
-        !confirm('Are you sure you want to create a new app? Unsaved changes will be lost.')) {
+    if (currentApp.components.length > 0 &&
+        !confirm('Create a new app? Unsaved changes will be lost.')) {
       return
     }
     

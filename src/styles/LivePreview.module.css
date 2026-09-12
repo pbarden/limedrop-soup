@@ -702,3 +702,17 @@
     transform: rotate(90deg);
   }
 }
+.previewMeta {
+  font-size: 11px;
+  opacity: 0.65;
+  color: var(--window-font-color, #444);
+  white-space: nowrap;
+}
+
+/* The runner fills the emulated viewport. */
+.previewContent {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: rgba(var(--window-tint-rgb), 0.9);
+}

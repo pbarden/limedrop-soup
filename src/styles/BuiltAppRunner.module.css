@@ -403,3 +403,27 @@
 .logEntry.success .logMessage { color: #10b981; }
 .logEntry.error .logMessage   { color: #ef4444; }
 .logEntry.warning .logMessage { color: #f59e0b; }
+
+.gateAction {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gateHint {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.65;
+  color: var(--window-font-color, #444);
+}
+
+.outputLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}

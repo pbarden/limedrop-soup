@@ -152,7 +152,6 @@ function Settings() {
   }
 
   const handleOpenBackgroundSelector = () => {
-    console.log('Opening background selector modal')
     showModal({
       title: '🎨 Choose Your Theme',
       content: <BackgroundSelectorModal />,
@@ -309,66 +308,6 @@ function Settings() {
     { id: 'fas fa-bomb', name: 'Bomb' }
   ]
 
-  const handleColorChange = (key, value) => {
-    console.log(`🎨 handleColorChange: ${key} = ${value}`)
-    console.log('Current settings before change:', settings[key])
-    const result = updateSetting(key, value)
-    console.log('updateSetting result:', result)
-    setTimeout(() => {
-      console.log('Settings after change:', settings[key])
-    }, 100)
-  }
-
-  const handleSliderChange = (key, value) => {
-    console.log(`🎚️ handleSliderChange: ${key} = ${value}`)
-    console.log('Current settings before change:', settings[key])
-    const result = updateSetting(key, value)
-    console.log('updateSetting result:', result)
-    setTimeout(() => {
-      console.log('Settings after change:', settings[key])
-    }, 100)
-  }
-
-  const testCSSVariables = () => {
-    const root = document.documentElement
-    console.log('🧪 === CRITICAL SETTINGS DEBUG ===')
-    
-    // Check localStorage directly
-    const rawStorage = localStorage.getItem('chaiq-settings')
-    console.log('Raw localStorage:', rawStorage)
-    const parsedStorage = rawStorage ? JSON.parse(rawStorage) : null
-    console.log('Parsed localStorage:', parsedStorage)
-    
-    // Check current settings object
-    console.log('Current settings object:', settings)
-    console.log('Settings object length:', Object.keys(settings).length)
-    
-    // Check specific values
-    console.log('Font colors in settings:', {
-      fontColor: settings.fontColor,
-      desktopFontColor: settings.desktopFontColor,
-      windowFontColor: settings.windowFontColor,
-      headerFontColor: settings.headerFontColor
-    })
-    
-    // Check CSS variables
-    const criticalVars = [
-      'font-color', 'desktop-font-color', 'window-font-color', 'header-font-color',
-      'primary-button-color', 'background-style', 'window-tint-color', 'window-tint-rgb'
-    ]
-    console.log('CSS Variables:')
-    criticalVars.forEach(varName => {
-      const value = getComputedStyle(root).getPropertyValue(`--${varName}`).trim()
-      console.log(`  --${varName}: "${value}"`)
-    })
-    
-    // Test manual setting
-    console.log('🔧 Testing manual CSS variable setting...')
-    root.style.setProperty('--font-color', '#ff0000')
-    root.style.setProperty('--desktop-font-color', '#00ff00') 
-    root.style.setProperty('--window-font-color', '#0000ff')
-    console.log('Set font colors to red/green/blue manually')
-  }
 
   const clearStorage = () => {
     if (confirm('Are you sure you want to clear all settings? This cannot be undone.')) {
@@ -395,7 +334,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.fontColor}
-              onChange={(e) => handleColorChange('fontColor', e.target.value)}
+              onChange={(e) => updateSetting('fontColor', e.target.value)}
             />
           </div>
 
@@ -404,7 +343,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.desktopFontColor}
-              onChange={(e) => handleColorChange('desktopFontColor', e.target.value)}
+              onChange={(e) => updateSetting('desktopFontColor', e.target.value)}
             />
           </div>
 
@@ -413,7 +352,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.windowFontColor}
-              onChange={(e) => handleColorChange('windowFontColor', e.target.value)}
+              onChange={(e) => updateSetting('windowFontColor', e.target.value)}
             />
           </div>
 
@@ -422,7 +361,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.headerFontColor}
-              onChange={(e) => handleColorChange('headerFontColor', e.target.value)}
+              onChange={(e) => updateSetting('headerFontColor', e.target.value)}
             />
           </div>
 
@@ -436,7 +375,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.primaryButtonColor}
-              onChange={(e) => handleColorChange('primaryButtonColor', e.target.value)}
+              onChange={(e) => updateSetting('primaryButtonColor', e.target.value)}
             />
           </div>
 
@@ -445,7 +384,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.primaryButtonTextColor}
-              onChange={(e) => handleColorChange('primaryButtonTextColor', e.target.value)}
+              onChange={(e) => updateSetting('primaryButtonTextColor', e.target.value)}
             />
           </div>
 
@@ -465,7 +404,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.secondaryButtonBg}
-              onChange={(e) => handleColorChange('secondaryButtonBg', e.target.value)}
+              onChange={(e) => updateSetting('secondaryButtonBg', e.target.value)}
             />
           </div>
 
@@ -474,7 +413,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.secondaryButtonTextColor}
-              onChange={(e) => handleColorChange('secondaryButtonTextColor', e.target.value)}
+              onChange={(e) => updateSetting('secondaryButtonTextColor', e.target.value)}
             />
           </div>
         </div>
@@ -488,7 +427,7 @@ function Settings() {
             <input 
               type="color"
               value={settings.desktopIconColor}
-              onChange={(e) => handleColorChange('desktopIconColor', e.target.value)}
+              onChange={(e) => updateSetting('desktopIconColor', e.target.value)}
             />
           </div>
 
@@ -500,7 +439,7 @@ function Settings() {
               max="3.0"
               step="0.1"
               value={parseFloat(settings.desktopIconSize)}
-              onChange={(e) => handleSliderChange('desktopIconSize', e.target.value + 'rem')}
+              onChange={(e) => updateSetting('desktopIconSize', e.target.value + 'rem')}
             />
           </div>
         </div>
@@ -516,7 +455,7 @@ function Settings() {
               max="1"
               step="0.1"
               value={parseFloat(settings.glassOpacity)}
-              onChange={(e) => handleSliderChange('glassOpacity', e.target.value)}
+              onChange={(e) => updateSetting('glassOpacity', e.target.value)}
             />
           </div>
 
@@ -528,7 +467,7 @@ function Settings() {
               max="20"
               step="1"
               value={parseInt(settings.glassBlur)}
-              onChange={(e) => handleSliderChange('glassBlur', e.target.value + 'px')}
+              onChange={(e) => updateSetting('glassBlur', e.target.value + 'px')}
             />
           </div>
 
@@ -540,7 +479,7 @@ function Settings() {
               max="1"
               step="0.05"
               value={parseFloat(settings.windowHeaderOpacity)}
-              onChange={(e) => handleSliderChange('windowHeaderOpacity', e.target.value)}
+              onChange={(e) => updateSetting('windowHeaderOpacity', e.target.value)}
             />
           </div>
         </div>
@@ -734,13 +673,6 @@ function Settings() {
             </label>
           </div>
           
-          <div className={styles.testZone}>
-            <h4>Debug & Testing</h4>
-            <button className="btn-primary" onClick={testCSSVariables}>
-              Test CSS Variables
-            </button>
-            <p>Click to test if CSS variables are working. Check console.</p>
-          </div>
 
           <div className={styles.dangerZone}>
             <h4>Danger Zone</h4>

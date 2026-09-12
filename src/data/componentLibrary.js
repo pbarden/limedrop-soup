@@ -361,6 +361,200 @@ export const advancedComponents = {
       height: 500,
       showInPalette: true
     }
+  },
+
+  'ai-prompt': {
+    id: 'ai-prompt',
+    name: 'AI Prompt',
+    category: 'ai',
+    icon: 'fas fa-wand-magic-sparkles',
+    description: 'Send a freeform prompt to Claude, with the incoming value substituted in',
+    tags: ['ai', 'claude', 'prompt', 'llm'],
+    difficulty: 'beginner',
+    estimatedSetupTime: '2 minutes',
+    properties: {
+      prompt: {
+        type: 'code',
+        language: 'text',
+        default: 'Summarise the following in one sentence:\n\n{{input}}',
+        description: 'Prompt template. {{input}} is replaced by the incoming value.'
+      },
+      system: {
+        type: 'text',
+        default: '',
+        description: 'Optional system prompt setting the role or output rules'
+      },
+      effort: {
+        type: 'select',
+        options: ['low', 'medium', 'high'],
+        default: 'medium',
+        description: 'How much reasoning effort Claude spends (higher costs more)'
+      },
+      maxTokens: {
+        type: 'number',
+        default: 4096,
+        min: 64,
+        max: 64000,
+        description: 'Maximum length of the response'
+      }
+    },
+    inputs: ['input'],
+    outputs: ['output', 'result', 'metadata'],
+    preview: { width: 360, height: 160, showInPalette: true }
+  },
+
+  'http-request': {
+    id: 'http-request',
+    name: 'HTTP Request',
+    category: 'integration',
+    icon: 'fas fa-cloud-arrow-down',
+    description: 'Fetch data from a URL. The target must allow cross-origin browser requests.',
+    tags: ['http', 'api', 'fetch', 'integration'],
+    difficulty: 'intermediate',
+    estimatedSetupTime: '5 minutes',
+    properties: {
+      url: { type: 'text', default: 'https://api.example.com/data', description: 'Request URL' },
+      method: {
+        type: 'select',
+        options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        default: 'GET',
+        description: 'HTTP method'
+      },
+      headers: {
+        type: 'code',
+        language: 'json',
+        default: '{}',
+        description: 'Request headers as a JSON object'
+      },
+      sendInputAsBody: {
+        type: 'boolean',
+        default: false,
+        description: 'Send the incoming value as the request body'
+      },
+      responseType: {
+        type: 'select',
+        options: ['json', 'text'],
+        default: 'json',
+        description: 'How to parse the response'
+      }
+    },
+    inputs: ['input'],
+    outputs: ['response', 'status', 'error'],
+    preview: { width: 360, height: 150, showInPalette: true }
+  },
+
+  'file-read': {
+    id: 'file-read',
+    name: 'Read File',
+    category: 'input',
+    icon: 'fas fa-file-import',
+    description: 'Read a file from the File Manager into the workflow',
+    tags: ['file', 'read', 'storage'],
+    difficulty: 'beginner',
+    estimatedSetupTime: '1 minute',
+    properties: {
+      fileName: { type: 'text', default: '', description: 'Name of the file to read' },
+      parseAs: {
+        type: 'select',
+        options: ['text', 'json', 'csv'],
+        default: 'text',
+        description: 'How to interpret the file contents'
+      }
+    },
+    outputs: ['content', 'file_name', 'errors'],
+    preview: { width: 300, height: 110, showInPalette: true }
+  },
+
+  'file-write': {
+    id: 'file-write',
+    name: 'Write File',
+    category: 'output',
+    icon: 'fas fa-file-export',
+    description: 'Save the incoming value as a file in the File Manager',
+    tags: ['file', 'write', 'save', 'storage'],
+    difficulty: 'beginner',
+    estimatedSetupTime: '1 minute',
+    properties: {
+      fileName: { type: 'text', default: 'output.txt', description: 'Name of the file to write' },
+      fileType: { type: 'text', default: 'document', description: 'File type shown in the File Manager' },
+      format: {
+        type: 'select',
+        options: ['text', 'json', 'csv'],
+        default: 'text',
+        description: 'How to serialise the incoming value'
+      }
+    },
+    inputs: ['input'],
+    outputs: ['file_name', 'bytes_written'],
+    preview: { width: 300, height: 110, showInPalette: true }
+  },
+
+  'action-button': {
+    id: 'action-button',
+    name: 'Action Button',
+    category: 'interaction',
+    icon: 'fas fa-hand-pointer',
+    description: 'Gate the workflow until the user clicks. Nothing downstream runs before then.',
+    tags: ['button', 'trigger', 'interaction', 'gate'],
+    difficulty: 'beginner',
+    estimatedSetupTime: '1 minute',
+    properties: {
+      label: { type: 'text', default: 'Run', description: 'Button label' },
+      style: {
+        type: 'select',
+        options: ['primary', 'secondary'],
+        default: 'primary',
+        description: 'Button appearance'
+      },
+      requireClick: {
+        type: 'boolean',
+        default: true,
+        description: 'Block downstream components until clicked'
+      }
+    },
+    inputs: ['input'],
+    outputs: ['clicked', 'output'],
+    preview: { width: 260, height: 100, showInPalette: true }
+  },
+
+  'display': {
+    id: 'display',
+    name: 'Display',
+    category: 'output',
+    icon: 'fas fa-desktop',
+    description: 'Show the incoming value as text or formatted JSON',
+    tags: ['display', 'output', 'result'],
+    difficulty: 'beginner',
+    estimatedSetupTime: '1 minute',
+    properties: {
+      label: { type: 'text', default: 'Result', description: 'Heading shown above the value' }
+    },
+    inputs: ['input'],
+    outputs: ['output'],
+    preview: { width: 320, height: 140, showInPalette: true }
+  },
+
+  'export': {
+    id: 'export',
+    name: 'Export / Download',
+    category: 'output',
+    icon: 'fas fa-download',
+    description: 'Offer the incoming value as a downloadable file',
+    tags: ['export', 'download', 'output'],
+    difficulty: 'beginner',
+    estimatedSetupTime: '1 minute',
+    properties: {
+      filename: { type: 'text', default: 'export', description: 'Download file name (without extension)' },
+      format: {
+        type: 'select',
+        options: ['json', 'csv', 'xml', 'yaml'],
+        default: 'json',
+        description: 'Export format'
+      }
+    },
+    inputs: ['input'],
+    outputs: ['output'],
+    preview: { width: 300, height: 120, showInPalette: true }
   }
 }
 

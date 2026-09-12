@@ -1,5 +1,6 @@
 import { runTextOperation, complete } from './aiClient'
 import { parseFormat, serializeFormat } from './formats'
+import { getFile, writeFileByName } from '../storage/fileStore'
 
 /**
  * An executor receives:
@@ -364,7 +365,121 @@ export const executors = {
       },
       display: { kind: 'dashboard', value: data, config }
     }
+  },
+  'http-request': async ({ config, inputs, signal }) => {
+    const input = firstDefined(inputs, 'input', 'data')
+
+    let headers = {}
+    if (config.headers && String(config.headers).trim()) {
+      try {
+        headers = JSON.parse(config.headers)
+      } catch (error) {
+        throw new Error(`Headers are not valid JSON: ${error.message}`)
+      }
+    }
+
+    const method = (config.method || 'GET').toUpperCase()
+    const init = { method, headers, signal }
+
+    if (config.sendInputAsBody && method !== 'GET' && method !== 'HEAD') {
+      init.body = typeof input === 'string' ? input : JSON.stringify(input)
+      if (!Object.keys(headers).some(h => h.toLowerCase() === 'content-type')) {
+        init.headers = { ...headers, 'Content-Type': 'application/json' }
+      }
+    }
+
+    let response
+    try {
+      response = await fetch(config.url, init)
+    } catch (error) {
+      // A browser cross-origin block surfaces here as an opaque TypeError.
+      throw new Error(
+        `Request to ${config.url} failed: ${error.message}. ` +
+        'Browser requests need the server to allow cross-origin access (CORS).'
+      )
+    }
+
+    const body = config.responseType === 'text'
+      ? await response.text()
+      : await response.json().catch(() => null)
+
+    if (!response.ok) {
+      return {
+        outputs: { response: body, status: response.status, error: response.statusText },
+        display: { kind: 'json', value: { status: response.status, body } }
+      }
+    }
+
+    return {
+      outputs: { response: body, status: response.status, error: null },
+      display: { kind: 'json', value: body }
+    }
+  },
+
+  'file-read': async ({ config }) => {
+    const name = config.fileName
+    if (!name) throw new Error('No file name configured')
+
+    const file = getFile(name)
+    if (!file) throw new Error(`No file named "${name}" in the File Manager`)
+
+    let content = file.content
+    if (config.parseAs && config.parseAs !== 'text') {
+      try {
+        content = parseFormat(content, config.parseAs)
+      } catch (error) {
+        throw new Error(`Could not parse "${name}" as ${config.parseAs}: ${error.message}`)
+      }
+    }
+
+    return {
+      outputs: { content, file_name: file.name, errors: [] },
+      display: {
+        kind: typeof content === 'string' ? 'text' : 'json',
+        value: content
+      }
+    }
+  },
+
+  'file-write': async ({ config, inputs }) => {
+    const value = firstDefined(inputs, 'input', 'data')
+    if (value === undefined) throw new Error('Nothing connected to write')
+
+    const format = config.format || 'text'
+    const content = format === 'text'
+      ? (typeof value === 'string' ? value : JSON.stringify(value, null, 2))
+      : serializeFormat(value, format)
+
+    const name = config.fileName || 'output.txt'
+    writeFileByName(name, content, config.fileType || 'document')
+
+    return {
+      outputs: { file_name: name, bytes_written: content.length },
+      display: { kind: 'text', value: `Wrote ${content.length} characters to "${name}"` }
+    }
+  },
+
+  'action-button': async ({ config, inputs, runtime, componentId }) => {
+    const value = firstDefined(inputs, 'input', 'data')
+
+    // The runner records a click per component id. Until it arrives, the gate
+    // holds and everything downstream is pruned.
+    const clicked = Boolean(runtime.getValue(componentId))
+
+    if (config.requireClick !== false && !clicked) {
+      return {
+        outputs: { clicked: false, output: undefined },
+        halt: true,
+        display: { kind: 'awaiting-click', label: config.label || 'Run', style: config.style || 'primary' }
+      }
+    }
+
+    return {
+      outputs: { clicked: true, output: value },
+      display: { kind: 'awaiting-click', label: config.label || 'Run', style: config.style || 'primary', done: true }
+    }
   }
+
 }
 
 /**
@@ -375,17 +490,19 @@ export const LEGACY_TYPE_ALIASES = {
   'text-input': 'smart-text-input',
   'file-upload': 'file-dropzone',
   'data-transform': 'data-transformer',
-  'chart': 'advanced-chart',
-  'display': 'display',
-  'export': 'export'
+  'chart': 'advanced-chart'
 }
 
 // Display and export have no advanced equivalent, so implement them directly.
-executors.display = async ({ inputs }) => {
+executors.display = async ({ config, inputs }) => {
   const value = firstDefined(inputs, 'input', 'data', 'text_input')
   return {
     outputs: { output: value },
-    display: { kind: typeof value === 'string' ? 'markdown' : 'json', value }
+    display: {
+      kind: typeof value === 'string' ? 'markdown' : 'json',
+      value,
+      label: config.label
+    }
   }
 }
 
@@ -416,5 +533,6 @@ export function getExecutor(type) {
 export const SOURCE_TYPES = new Set([
   'smart-text-input',
   'file-dropzone',
-  'data-table-input'
+  'data-table-input',
+  'action-button'
 ])

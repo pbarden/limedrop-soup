@@ -43,11 +43,9 @@ export function SettingsProvider({ children }) {
   const loadSettings = useCallback(() => {
     try {
       const savedSettings = localStorage.getItem('chaiq-settings')
-      console.log('🔄 Loading settings from localStorage:', savedSettings)
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings)
         setSettings(prev => ({ ...prev, ...parsed }))
-        console.log('✅ Settings loaded successfully')
       }
     } catch (error) {
       console.warn('❌ Failed to load settings from localStorage:', error)
@@ -58,11 +56,9 @@ export function SettingsProvider({ children }) {
     try {
       const updatedSettings = { ...settings, ...newSettings }
       setSettings(updatedSettings)
-      console.log('💾 Saving settings:', newSettings)
       
       if (updatedSettings.autoSave !== false) {
         localStorage.setItem('chaiq-settings', JSON.stringify(updatedSettings))
-        console.log('✅ Settings saved to localStorage')
       }
       
       return updatedSettings
@@ -75,7 +71,6 @@ export function SettingsProvider({ children }) {
   const applySettings = useCallback(() => {
     try {
       const root = document.documentElement
-      console.log('🔧 Applying settings:', Object.keys(settings).length, 'settings')
       
       // Apply CSS custom properties for theming
       Object.entries(settings).forEach(([key, value]) => {
@@ -153,7 +148,6 @@ export function SettingsProvider({ children }) {
           root.style.setProperty('--background-style', value)
           // Also set body background directly for immediate effect
           document.body.style.background = value
-          console.log('🖼️ Background updated:', value)
         }
       })
 
@@ -175,13 +169,11 @@ export function SettingsProvider({ children }) {
 
 
   const updateSetting = useCallback((key, value) => {
-    console.log(`⚙️ updateSetting called: ${key} = ${value}`)
     return saveSettings({ [key]: value })
   }, [saveSettings])
 
   const resetSettings = useCallback(() => {
     try {
-      console.log('🔄 Resetting settings to defaults')
       setSettings(defaultSettings)
       localStorage.removeItem('chaiq-settings')
       return defaultSettings

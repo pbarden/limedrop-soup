@@ -63,10 +63,26 @@ function TableView({ rows }) {
 }
 
 /** Render whatever a node produced, based on the display hint its executor returned. */
-function NodeDisplay({ display }) {
+function NodeDisplay({ display, onAction }) {
   if (!display) return null
 
   switch (display.kind) {
+    case 'awaiting-click':
+      return (
+        <div className={styles.gateAction}>
+          <button
+            className={display.style === 'secondary' ? 'btn-secondary' : 'btn-primary'}
+            onClick={onAction}
+            disabled={display.done}
+          >
+            {display.done ? <><i className="fas fa-check" /> {display.label}</> : display.label}
+          </button>
+          {!display.done && (
+            <span className={styles.gateHint}>Waiting for you — nothing downstream runs yet</span>
+          )}
+        </div>
+      )
+
     case 'chart':
       return <ResultChart data={display.value} chartType={display.chartType} />
 
@@ -136,6 +152,7 @@ function NodeDisplay({ display }) {
     case 'text':
       return (
         <div className={styles.componentOutput}>
+          {display.label && <strong className={styles.outputLabel}>{display.label}</strong>}
           {String(display.value ?? '') || <span className={styles.emptyOutput}>Empty</span>}
           {display.errors?.length > 0 && (
             <ul className={styles.validationErrors}>
@@ -179,6 +196,9 @@ function BuiltAppRunner({ appData }) {
     }])
   }, [])
 
+  // Keyed on the app id, not the object: while the builder previews a live
+  // app, every property edit produces a new object, and resetting on that
+  // would wipe whatever the user has typed into the inputs.
   useEffect(() => {
     setResults({})
     setValues({})
@@ -187,12 +207,13 @@ function BuiltAppRunner({ appData }) {
       message: `Loaded "${appData.name}" — ${appData.components.length} components, ${(appData.connections || []).length} connections`,
       level: 'info'
     }])
-  }, [appData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appData.id])
 
   // Cancel any in-flight run when the window closes.
   useEffect(() => () => abortRef.current?.abort(), [])
 
-  const handleRun = useCallback(async () => {
+  const handleRun = useCallback(async (overrides) => {
     if (isRunning) {
       abortRef.current?.abort()
       return
@@ -204,8 +225,13 @@ function BuiltAppRunner({ appData }) {
     setIsRunning(true)
     setResults({})
 
+    // Merge overrides (e.g. a gate button just clicked) so the run sees the new
+    // value instead of the copy captured when this callback was created.
+    const runValues = overrides ? { ...values, ...overrides } : values
+    if (overrides) setValues(runValues)
+
     const { results: finalResults } = await runApp(appData, {
-      values,
+      values: runValues,
       signal: controller.signal,
       onEvent: (event) => {
         switch (event.type) {
@@ -308,7 +334,7 @@ function BuiltAppRunner({ appData }) {
         <div className={styles.appActions}>
           <button
             className="btn-primary"
-            onClick={handleRun}
+            onClick={() => handleRun()}
             disabled={blockingIssues.length > 0 || missingKey}
           >
             <i className={isRunning ? 'fas fa-stop' : 'fas fa-play'} />
@@ -373,7 +399,10 @@ function BuiltAppRunner({ appData }) {
 
                     {result.status === NODE_STATUS.SUCCESS && (
                       <>
-                        <NodeDisplay display={result.display} />
+                        <NodeDisplay
+                          display={result.display}
+                          onAction={() => handleRun({ [component.id]: true })}
+                        />
                         {result.durationMs != null && (
                           <span className={styles.duration}>{result.durationMs}ms</span>
                         )}

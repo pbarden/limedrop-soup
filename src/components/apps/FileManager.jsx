@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { listFiles, saveFiles as persistFiles, subscribe } from '../../storage/fileStore'
 import styles from '../../styles/FileManager.module.css'
 
 function FileManager() {
@@ -7,17 +8,14 @@ function FileManager() {
   const [files, setFiles] = useState([])
   const [fileTypes, setFileTypes] = useState(['default', 'document', 'image', 'video'])
 
+  // Stay in sync with writes made by running apps, not just our own edits.
   useEffect(() => {
-    loadFiles()
+    setFiles(listFiles())
+    return subscribe(setFiles)
   }, [])
 
-  const loadFiles = () => {
-    const savedFiles = JSON.parse(localStorage.getItem('chaiq-files') || '[]')
-    setFiles(savedFiles)
-  }
-
   const saveFiles = (newFiles) => {
-    localStorage.setItem('chaiq-files', JSON.stringify(newFiles))
+    persistFiles(newFiles)
     setFiles(newFiles)
   }
 
