@@ -35,4 +35,3 @@ export const useApp = () => {
 export { useWindowManager } from '../hooks/useWindowManager'
 export { useNotifications } from '../hooks/useNotifications'
 export { useModal } from '../hooks/useModal.jsx'
-export { useDesktop } from '../hooks/useDesktop'

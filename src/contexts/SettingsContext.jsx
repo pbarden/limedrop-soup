@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
 const defaultSettings = {
-  fontColor: '#ffffff',
+  fontColor: '#1f2937',
   desktopFontColor: '#ffffff',
-  windowFontColor: '#ffffff',
-  headerFontColor: '#ffffff',
+  windowFontColor: '#1f2937',
+  headerFontColor: '#1f2937',
   primaryButtonStyle: 'solid',
   primaryButtonColor: '#667eea',
   primaryButtonRgb: '102, 126, 234',
@@ -14,9 +14,9 @@ const defaultSettings = {
   primaryButtonTextColor: '#ffffff',
   matchDesktopTheme: false,
   secondaryButtonBg: '#ffffff',
-  secondaryButtonTextColor: '#ffffff',
+  secondaryButtonTextColor: '#1f2937',
   secondaryButtonOpacity: '0.1',
-  secondaryButtonText: '#ffffff',
+  secondaryButtonText: '#1f2937',
   secondaryButtonBorder: '#ffffff',
   secondaryBorderOpacity: '0.2',
   glassOpacity: '0.8',

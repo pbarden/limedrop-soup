@@ -6,7 +6,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import { useMobile } from '../hooks/useMobile'
 import styles from '../styles/Window.module.css'
 
-function Window({ windowId, appId, title, width, height, left, top, zIndex, minimized, maximized, content }) {
+function Window({ windowId, title, width, height, left, top, zIndex, minimized, maximized, content }) {
   const windowRef = useRef(null)
   const { focusWindow, minimizeWindow, toggleMaximize, closeWindow, activeWindowId } = useApp()
   const { settings } = useSettings()
@@ -33,7 +33,7 @@ function Window({ windowId, appId, title, width, height, left, top, zIndex, mini
     }
   }, [width, height, left, top, zIndex])
 
-  const handleWindowClick = (e) => {
+  const handleWindowClick = () => {
     // Focus window on any click within the window
     focusWindow(windowId)
   }

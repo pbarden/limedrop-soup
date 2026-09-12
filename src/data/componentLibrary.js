@@ -143,7 +143,7 @@ export const advancedComponents = {
     preview: {
       width: 600,
       height: 300,
-      showInPalette: false
+      showInPalette: true
     }
   },
 
@@ -359,7 +359,7 @@ export const advancedComponents = {
     preview: {
       width: 800,
       height: 500,
-      showInPalette: false
+      showInPalette: true
     }
   }
 }
@@ -406,7 +406,7 @@ export function getComponentById(id) {
 export function getPopularComponents(limit = 10) {
   // In a real app, this would use usage analytics
   return Object.values(advancedComponents)
-    .sort((a, b) => a.difficulty === 'beginner' ? -1 : 1)
+    .sort((a, b) => (a.difficulty === 'beginner' ? 0 : 1) - (b.difficulty === 'beginner' ? 0 : 1))
     .slice(0, limit)
 }
 

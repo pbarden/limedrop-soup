@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import styles from '../../styles/AppBuilder.module.css'
 
 function AppBuilder() {
@@ -10,6 +10,7 @@ function AppBuilder() {
   
   const [selectedComponent, setSelectedComponent] = useState(null)
   const [draggingComponent, setDraggingComponent] = useState(null)
+  const [draggingIndex, setDraggingIndex] = useState(null)
 
   const componentTypes = {
     input: [
@@ -187,7 +188,17 @@ function AppBuilder() {
           </div>
         </div>
 
-        <div className={styles.workflowArea}>
+        <div
+          className={styles.workflowArea}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault()
+            if (draggingComponent) {
+              addComponent(draggingComponent)
+              setDraggingComponent(null)
+            }
+          }}
+        >
           <h3>App Workflow</h3>
           
           {currentApp.components.length === 0 ? (
@@ -201,6 +212,18 @@ function AppBuilder() {
                   key={component.id}
                   className={`${styles.workflowComponent} ${selectedComponent?.id === component.id ? styles.selected : ''}`}
                   onClick={() => setSelectedComponent(component)}
+                  draggable
+                  onDragStart={() => setDraggingIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (draggingIndex !== null && draggingIndex !== index) {
+                      moveComponent(draggingIndex, index)
+                    }
+                    setDraggingIndex(null)
+                    setDraggingComponent(null)
+                  }}
                 >
                   <div className={styles.componentHeader}>
                     <i className={component.icon}></i>

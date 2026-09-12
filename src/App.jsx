@@ -49,7 +49,7 @@ function AppContent() {
 
 function App() {
   return (
-    <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+    <ErrorBoundary showDetails={import.meta.env.DEV}>
       <AppContent />
     </ErrorBoundary>
   )

@@ -17,8 +17,6 @@ export function useAdvancedDragDrop({
     snapPosition: null
   })
 
-  const dragRef = useRef(null)
-  const animationRef = useRef(null)
   const dropZoneRefs = useRef(new Map())
 
   // Grid snapping utility
@@ -193,7 +191,7 @@ export function useAdvancedDragDrop({
   }, [handleDragMove, handleDragEnd])
 
   // Create enhanced ghost element
-  const createGhostElement = useCallback((originalElement, item) => {
+  const createGhostElement = useCallback((originalElement) => {
     const ghost = originalElement.cloneNode(true)
     ghost.className = 'drag-ghost'
     
@@ -296,7 +294,7 @@ export function useAdvancedDragDrop({
       }
     }
 
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = () => {
       if (dragState.isDragging) {
         const mouseEvent = new MouseEvent('mouseup', {
           bubbles: true

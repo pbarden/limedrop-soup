@@ -12,10 +12,6 @@ function Dock() {
     { id: 'settings', icon: 'fas fa-cog', tooltip: 'Settings' }
   ]
 
-  const handleDockItemClick = useCallback((appId) => {
-    openApp(appId)
-  }, [openApp])
-
   const handleRunningAppClick = useCallback((window) => {
     if (window.minimized) {
       minimizeWindow(window.windowId) // This will toggle minimized state back to false

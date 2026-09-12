@@ -10,7 +10,7 @@ class ErrorBoundary extends React.Component {
     }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     // Update state so the next render will show the fallback UI
     return { hasError: true }
   }
@@ -75,7 +75,7 @@ class ErrorBoundary extends React.Component {
           </h2>
           
           <p style={{ margin: '0 0 16px 0' }}>
-            We're sorry, but something unexpected happened. You can try reloading the page or resetting this component.
+            We&apos;re sorry, but something unexpected happened. You can try reloading the page or resetting this component.
           </p>
           
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>

@@ -4,6 +4,8 @@ import { resolveType, SOURCE_TYPES } from '../../runtime/executors'
 import { hasApiKey } from '../../runtime/aiClient'
 import { getComponentById } from '../../data/componentLibrary'
 import ResultChart from '../runtime/ResultChart'
+import DataTableInput from '../runtime/DataTableInput'
+import Dashboard from '../runtime/Dashboard'
 import styles from '../../styles/BuiltAppRunner.module.css'
 
 const TEXT_FILE_RE = /^(text\/|application\/(json|xml|x-yaml|yaml|csv))/
@@ -38,6 +40,28 @@ function StatusPill({ status }) {
   return <span className={`${styles.componentStatus} ${styles[label] || ''}`}>{label}</span>
 }
 
+/** Read-only table used to show rows a node produced. */
+function TableView({ rows }) {
+  const headers = [...new Set(rows.flatMap(row => Object.keys(row ?? {})))]
+
+  return (
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>
+        <thead>
+          <tr>{headers.map(header => <th key={header}>{header}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.slice(0, 50).map((row, index) => (
+            <tr key={index}>
+              {headers.map(header => <td key={header}>{String(row?.[header] ?? '')}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 /** Render whatever a node produced, based on the display hint its executor returned. */
 function NodeDisplay({ display }) {
   if (!display) return null
@@ -45,6 +69,9 @@ function NodeDisplay({ display }) {
   switch (display.kind) {
     case 'chart':
       return <ResultChart data={display.value} chartType={display.chartType} />
+
+    case 'dashboard':
+      return <Dashboard config={display.config} data={display.value} />
 
     case 'boolean':
       return (
@@ -57,22 +84,15 @@ function NodeDisplay({ display }) {
     case 'table': {
       const rows = Array.isArray(display.value) ? display.value : []
       if (rows.length === 0) return <div className={styles.emptyOutput}>No rows</div>
-      const headers = [...new Set(rows.flatMap(row => Object.keys(row ?? {})))]
       return (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>{headers.map(header => <th key={header}>{header}</th>)}</tr>
-            </thead>
-            <tbody>
-              {rows.slice(0, 50).map((row, index) => (
-                <tr key={index}>
-                  {headers.map(header => <td key={header}>{String(row?.[header] ?? '')}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {display.errors?.length > 0 && (
+            <ul className={styles.validationErrors}>
+              {display.errors.map((error, index) => <li key={index}>{error}</li>)}
+            </ul>
+          )}
+          <TableView rows={rows} />
+        </>
       )
     }
 
@@ -264,22 +284,10 @@ function BuiltAppRunner({ appData }) {
 
     if (type === 'data-table-input') {
       return (
-        <textarea
-          className={styles.componentTextarea}
-          rows={5}
-          placeholder='[{"Name": "Ada", "Age": 36}]'
-          value={
-            typeof values[component.id] === 'string'
-              ? values[component.id]
-              : JSON.stringify(values[component.id] ?? [], null, 2)
-          }
-          onChange={(event) => {
-            try {
-              setValue(component.id, JSON.parse(event.target.value))
-            } catch {
-              setValue(component.id, event.target.value)
-            }
-          }}
+        <DataTableInput
+          config={config}
+          rows={values[component.id] ?? []}
+          onChange={(rows) => setValue(component.id, rows)}
         />
       )
     }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { getComponentById } from '../data/componentLibrary'
 import styles from '../styles/SmartPropertyEditor.module.css'
 

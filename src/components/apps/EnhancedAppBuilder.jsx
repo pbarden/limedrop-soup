@@ -40,7 +40,7 @@ function EnhancedAppBuilder() {
   const [isPropertyPanelOpen, setIsPropertyPanelOpen] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [panelSizes, setPanelSizes] = useState({
+  const [panelSizes] = useState({
     components: 280,
     workflow: 600,
     properties: 320,
@@ -92,7 +92,7 @@ function EnhancedAppBuilder() {
   }, [currentApp.components])
 
   // Handle drag start
-  function handleDragStart(item, position) {
+  function handleDragStart(item) {
     showNotification(`Dragging ${item.name}`, 'info')
   }
 
@@ -105,7 +105,7 @@ function EnhancedAppBuilder() {
   }
 
   // Handle drag end
-  function handleDragEnd(item, dropZone, position) {
+  function handleDragEnd() {
     // Cleanup or additional logic
   }
 
@@ -166,7 +166,7 @@ function EnhancedAppBuilder() {
   }, [selectedComponent, showModal, showNotification])
 
   // Update component property
-  const updateComponentProperty = useCallback((componentId, propertyKey, value, allValues) => {
+  const updateComponentProperty = useCallback((componentId, propertyKey, value) => {
     setCurrentApp(prev => ({
       ...prev,
       components: prev.components.map(comp =>
@@ -691,7 +691,7 @@ function EnhancedAppBuilder() {
             <SmartPropertyEditor
               selectedComponent={selectedComponent}
               onPropertyChange={updateComponentProperty}
-              onValidationChange={(state, errors) => {
+              onValidationChange={() => {
                 // Handle validation state changes
               }}
               isLivePreview={viewMode === 'split'}

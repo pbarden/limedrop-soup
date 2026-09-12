@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSettings } from '../../contexts/SettingsContext'
 import { useApp } from '../../contexts/AppContext'
 import {
@@ -12,7 +12,7 @@ import styles from '../../styles/Settings.module.css'
 
 function Settings() {
   const { settings, updateSetting, resetSettings } = useSettings()
-  const { showModal, closeModal, showNotification } = useApp()
+  const { showModal, showNotification } = useApp()
 
   // --- Anthropic credentials -------------------------------------------
   const [credentials, setLocalCredentials] = useState(() => getCredentials())
@@ -54,7 +54,7 @@ function Settings() {
   const BackgroundSelectorModal = () => {
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [searchTerm, setSearchTerm] = useState('')
-    const [forceUpdate, setForceUpdate] = useState(0)
+    const [, setForceUpdate] = useState(0)
     
     // Get current gradient reactively (this will update when settings change)
     const currentGradient = backgroundGradients.find(g => g.gradient === settings.backgroundStyle) || backgroundGradients[0]
@@ -327,10 +327,6 @@ function Settings() {
     setTimeout(() => {
       console.log('Settings after change:', settings[key])
     }, 100)
-  }
-
-  const handleBackgroundChange = (gradient) => {
-    updateSetting('backgroundStyle', gradient)
   }
 
   const testCSSVariables = () => {

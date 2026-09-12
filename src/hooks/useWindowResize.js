@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useApp } from '../contexts/AppContext'
 
-export function useWindowResize(windowRef, windowId, initialSize) {
+export function useWindowResize(windowRef, windowId) {
   const { updateWindowSize } = useApp()
   const isResizing = useRef(false)
   const resizeDirection = useRef(null)

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { getComponentById } from '../data/componentLibrary'
 import { resolveType } from '../runtime/executors'
 import styles from '../styles/ConnectionSystem.module.css'
@@ -145,7 +145,7 @@ function ConnectionSystem({
   }
 
   // Get port position on screen
-  const getPortPosition = (componentId, portId, portType) => {
+  const getPortPosition = (componentId, portId) => {
     const portElement = document.querySelector(
       `[data-component-id="${componentId}"] [data-port-id="${portId}"]`
     )
@@ -164,7 +164,6 @@ function ConnectionSystem({
   // Generate SVG path for connection
   const generateConnectionPath = (from, to) => {
     const dx = to.x - from.x
-    const dy = to.y - from.y
     
     // Control points for bezier curve
     const cp1x = from.x + Math.abs(dx) * 0.5

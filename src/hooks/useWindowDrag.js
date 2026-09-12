@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useApp } from '../contexts/AppContext'
 
-export function useWindowDrag(windowRef, windowId, initialPosition) {
+export function useWindowDrag(windowRef, windowId) {
   const { updateWindowPosition } = useApp()
   const isDragging = useRef(false)
   const startPos = useRef({ x: 0, y: 0 })

@@ -81,9 +81,9 @@ function compare(left, operator, right) {
     case '<': return Number(left) < Number(right)
     case '>=': return Number(left) >= Number(right)
     case '<=': return Number(left) <= Number(right)
-    case '==': return left == right // eslint-disable-line eqeqeq
+    case '==': return left == right
     case '===': return left === right
-    case '!=': return left != right // eslint-disable-line eqeqeq
+    case '!=': return left != right
     case '!==': return left !== right
     case 'contains': return String(left ?? '').includes(String(right))
     case 'startsWith': return String(left ?? '').startsWith(String(right))
@@ -152,14 +152,28 @@ export const executors = {
   },
 
   'data-table-input': async ({ config, runtime, componentId }) => {
-    const rows = runtime.getValue(componentId) ?? config.columns?.default ?? []
+    const rows = runtime.getValue(componentId) ?? []
+    const columns = Array.isArray(config.columns) ? config.columns : []
+
+    // Flag cells that do not match their column's declared type.
+    const errors = []
+    rows.forEach((row, index) => {
+      columns.forEach(column => {
+        const value = row?.[column.name]
+        if (column.type === 'number' && value !== '' && value != null &&
+            !Number.isFinite(Number(value))) {
+          errors.push(`Row ${index + 1}: "${column.name}" is not a number`)
+        }
+      })
+    })
+
     return {
       outputs: {
         table_data: rows,
         selected_rows: [],
-        validation_errors: []
+        validation_errors: errors
       },
-      display: { kind: 'table', value: rows }
+      display: { kind: 'table', value: rows, errors }
     }
   },
 
@@ -348,7 +362,7 @@ export const executors = {
         layout_changes: [],
         user_actions: []
       },
-      display: { kind: 'dashboard', value: data, widgets: config.widgets || [] }
+      display: { kind: 'dashboard', value: data, config }
     }
   }
 }

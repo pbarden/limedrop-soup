@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { getComponentById } from '../data/componentLibrary'
 import { useApp } from '../contexts/AppContext'
 import styles from '../styles/LivePreview.module.css'

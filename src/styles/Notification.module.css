@@ -75,13 +75,14 @@
   font-weight: 600;
   font-size: 14px;
   margin-bottom: 4px;
-  color: var(--desktop-font-color);
+  color: var(--window-font-color);
 }
 
 .notificationMessage {
   font-size: 13px;
   line-height: 1.4;
-  color: rgba(var(--window-tint-rgb), 0.8);
+  color: var(--window-font-color);
+  opacity: 0.8;
 }
 
 .notificationClose {
@@ -90,7 +91,8 @@
   height: 24px;
   border: none;
   background: none;
-  color: rgba(var(--window-tint-rgb), 0.6);
+  color: var(--window-font-color);
+  opacity: 0.6;
   cursor: pointer;
   border-radius: 4px;
   display: flex;
