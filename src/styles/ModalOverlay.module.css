@@ -21,7 +21,7 @@
 .modal {
   background: rgba(var(--window-tint-rgb), var(--glass-opacity));
   backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.25);
+  border: 1px solid var(--hairline-strong);
   border-radius: 20px;
   box-shadow: 
     0 32px 64px rgba(0, 0, 0, 0.3),
@@ -44,7 +44,7 @@
   backdrop-filter: blur(8px);
   color: var(--header-font-color);
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.15);
+  border-bottom: 1px solid var(--hairline-strong);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -66,7 +66,7 @@
 
 .modalTitle {
   font-weight: 600;
-  font-size: 18px;
+  font-size: var(--fs-title);
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -75,22 +75,22 @@
   width: 32px;
   height: 32px;
   border: none;
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
   color: var(--window-font-color);
   cursor: pointer;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--fs-lead);
   font-weight: 500;
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.15);
+  border: 1px solid var(--hairline-strong);
 }
 
 .modalClose:hover {
-  background: rgba(var(--window-tint-rgb), 0.2);
+  background: var(--surface-3);
   transform: scale(1.05);
 }
 
@@ -106,12 +106,12 @@
 }
 
 .modalBody::-webkit-scrollbar-track {
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
   border-radius: 3px;
 }
 
 .modalBody::-webkit-scrollbar-thumb {
-  background: rgba(var(--window-tint-rgb), 0.3);
+  background: var(--surface-3);
   border-radius: 3px;
 }
 
@@ -121,7 +121,7 @@
 
 .modalFooter {
   padding: 20px 24px;
-  border-top: 1px solid rgba(var(--window-tint-rgb), 0.15);
+  border-top: 1px solid var(--hairline-strong);
   background: rgba(var(--window-header-rgb), 0.08);
   backdrop-filter: blur(8px);
   position: relative;

@@ -1,55 +1,66 @@
 .desktopIcons {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  display: grid;
-  grid-template-rows: repeat(auto-fit, 80px);
-  gap: 16px;
+  top: var(--sp-5);
+  left: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  max-height: calc(100vh - 140px);
+  flex-wrap: wrap;
   z-index: 50;
 }
 
 .desktopIcon {
-  width: 64px;
-  height: 64px;
+  width: 76px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-1);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .desktopIcon:hover {
-  background: rgba(var(--window-tint-rgb), 0.1);
-  transform: scale(1.05);
+  background: rgba(var(--window-tint-rgb), 0.14);
+  border-color: rgba(var(--window-tint-rgb), 0.2);
 }
 
 .desktopIcon:active {
-  transform: scale(0.95);
+  background: rgba(var(--window-tint-rgb), 0.2);
 }
 
 .iconImage {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--desktop-icon-color), 0.1);
-  border-radius: 6px;
+  background: rgba(var(--window-tint-rgb), 0.18);
+  border-radius: var(--radius-md);
   color: var(--desktop-icon-color);
-  font-size: var(--desktop-icon-font-size, 1.2rem);
-  margin-bottom: 4px;
+  font-size: var(--desktop-icon-font-size, 1.05rem);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .iconLabel {
+  width: 100%;
   color: var(--desktop-font-color);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   font-weight: 500;
   text-align: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  max-width: 64px;
+  line-height: 1.25;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  /* Two lines before ellipsis: "App Manager" used to truncate to "App Mana…"
+     on a single line. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }

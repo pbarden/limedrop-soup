@@ -9,10 +9,13 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--background-style, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
-  color: var(--font-color, #ffffff);
+  color: var(--font-color, #1f2937);
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -22,36 +25,100 @@ body {
 
 /* CSS Custom Properties - Default Values */
 :root {
+  /* ---- Design tokens -------------------------------------------------
+     One 4px-based spacing scale and one type scale, so panels across the
+     app stay on the same rhythm. Sizes here are deliberately compact: the
+     shell packs several panels side by side inside a single window, so it
+     should read at 100% browser zoom rather than needing zoom-out. */
+  --sp-0: 2px;
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 12px;
+  --sp-5: 16px;
+  --sp-6: 20px;
+  --sp-7: 24px;
+  --sp-8: 32px;
+
+  --fs-micro: 10px;
+  --fs-tiny: 11px;
+  --fs-small: 12px;
+  --fs-body: 13px;
+  --fs-lead: 14px;
+  --fs-title: 15px;
+  --fs-display: 18px;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --control-height: 30px;
+  --control-height-sm: 26px;
+
+  /* Neutral surfaces and hairlines.
+
+     These are derived from the FONT colour, not the window tint. The window
+     tint is white and so is the glass behind it, so tint-derived borders were
+     white-on-white and simply never showed up — which is why panels inside a
+     window used to read as one flat wash. Deriving from the text colour
+     guarantees contrast against whatever surface the text sits on, and still
+     follows the theme when the font colour is changed. */
+  --surface-1: color-mix(in srgb, var(--font-color) 3%, transparent);
+  --surface-2: color-mix(in srgb, var(--font-color) 6%, transparent);
+  --surface-3: color-mix(in srgb, var(--font-color) 11%, transparent);
+  --hairline: color-mix(in srgb, var(--font-color) 12%, transparent);
+  --hairline-strong: color-mix(in srgb, var(--font-color) 22%, transparent);
+
+  /* Text emphasis levels. Modules pick one of these rather than inventing
+     their own alpha, so contrast stays predictable when the font colour is
+     themed. */
+  --text-1: var(--font-color);
+  --text-2: color-mix(in srgb, var(--font-color) 78%, transparent);
+  --text-3: color-mix(in srgb, var(--font-color) 58%, transparent);
+  --text-4: color-mix(in srgb, var(--font-color) 42%, transparent);
+
+  /* Status colours */
+  --status-success: #16a34a;
+  --status-warning: #d97706;
+  --status-error: #dc2626;
+  --status-info: #2563eb;
+
   /* Typography */
-  --font-color: #ffffff;
+  --font-color: #1f2937;
   --desktop-font-color: #ffffff;
-  --window-font-color: #ffffff;
-  --header-font-color: #ffffff;
-  --font-size: 14px;
-  --desktop-font-size: 12px;
-  --window-font-size: 14px;
-  --header-font-size: 13px;
+  --window-font-color: #1f2937;
+  --header-font-color: #1f2937;
+  --font-size: 13px;
+  --desktop-font-size: 11px;
+  --window-font-size: 13px;
+  --header-font-size: 12px;
   --font-family: system-ui;
-  
+
   /* Primary Elements */
   --primary-button-style: solid;
   --primary-button-color: #667eea;
   --primary-button-rgb: 102, 126, 234;
+  /* Button fill: a plain colour by default, swapped for the desktop gradient
+     when "match desktop theme" is on. --primary-button-color always stays a
+     real colour so borders and color-mix() stay valid. */
+  --primary-button-fill: var(--primary-button-color);
   --primary-gradient-start: #667eea;
   --primary-gradient-end: #764ba2;
   --primary-button-text: #ffffff;
   --primary-button-text-color: #ffffff;
   --primary-icon-color: #667eea;
-  
+
   /* Secondary Elements */
   --secondary-button-bg: #ffffff;
   --secondary-button-opacity: 0.1;
-  --secondary-button-text: #ffffff;
-  --secondary-button-text-color: #ffffff;
+  --secondary-button-text: #1f2937;
+  --secondary-button-text-color: #1f2937;
   --secondary-button-border: #ffffff;
   --secondary-border-opacity: 0.2;
   --secondary-icon-color: #ffffff;
-  
+
   /* Window System - Modern Glassmorphism */
   --window-tint-color: #ffffff;
   --window-tint-rgb: 255, 255, 255;
@@ -64,15 +131,15 @@ body {
   --window-header-border-opacity: 0.1;
   --window-border-color: #ffffff;
   --window-border-opacity: 0.2;
-  
+
   /* Desktop */
   --desktop-icon-color: #ffffff;
-  --desktop-icon-font-size: 1.2rem;
+  --desktop-icon-font-size: 1.05rem;
   --dock-color: #000000;
   --dock-rgb: 0, 0, 0;
   --dock-opacity: 0.3;
   --dock-blur: 20px;
-  
+
   /* System */
   --auto-save: 1;
   --show-icons: 1;
@@ -85,73 +152,101 @@ body {
 }
 
 /* Common button styles */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--control-height);
+  padding: 0 var(--sp-5);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
 .btn-primary {
   background: var(--primary-button-color);
   color: var(--primary-button-text-color);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  border: 1px solid var(--primary-button-color);
 }
 
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+.btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-button-color) 88%, black);
+  border-color: color-mix(in srgb, var(--primary-button-color) 88%, black);
 }
 
 .btn-secondary {
-  background: var(--secondary-button-bg);
-  color: var(--secondary-button-text-color);
-  border: 1px solid rgba(var(--window-tint-rgb), var(--secondary-border-opacity));
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid var(--hairline);
 }
 
-.btn-secondary:hover {
-  background: rgba(var(--window-tint-rgb), 0.2);
-  transform: translateY(-1px);
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--hairline-strong);
 }
 
 .btn-danger {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  background: var(--status-error);
+  color: #fff;
+  border: 1px solid var(--status-error);
 }
 
-.btn-danger:hover {
-  background: #c82333;
-  transform: translateY(-1px);
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--status-error) 88%, black);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .btn-small {
-  padding: 6px 12px;
-  font-size: 12px;
+  min-height: var(--control-height-sm);
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-small);
 }
 
 /* Form elements */
 input, select, textarea {
-  background: rgba(var(--window-tint-rgb), 0.1);
-  color: var(--font-color);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 14px;
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid var(--hairline);
+  padding: 0 var(--sp-3);
+  min-height: var(--control-height);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  font-family: inherit;
+}
+
+textarea {
+  padding: var(--sp-2) var(--sp-3);
+  line-height: 1.5;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-4);
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary-button-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-button-color), 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-button-color) 22%, transparent);
+}
+
+/* One visible focus ring for keyboard users across the whole shell. */
+:focus-visible {
+  outline: 2px solid var(--primary-button-color);
+  outline-offset: 2px;
 }
 
 /* Glass effect utility classes */
@@ -178,4 +273,31 @@ input:focus, select:focus, textarea:focus {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Consistent, unobtrusive scrollbars for every scrolling panel. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--font-color) 35%, transparent);
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

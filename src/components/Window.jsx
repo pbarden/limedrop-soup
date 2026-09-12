@@ -66,17 +66,35 @@ function Window({ windowId, title, width, height, left, top, zIndex, minimized, 
       onClick={handleWindowClick}
     >
       <div className={styles.windowHeader} onClick={handleHeaderClick}>
-        <div className={styles.windowTitle}>{title}</div>
+        <div className={styles.windowTitle} title={title}>{title}</div>
         <div className={styles.windowControls}>
-          <button className={`${styles.windowControl} ${styles.minimize}`} onClick={(e) => { e.stopPropagation(); handleMinimize(); }}>
+          <button
+            type="button"
+            className={`${styles.windowControl} ${styles.minimize}`}
+            onClick={(e) => { e.stopPropagation(); handleMinimize(); }}
+            title={minimized ? 'Restore' : 'Minimize'}
+            aria-label={`${minimized ? 'Restore' : 'Minimize'} ${title}`}
+          >
             {getControlIcon('minimize', '−')}
           </button>
           {!isMobile && (
-            <button className={`${styles.windowControl} ${styles.maximize}`} onClick={(e) => { e.stopPropagation(); handleMaximize(); }}>
+            <button
+              type="button"
+              className={`${styles.windowControl} ${styles.maximize}`}
+              onClick={(e) => { e.stopPropagation(); handleMaximize(); }}
+              title={maximized ? 'Restore down' : 'Maximize'}
+              aria-label={`${maximized ? 'Restore down' : 'Maximize'} ${title}`}
+            >
               {getControlIcon('maximize', '□')}
             </button>
           )}
-          <button className={`${styles.windowControl} ${styles.close}`} onClick={handleClose}>
+          <button
+            type="button"
+            className={`${styles.windowControl} ${styles.close}`}
+            onClick={handleClose}
+            title="Close"
+            aria-label={`Close ${title}`}
+          >
             {getControlIcon('close', '×')}
           </button>
         </div>
@@ -84,7 +102,7 @@ function Window({ windowId, title, width, height, left, top, zIndex, minimized, 
       <div className={styles.windowContent}>
         {content}
       </div>
-      <div className={styles.windowResizeHandle}></div>
+      {!maximized && <div className={styles.windowResizeHandle}></div>}
     </div>
   )
 }

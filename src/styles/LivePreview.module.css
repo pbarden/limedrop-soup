@@ -15,15 +15,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(var(--window-tint-rgb), 0.05);
-  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
   gap: 16px;
 }
 
 .deviceSelector {
   display: flex;
   gap: 4px;
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
   border-radius: 8px;
   padding: 4px;
 }
@@ -33,28 +33,28 @@
   background: none;
   border: none;
   border-radius: 6px;
-  color: rgba(var(--font-color), 0.7);
+  color: color-mix(in srgb, var(--font-color) 70%, transparent);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 .deviceButton:hover {
   color: var(--font-color);
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
 }
 
 .deviceButton.active {
   background: var(--primary-button-color);
   color: white;
-  box-shadow: 0 2px 8px rgba(var(--primary-button-color), 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-button-color) 30%, transparent);
 }
 
 .zoomControls {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
   border-radius: 8px;
   padding: 4px;
 }
@@ -68,14 +68,14 @@
   background: none;
   border: none;
   border-radius: 6px;
-  color: rgba(var(--font-color), 0.7);
+  color: color-mix(in srgb, var(--font-color) 70%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .zoomButton:hover:not(:disabled) {
   color: var(--font-color);
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
 }
 
 .zoomButton:disabled {
@@ -102,23 +102,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--window-tint-rgb), 0.1);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline-strong);
   border-radius: 8px;
-  color: rgba(var(--font-color), 0.7);
+  color: color-mix(in srgb, var(--font-color) 70%, transparent);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .actionButton:hover {
   color: var(--font-color);
-  background: rgba(var(--window-tint-rgb), 0.15);
+  background: var(--surface-3);
   border-color: rgba(var(--window-tint-rgb), 0.3);
   transform: translateY(-1px);
 }
 
 .actionButton.active {
-  background: rgba(var(--primary-button-color), 0.1);
+  background: color-mix(in srgb, var(--primary-button-color) 10%, transparent);
   border-color: var(--primary-button-color);
   color: var(--primary-button-color);
 }
@@ -129,8 +129,8 @@
   align-items: center;
   gap: 16px;
   padding: 8px 16px;
-  background: rgba(var(--window-tint-rgb), 0.03);
-  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.08);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
   font-size: 11px;
 }
 
@@ -138,7 +138,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
 }
 
 .metric i {
@@ -211,7 +211,7 @@
 }
 
 .loadingSpinner span {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 500;
 }
 
@@ -222,26 +222,26 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: rgba(var(--font-color), 0.5);
+  color: color-mix(in srgb, var(--font-color) 50%, transparent);
   text-align: center;
   padding: 40px;
 }
 
 .emptyPreview i {
-  font-size: 48px;
+  font-size: 26px;
   margin-bottom: 16px;
   opacity: 0.5;
 }
 
 .emptyPreview h3 {
   margin: 0 0 8px 0;
-  font-size: 18px;
+  font-size: var(--fs-title);
   font-weight: 600;
 }
 
 .emptyPreview p {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fs-body);
   opacity: 0.8;
 }
 
@@ -258,20 +258,20 @@
 }
 
 .previewError i {
-  font-size: 48px;
+  font-size: 26px;
   margin-bottom: 16px;
   opacity: 0.7;
 }
 
 .previewError h3 {
   margin: 0 0 8px 0;
-  font-size: 18px;
+  font-size: var(--fs-title);
   font-weight: 600;
 }
 
 .previewError p {
   margin: 0 0 16px 0;
-  font-size: 14px;
+  font-size: var(--fs-body);
   opacity: 0.8;
 }
 
@@ -282,7 +282,7 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -303,7 +303,7 @@
 
 .previewComponent:hover {
   border-color: var(--primary-button-color);
-  box-shadow: 0 4px 12px rgba(var(--primary-button-color), 0.15);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-button-color) 15%, transparent);
 }
 
 .componentHeader {
@@ -312,8 +312,8 @@
   justify-content: space-between;
   padding: 12px 16px;
   background: linear-gradient(135deg, 
-    rgba(var(--primary-button-color), 0.05) 0%,
-    rgba(var(--primary-button-color), 0.02) 100%);
+    color-mix(in srgb, var(--primary-button-color) 5%, transparent) 0%,
+    color-mix(in srgb, var(--primary-button-color) 2%, transparent) 100%);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -331,13 +331,13 @@
 
 .componentName {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--font-color);
 }
 
 .componentType {
   font-size: 12px;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
 }
 
 .componentControls {
@@ -351,10 +351,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--window-tint-rgb), 0.1);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.2);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline-strong);
   border-radius: 6px;
-  color: rgba(var(--font-color), 0.7);
+  color: color-mix(in srgb, var(--font-color) 70%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 12px;
@@ -362,7 +362,7 @@
 
 .controlButton:hover {
   color: var(--font-color);
-  background: rgba(var(--window-tint-rgb), 0.15);
+  background: var(--surface-3);
   transform: scale(1.05);
 }
 
@@ -393,8 +393,8 @@
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: rgba(var(--font-color), 0.6);
-  background: rgba(var(--window-tint-rgb), 0.1);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
+  background: var(--surface-2);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -412,7 +412,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 /* Mock Component Styles */
@@ -432,12 +432,12 @@
   padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 .validationHint {
   font-size: 11px;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
   font-style: italic;
 }
 
@@ -450,8 +450,8 @@
 }
 
 .dropzoneContent i {
-  font-size: 32px;
-  color: rgba(var(--font-color), 0.4);
+  font-size: 20px;
+  color: color-mix(in srgb, var(--font-color) 40%, transparent);
   margin-bottom: 8px;
 }
 
@@ -462,7 +462,7 @@
 }
 
 .dropzoneContent small {
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
 }
 
 .allowedTypes {
@@ -474,7 +474,7 @@
 }
 
 .fileType {
-  background: rgba(var(--primary-button-color), 0.1);
+  background: color-mix(in srgb, var(--primary-button-color) 10%, transparent);
   color: var(--primary-button-color);
   padding: 2px 6px;
   border-radius: 4px;
@@ -500,15 +500,15 @@
   align-items: center;
   gap: 6px;
   padding: 12px;
-  border: 1px solid rgba(var(--primary-button-color), 0.2);
+  border: 1px solid color-mix(in srgb, var(--primary-button-color) 20%, transparent);
   border-radius: 8px;
-  background: rgba(var(--primary-button-color), 0.05);
+  background: color-mix(in srgb, var(--primary-button-color) 5%, transparent);
   flex: 1;
   max-width: 80px;
 }
 
 .flowStep i {
-  font-size: 16px;
+  font-size: var(--fs-lead);
   color: var(--primary-button-color);
 }
 
@@ -531,7 +531,7 @@
 }
 
 .processingTag {
-  background: rgba(var(--primary-button-color), 0.1);
+  background: color-mix(in srgb, var(--primary-button-color) 10%, transparent);
   color: var(--primary-button-color);
   padding: 4px 8px;
   border-radius: 6px;
@@ -553,13 +553,13 @@
 }
 
 .chartTheme {
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
   font-size: 11px;
 }
 
 .chartArea {
   height: 80px;
-  background: rgba(var(--window-tint-rgb), 0.05);
+  background: var(--surface-1);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -583,9 +583,9 @@
   align-items: center;
   gap: 8px;
   padding: 20px;
-  border: 1px dashed rgba(var(--primary-button-color), 0.3);
+  border: 1px dashed color-mix(in srgb, var(--primary-button-color) 30%, transparent);
   border-radius: 8px;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
 }
 
 .componentPlaceholder i {
@@ -596,7 +596,7 @@
 .configPreview small {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(var(--font-color), 0.7);
+  color: color-mix(in srgb, var(--font-color) 70%, transparent);
   margin-bottom: 6px;
   display: block;
 }
@@ -605,7 +605,7 @@
   margin: 0;
   padding-left: 16px;
   font-size: 11px;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
 }
 
 .configPreview li {

@@ -44,7 +44,10 @@ src/
 │   ├── Notification*.jsx    # Toast system
 │   ├── ModalOverlay.jsx
 │   ├── ErrorBoundary.jsx
-│   ├── ConnectionSystem.jsx # Visual wiring between App-Builder components
+│   ├── workflow/
+│   │   ├── WorkflowCanvas.jsx   # Pan/zoom node canvas: nodes, ports, wires
+│   │   ├── geometry.js          # Deterministic node/port/edge geometry
+│   │   └── WorkflowCanvas.module.css
 │   ├── SmartPropertyEditor.jsx  # Dynamic form driven by component metadata
 │   ├── LivePreview.jsx      # Renders App-Builder output in real time
 │   └── apps/
@@ -62,7 +65,6 @@ src/
 │   ├── useWindowManager.js  # Open / close / focus / minimize / maximize
 │   ├── useWindowDrag.js     # Pointer-based window dragging
 │   ├── useWindowResize.js   # Edge/corner resize handles
-│   ├── useAdvancedDragDrop.js  # Grid snapping + magnetic drop zones
 │   ├── useNotifications.js
 │   ├── useSettings.js
 │   ├── useDesktop.js
@@ -78,6 +80,8 @@ src/
 - **Context + hooks over Redux.** Cross-cutting state (auth, settings, windows, notifications, modals) is exposed through purpose-built hooks rather than a global store.
 - **Metadata-driven UI.** `componentLibrary.js` defines each builder component as a rich object — category, icon, properties schema, default values, tags, difficulty, estimated setup time — so the property editor, palette, and preview can all be generated from the same source of truth.
 - **CSS-variable theming.** `SettingsContext` writes to CSS custom properties on the document root, so theme changes apply instantly across every mounted component without re-rendering.
+- **One token layer.** `global.css` defines a 4px spacing scale, a type scale, and semantic surface/hairline/text tokens. Surfaces and hairlines are derived from the *font* colour via `color-mix()`, not from the window tint — the tint is white and so is the glass behind it, so tint-derived borders were invisible. Modules pick a token rather than inventing their own alpha.
+- **Geometry over measurement in the canvas.** Node, port, and edge positions are computed arithmetically from each node's stored position and its port counts (`components/workflow/geometry.js`). Nothing is read from the DOM during render, so the wire layer and the node layer cannot disagree — including on the first paint of a freshly loaded app.
 - **Separation of chrome vs. content.** `Window.jsx` owns only the frame (title bar, resize, focus); the inner application component is injected and has no knowledge of window mechanics.
 - **Z-index as focus model.** `useWindowManager` keeps a monotonically increasing `nextZIndex` ref; clicking any window issues a new z-index, mirroring native OS window-stacking semantics.
 
@@ -117,11 +121,11 @@ src/
 - Six component categories including an **AI & Intelligence** category and an **External Services** integration category
 - Search + category filtering across the component library
 - `SmartPropertyEditor` — dynamic property form generated from each component's metadata schema
-- `ConnectionSystem` — visual wiring between components (workflow-style edges)
+- `WorkflowCanvas` — pan/zoom node canvas with always-visible typed ports, drag-to-wire, click-to-select edges, per-node validation badges, zoom controls and fit-to-view
 - `LivePreview` — real-time render of the app being built
 - Three view modes: designer / preview / split
-- Resizable panels (components / workflow / properties / preview)
-- Grid snapping + magnetic drop zones via `useAdvancedDragDrop`
+- Drag-and-drop from the palette onto the canvas (native HTML5 DnD), or click to add
+- Resizable palette and properties panels
 - Auto-save every 30s while unsaved changes are pending
 - App metadata: id, name, description, icon, version, timestamps, author
 
@@ -138,7 +142,7 @@ src/
 
 1. **Custom window manager from scratch** — implemented z-index focus, drag, edge/corner resize, and min/max state without pulling in a windowing library.
 2. **Metadata-driven low-code builder** — a single component schema drives the palette, the property editor, the live preview, and the saved app definition; adding a new component type is a data change, not a code change across multiple files.
-3. **Advanced drag-and-drop hook** — `useAdvancedDragDrop` supports grid snapping and magnetic drop zones with a configurable threshold, built directly on pointer events.
+3. **Node-graph canvas built from scratch** — pan, zoom-about-pointer, fit-to-view, drag-to-wire with live validity feedback, and an edge layer that shares one transformed coordinate space with the nodes, so no DOM measurement is needed to keep wires attached.
 4. **Live CSS-variable theming** — settings changes propagate instantly to every component by updating root CSS variables rather than re-rendering a theme provider.
 5. **Clean separation of concerns** — CSS Modules per component, Context for cross-cutting state, hooks for reusable behavior, and thin pages that only compose.
 6. **~6.4k LOC of application code across 33 JSX/JS files** — non-trivial, self-contained SPA that runs with zero backend.

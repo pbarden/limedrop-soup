@@ -4,10 +4,10 @@ import { listInstalledApps, subscribe, appWindowId } from '../storage/appStore'
 import styles from '../styles/DesktopIcons.module.css'
 
 const systemApps = [
-  { id: 'app-builder', icon: 'fas fa-hammer', label: 'App Builder' },
-  { id: 'app-manager', icon: 'fas fa-th-large', label: 'App Manager' },
-  { id: 'file-manager', icon: 'fas fa-folder', label: 'Files' },
-  { id: 'settings', icon: 'fas fa-cog', label: 'Settings' }
+  { id: 'app-builder', icon: 'fas fa-diagram-project', label: 'App Builder' },
+  { id: 'app-manager', icon: 'fas fa-table-cells-large', label: 'App Manager' },
+  { id: 'file-manager', icon: 'fas fa-folder-open', label: 'Files' },
+  { id: 'settings', icon: 'fas fa-gear', label: 'Settings' }
 ]
 
 function DesktopIcons() {
@@ -30,37 +30,39 @@ function DesktopIcons() {
   }, [openApp])
 
   return (
-    <div className={styles.desktopIcons}>
+    <nav className={styles.desktopIcons} aria-label="Desktop shortcuts">
       {systemApps.map(app => (
-        <div
+        <button
+          type="button"
           key={app.id}
           className={styles.desktopIcon}
           data-app={app.id}
           onClick={() => handleSystemClick(app.id)}
           title={app.label}
         >
-          <div className={styles.iconImage}>
-            <i className={app.icon}></i>
-          </div>
-          <div className={styles.iconLabel}>{app.label}</div>
-        </div>
+          <span className={styles.iconImage}>
+            <i className={app.icon} aria-hidden="true"></i>
+          </span>
+          <span className={styles.iconLabel}>{app.label}</span>
+        </button>
       ))}
 
       {builtApps.map(app => (
-        <div
+        <button
+          type="button"
           key={app.id}
           className={styles.desktopIcon}
           data-app={appWindowId(app.id)}
           onClick={() => handleBuiltClick(app)}
           title={app.description || app.name}
         >
-          <div className={styles.iconImage}>
-            <i className={app.icon}></i>
-          </div>
-          <div className={styles.iconLabel}>{app.name}</div>
-        </div>
+          <span className={styles.iconImage}>
+            <i className={app.icon} aria-hidden="true"></i>
+          </span>
+          <span className={styles.iconLabel}>{app.name}</span>
+        </button>
       ))}
-    </div>
+    </nav>
   )
 }
 

@@ -1,14 +1,19 @@
 .window {
   position: absolute;
-  min-width: 300px;
+  min-width: 320px;
   min-height: 200px;
+  display: flex;
+  flex-direction: column;
   background: rgba(var(--window-tint-rgb), var(--glass-opacity));
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid rgba(var(--window-tint-rgb), var(--window-header-border-opacity));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  /* Only the focus affordances animate. `transition: all` also animated
+     left/top, which made every window lag ~200ms behind the pointer while
+     being dragged. */
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 /* The focused window sits visibly above the rest. */
@@ -32,13 +37,15 @@
 }
 
 .windowHeader {
+  flex-shrink: 0;
   background: rgba(var(--window-header-rgb), var(--window-header-opacity));
   color: var(--header-font-color);
-  padding: 12px 16px;
+  padding: var(--sp-2) var(--sp-4);
   border-bottom: 1px solid rgba(var(--window-tint-rgb), var(--window-header-border-opacity));
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--sp-4);
   cursor: grab;
   user-select: none;
 }
@@ -48,63 +55,75 @@
 }
 
 .windowTitle {
-  font-weight: 600;
-  font-size: 14px;
   flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: var(--fs-small);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .windowControls {
   display: flex;
-  gap: 6px;
+  gap: var(--sp-2);
+  flex-shrink: 0;
 }
 
 .windowControl {
-  width: 24px;
-  height: 24px;
+  width: 13px;
+  height: 13px;
+  padding: 0;
   border: none;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  transition: all 0.2s ease;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  /* The glyph only appears on hover, the way traffic lights do — at rest the
+     controls read as three clean dots. */
+  color: transparent;
+  transition: color 0.12s ease, background 0.12s ease;
 }
 
-.windowControl:hover {
-  transform: scale(1.1);
+.windowControls:hover .windowControl,
+.windowControl:focus-visible {
+  color: var(--control-glyph);
 }
 
 .minimize {
   background: #ffbd2e;
-  color: #d19000;
+  --control-glyph: #8a6000;
 }
 
 .minimize:hover {
-  background: #e5a617;
+  background: #f0ad1a;
 }
 
 .maximize {
   background: #28ca42;
-  color: #156528;
+  --control-glyph: #0d5a1d;
 }
 
 .maximize:hover {
-  background: #20a037;
+  background: #1fb336;
 }
 
 .close {
   background: #ff5f57;
-  color: #c02c1d;
+  --control-glyph: #8c1c11;
 }
 
 .close:hover {
-  background: #e04640;
+  background: #f0463d;
 }
 
 .windowContent {
-  height: calc(100% - 49px);
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 0;
 }
@@ -113,8 +132,22 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 16px;
-  height: 16px;
-  cursor: se-resize;
-  background: linear-gradient(-45deg, transparent 0%, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%, transparent 100%);
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  /* Two short strokes, so the grip is actually findable. */
+  background:
+    linear-gradient(-45deg, transparent 46%, rgba(var(--window-tint-rgb), 0.85) 46%, rgba(var(--window-tint-rgb), 0.85) 54%, transparent 54%) no-repeat,
+    linear-gradient(-45deg, transparent 46%, rgba(var(--window-tint-rgb), 0.6) 46%, rgba(var(--window-tint-rgb), 0.6) 54%, transparent 54%) no-repeat;
+  background-size: 10px 10px, 6px 6px;
+  background-position: bottom 3px right 3px, bottom 3px right 3px;
+  opacity: 0.7;
+}
+
+.windowResizeHandle:hover {
+  opacity: 1;
+}
+
+.window.maximized .windowResizeHandle {
+  display: none;
 }

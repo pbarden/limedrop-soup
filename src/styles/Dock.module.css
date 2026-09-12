@@ -1,95 +1,125 @@
 .dock {
   position: fixed;
-  bottom: 20px;
+  bottom: var(--sp-4);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(var(--window-tint-rgb), 0.2);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.3);
-  border-radius: 16px;
-  padding: 8px 12px;
+  gap: var(--sp-2);
+  max-width: calc(100vw - var(--sp-8));
+  background: rgba(var(--window-tint-rgb), 0.18);
+  backdrop-filter: blur(var(--dock-blur, 20px));
+  border: 1px solid rgba(var(--window-tint-rgb), 0.28);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-2);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  z-index: 60;
 }
 
-.dockSystem {
+.dockSystem,
+.dockFavorites,
+.dockRunning {
   display: flex;
-  gap: 8px;
+  gap: var(--sp-2);
 }
 
 .dockSeparator {
   width: 1px;
-  height: 32px;
+  height: 24px;
   background: rgba(var(--window-tint-rgb), 0.3);
-  margin: 0 4px;
-}
-
-.dockFavorites,
-.dockRunning {
-  display: flex;
-  gap: 8px;
+  margin: 0 var(--sp-1);
+  flex-shrink: 0;
 }
 
 .dockItem {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--window-tint-rgb), 0.1);
+  padding: 0;
+  background: rgba(var(--window-tint-rgb), 0.12);
   border: 1px solid rgba(var(--window-tint-rgb), 0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
-  overflow: hidden;
+  /* No overflow:hidden here — the tooltip below is a child and was being
+     clipped out of existence by it, so dock tooltips never appeared. */
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .dockItem:hover {
-  background: rgba(var(--window-tint-rgb), 0.2);
-  transform: translateY(-4px) scale(1.05);
+  background: rgba(var(--window-tint-rgb), 0.26);
+  transform: translateY(-3px);
 }
 
-.dockItem:hover .dockTooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(-10px);
+.dockItem:active {
+  transform: translateY(-1px);
 }
 
 .dockIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--desktop-font-color);
-  font-size: 20px;
+  font-size: var(--fs-lead);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .dockTooltip {
   position: absolute;
-  bottom: 60px;
+  bottom: calc(100% + var(--sp-3));
   left: 50%;
-  transform: translateX(-50%) translateY(0px);
-  background: rgba(0, 0, 0, 0.8);
-  color: var(--desktop-font-color);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-tiny);
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;
-  transition: all 0.2s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   pointer-events: none;
 }
 
-.dockItem.minimized {
-  opacity: 0.6;
+.dockItem:hover .dockTooltip,
+.dockItem:focus-visible .dockTooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
-.dockItem.minimized::after {
+/* A running app keeps a dot under its icon, the way a desktop dock does. */
+.dockItem.running::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: -5px;
   left: 50%;
   transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  background: #ffbd2e;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
+  background: var(--desktop-font-color);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+.dockItem.minimized {
+  opacity: 0.65;
+}
+
+.dockItem.minimized.running::after {
+  background: #ffbd2e;
+}
+
+@media (max-width: 600px) {
+  .dock {
+    gap: var(--sp-1);
+    padding: var(--sp-1);
+  }
+
+  .dockItem {
+    width: 36px;
+    height: 36px;
+  }
 }

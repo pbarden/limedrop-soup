@@ -4,10 +4,10 @@ import { listInstalledApps, subscribe, appWindowId } from '../storage/appStore'
 import styles from '../styles/Dock.module.css'
 
 const systemApps = [
-  { id: 'app-builder', icon: 'fas fa-hammer', tooltip: 'App Builder' },
-  { id: 'app-manager', icon: 'fas fa-th-large', tooltip: 'App Manager' },
-  { id: 'file-manager', icon: 'fas fa-folder', tooltip: 'Files' },
-  { id: 'settings', icon: 'fas fa-cog', tooltip: 'Settings' }
+  { id: 'app-builder', icon: 'fas fa-diagram-project', tooltip: 'App Builder' },
+  { id: 'app-manager', icon: 'fas fa-table-cells-large', tooltip: 'App Manager' },
+  { id: 'file-manager', icon: 'fas fa-folder-open', tooltip: 'Files' },
+  { id: 'settings', icon: 'fas fa-gear', tooltip: 'Settings' }
 ]
 
 const FALLBACK_ICON = 'fas fa-window-maximize'
@@ -67,26 +67,32 @@ function Dock() {
   }, [openApp, windows, minimizeWindow])
 
   return (
-    <div className={styles.dock}>
+    <nav className={styles.dock} aria-label="Application dock">
       <div className={styles.dockSystem} id="dock-system">
         {systemApps.map(app => {
           const systemWindow = windows.find(w => w.appId === app.id)
           const isMinimized = systemWindow && systemWindow.minimized
           
           return (
-            <div
+            <button
+              type="button"
               key={app.id}
-              className={`${styles.dockItem} ${isMinimized ? styles.minimized : ''}`}
+              className={[
+                styles.dockItem,
+                isMinimized ? styles.minimized : '',
+                systemWindow ? styles.running : ''
+              ].filter(Boolean).join(' ')}
               data-app={app.id}
               onClick={() => handleSystemAppClick(app.id)}
+              aria-label={`${app.tooltip}${isMinimized ? ' (minimized)' : ''}`}
             >
-              <div className={styles.dockIcon}>
-                <i className={app.icon}></i>
-              </div>
-              <div className={styles.dockTooltip}>
-                {app.tooltip} {isMinimized ? '(Minimized)' : ''}
-              </div>
-            </div>
+              <span className={styles.dockIcon}>
+                <i className={app.icon} aria-hidden="true"></i>
+              </span>
+              <span className={styles.dockTooltip} aria-hidden="true">
+                {app.tooltip}{isMinimized ? ' (minimized)' : ''}
+              </span>
+            </button>
           )
         })}
       </div>
@@ -97,19 +103,25 @@ function Dock() {
             {builtApps.map(app => {
               const appWindow = windows.find(w => w.appId === appWindowId(app.id))
               return (
-                <div
+                <button
+                  type="button"
                   key={app.id}
-                  className={`${styles.dockItem} ${appWindow?.minimized ? styles.minimized : ''}`}
+                  className={[
+                    styles.dockItem,
+                    appWindow?.minimized ? styles.minimized : '',
+                    appWindow ? styles.running : ''
+                  ].filter(Boolean).join(' ')}
                   data-app={appWindowId(app.id)}
                   onClick={() => handleBuiltAppClick(app)}
+                  aria-label={`${app.name}${appWindow?.minimized ? ' (minimized)' : ''}`}
                 >
-                  <div className={styles.dockIcon}>
-                    <i className={app.icon}></i>
-                  </div>
-                  <div className={styles.dockTooltip}>
-                    {app.name} {appWindow?.minimized ? '(Minimized)' : ''}
-                  </div>
-                </div>
+                  <span className={styles.dockIcon}>
+                    <i className={app.icon} aria-hidden="true"></i>
+                  </span>
+                  <span className={styles.dockTooltip} aria-hidden="true">
+                    {app.name}{appWindow?.minimized ? ' (minimized)' : ''}
+                  </span>
+                </button>
               )
             })}
           </div>
@@ -120,24 +132,29 @@ function Dock() {
           <div className={styles.dockSeparator}></div>
           <div className={styles.dockRunning} id="dock-running">
             {runningWindows.map(window => (
-              <div
+              <button
+                type="button"
                 key={window.windowId}
-                className={`${styles.dockItem} ${window.minimized ? styles.minimized : ''}`}
+                className={[
+                  styles.dockItem,
+                  window.minimized ? styles.minimized : '',
+                  styles.running
+                ].filter(Boolean).join(' ')}
                 onClick={() => handleRunningAppClick(window)}
-                title={window.title}
+                aria-label={`${window.title}${window.minimized ? ' (minimized)' : ''}`}
               >
-                <div className={styles.dockIcon}>
-                  <i className={getAppIcon(window)}></i>
-                </div>
-                <div className={styles.dockTooltip}>
-                  {window.title} {window.minimized ? '(Minimized)' : ''}
-                </div>
-              </div>
+                <span className={styles.dockIcon}>
+                  <i className={getAppIcon(window)} aria-hidden="true"></i>
+                </span>
+                <span className={styles.dockTooltip} aria-hidden="true">
+                  {window.title}{window.minimized ? ' (minimized)' : ''}
+                </span>
+              </button>
             ))}
           </div>
         </>
       )}
-    </div>
+    </nav>
   )
 }
 

@@ -1,286 +1,236 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { useAdvancedDragDrop } from '../../hooks/useAdvancedDragDrop'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import SmartPropertyEditor from '../SmartPropertyEditor'
 import LivePreview from '../LivePreview'
-import ConnectionSystem from '../ConnectionSystem'
+import WorkflowCanvas from '../workflow/WorkflowCanvas'
+import { nextFreePosition } from '../workflow/geometry'
 import { listApps, saveApp as persistApp, appWindowId } from '../../storage/appStore'
 import { validateApp } from '../../runtime/engine'
-import { 
-  advancedComponents, 
-  componentCategories, 
+import {
+  advancedComponents,
+  componentCategories,
   searchComponents,
   getComponentsByCategory,
-  getRecommendedComponents 
+  getRecommendedComponents
 } from '../../data/componentLibrary'
 import styles from '../../styles/EnhancedAppBuilder.module.css'
 
-function EnhancedAppBuilder() {
-  // Core state
-  const [currentApp, setCurrentApp] = useState({
-    id: `app-${Date.now()}`,
-    name: 'Untitled App',
-    description: '',
-    icon: 'fas fa-rocket',
-    version: '1.0.0',
-    components: [],
-    connections: [],
-    metadata: {
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      author: 'Current User'
-    }
-  })
+const PALETTE_MIN = 200
+const PALETTE_MAX = 380
+const PROPERTIES_MIN = 240
+const PROPERTIES_MAX = 460
 
-  // UI state
-  const [selectedComponent, setSelectedComponent] = useState(null)
+const emptyApp = () => ({
+  id: `app-${Date.now()}`,
+  name: 'Untitled App',
+  description: '',
+  icon: 'fas fa-rocket',
+  version: '1.0.0',
+  components: [],
+  connections: [],
+  metadata: {
+    created: new Date().toISOString(),
+    modified: new Date().toISOString(),
+    author: 'Current User'
+  }
+})
+
+/** True when the event came from somewhere the user is typing. */
+function isTextEntry(target) {
+  return /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName) || target?.isContentEditable
+}
+
+function EnhancedAppBuilder() {
+  const [currentApp, setCurrentApp] = useState(emptyApp)
+
+  // The selection is stored as an id, not a copy of the component. Holding a
+  // copy meant the property editor kept showing a stale snapshot after the
+  // node was moved or reconfigured from anywhere else.
+  const [selectedId, setSelectedId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
-  const [viewMode, setViewMode] = useState('designer') // designer, preview, split
+  const [viewMode, setViewMode] = useState('designer') // designer | preview | split
   const [isPropertyPanelOpen, setIsPropertyPanelOpen] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [panelSizes] = useState({
-    components: 280,
-    workflow: 600,
-    properties: 320,
-    preview: 400
-  })
+  const [panelSizes, setPanelSizes] = useState({ palette: 244, properties: 300 })
 
-  // Hooks
   const { showNotification, showModal, closeModal, openApp } = useApp()
-  const workflowRef = useRef(null)
+  const bodyRef = useRef(null)
 
-  // Advanced drag and drop
-  const dragDrop = useAdvancedDragDrop({
-    onDragStart: handleDragStart,
-    onDrop: handleDrop,
-    onDragEnd: handleDragEnd,
-    gridSize: 20,
-    magneticThreshold: 15
-  })
+  const selectedComponent = useMemo(
+    () => currentApp.components.find(component => component.id === selectedId) || null,
+    [currentApp.components, selectedId]
+  )
 
-  // Filtered components based on search and category
-  const filteredComponents = React.useMemo(() => {
-    let components = Object.values(advancedComponents)
-    
-    if (selectedCategory) {
-      components = getComponentsByCategory(selectedCategory)
-    }
-    
+  const filteredComponents = useMemo(() => {
     if (searchQuery.trim()) {
-      components = searchComponents(searchQuery, selectedCategory ? [selectedCategory] : null)
+      return searchComponents(searchQuery, selectedCategory ? [selectedCategory] : null)
     }
-    
-    return components
+    if (selectedCategory) return getComponentsByCategory(selectedCategory)
+    return Object.values(advancedComponents)
   }, [searchQuery, selectedCategory])
 
-  // Recommended components
-  const recommendedComponents = React.useMemo(() => {
-    return getRecommendedComponents(currentApp.components)
-  }, [currentApp.components])
+  const recommendedComponents = useMemo(
+    () => getRecommendedComponents(currentApp.components),
+    [currentApp.components]
+  )
 
-  // Handle drag start
-  function handleDragStart(item) {
-    showNotification(`Dragging ${item.name}`, 'info')
-  }
+  const touch = useCallback((updater) => {
+    setCurrentApp(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      return {
+        ...next,
+        metadata: { ...next.metadata, modified: new Date().toISOString() }
+      }
+    })
+    setHasUnsavedChanges(true)
+  }, [])
 
-  // Handle drop
-  function handleDrop(item, dropZone, position) {
-    if (dropZone.metadata?.accepts === 'component') {
-      addComponentToWorkflow(item, position)
-      showNotification(`Added ${item.name} to workflow`, 'success')
-    }
-  }
+  // ---- Graph edits -----------------------------------------------------
 
-  // Handle drag end
-  function handleDragEnd() {
-    // Cleanup or additional logic
-  }
+  const addComponent = useCallback((typeId, position) => {
+    const definition = advancedComponents[typeId]
+    if (!definition) return
 
-  // Add component to workflow
-  const addComponentToWorkflow = useCallback((componentType, position) => {
-    const newComponent = {
-      id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: componentType.id,
-      name: componentType.name,
-      config: {},
-      position: position || {
-        x: Math.random() * 400 + 50,
-        y: Math.random() * 200 + 50
-      },
-      size: componentType.preview || { width: 200, height: 100 }
-    }
+    const id = `comp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 
     setCurrentApp(prev => ({
       ...prev,
-      components: [...prev.components, newComponent],
-      metadata: {
-        ...prev.metadata,
-        modified: new Date().toISOString()
-      }
+      components: [...prev.components, {
+        id,
+        type: definition.id,
+        name: definition.name,
+        config: {},
+        position: nextFreePosition(prev.components, position)
+      }],
+      metadata: { ...prev.metadata, modified: new Date().toISOString() }
     }))
-    
+
     setHasUnsavedChanges(true)
-    setSelectedComponent(newComponent)
+    setSelectedId(id)
   }, [])
 
-  // Remove component
   const removeComponent = useCallback((componentId) => {
     showModal({
       title: 'Remove Component',
-      message: 'Are you sure you want to remove this component? This action cannot be undone.',
+      message: 'Remove this component and any connections attached to it?',
       type: 'confirm',
       onConfirm: () => {
-        setCurrentApp(prev => ({
+        touch(prev => ({
           ...prev,
-          components: prev.components.filter(c => c.id !== componentId),
+          components: prev.components.filter(component => component.id !== componentId),
           connections: prev.connections.filter(
-            conn => conn.from !== componentId && conn.to !== componentId
-          ),
-          metadata: {
-            ...prev.metadata,
-            modified: new Date().toISOString()
-          }
+            connection => connection.from !== componentId && connection.to !== componentId
+          )
         }))
-        
-        if (selectedComponent?.id === componentId) {
-          setSelectedComponent(null)
-        }
-        
-        setHasUnsavedChanges(true)
+        setSelectedId(prev => (prev === componentId ? null : prev))
         showNotification('Component removed', 'success')
       }
     })
-  }, [selectedComponent, showModal, showNotification])
+  }, [showModal, showNotification, touch])
 
-  // Update component property
   const updateComponentProperty = useCallback((componentId, propertyKey, value) => {
-    setCurrentApp(prev => ({
+    touch(prev => ({
       ...prev,
-      components: prev.components.map(comp =>
-        comp.id === componentId
-          ? { ...comp, config: { ...comp.config, [propertyKey]: value } }
-          : comp
-      ),
-      metadata: {
-        ...prev.metadata,
-        modified: new Date().toISOString()
-      }
+      components: prev.components.map(component =>
+        component.id === componentId
+          ? { ...component, config: { ...component.config, [propertyKey]: value } }
+          : component
+      )
     }))
-    
-    setHasUnsavedChanges(true)
-    
-    // Update selected component if it's the one being edited
-    if (selectedComponent?.id === componentId) {
-      setSelectedComponent(prev => ({
-        ...prev,
-        config: { ...prev.config, [propertyKey]: value }
-      }))
-    }
-  }, [selectedComponent])
+  }, [touch])
 
-  // Stable ref callback: an inline arrow here would re-register the drop
-  // zone on every render, which loops through setState.
-  const registerWorkflowCanvas = useCallback((el) => {
-    if (el) dragDrop.registerDropZone(el, 'workflow', { accepts: 'component' })
-  }, [dragDrop])
-
-  // Connections between components
   const handleConnectionCreate = useCallback((connection) => {
-    setCurrentApp(prev => {
-      // One value per input port: replace any existing wire into that port.
-      const filtered = prev.connections.filter(
+    touch(prev => {
+      // One value per input port: a new wire replaces whatever fed that port.
+      const kept = prev.connections.filter(
         existing => !(existing.to === connection.to && existing.toPort === connection.toPort)
       )
-      return {
-        ...prev,
-        connections: [...filtered, connection],
-        metadata: { ...prev.metadata, modified: new Date().toISOString() }
-      }
+      return { ...prev, connections: [...kept, connection] }
     })
-    setHasUnsavedChanges(true)
-  }, [])
+  }, [touch])
 
   const handleConnectionDelete = useCallback((connectionId) => {
-    setCurrentApp(prev => ({
+    touch(prev => ({
       ...prev,
-      connections: prev.connections.filter(conn => conn.id !== connectionId),
-      metadata: { ...prev.metadata, modified: new Date().toISOString() }
+      connections: prev.connections.filter(connection => connection.id !== connectionId)
     }))
-    setHasUnsavedChanges(true)
-  }, [])
+  }, [touch])
 
-  // Move a component around the canvas
+  // Moves are frequent, so they bypass `touch` and its timestamp rewrite.
   const handleComponentMove = useCallback((componentId, position) => {
     setCurrentApp(prev => ({
       ...prev,
-      components: prev.components.map(comp =>
-        comp.id === componentId ? { ...comp, position } : comp
+      components: prev.components.map(component =>
+        component.id === componentId ? { ...component, position } : component
       )
     }))
     setHasUnsavedChanges(true)
   }, [])
 
-  // Problems that would stop the app running
-  const issues = React.useMemo(() => validateApp(currentApp), [currentApp])
+  // ---- Validation ------------------------------------------------------
 
-  // Save, then open the app in its own window
-  const runCurrentApp = useCallback(async () => {
+  const issues = useMemo(() => validateApp(currentApp), [currentApp])
+  const blockingIssues = useMemo(
+    () => issues.filter(issue => issue.severity === 'error'),
+    [issues]
+  )
+
+  const issuesByComponent = useMemo(() => {
+    const map = new Map()
+    for (const issue of issues) {
+      if (!issue.componentId) continue
+      map.set(issue.componentId, [...(map.get(issue.componentId) || []), issue])
+    }
+    return map
+  }, [issues])
+
+  // ---- Persistence -----------------------------------------------------
+
+  const saveApp = useCallback(async () => {
+    try {
+      setIsSaving(true)
+      const saved = persistApp(currentApp)
+      setCurrentApp(saved)
+      setHasUnsavedChanges(false)
+      showNotification(`"${saved.name}" saved`, 'success')
+      return saved
+    } catch (error) {
+      console.error('Failed to save app:', error)
+      showNotification('Failed to save app', 'error')
+      return null
+    } finally {
+      setIsSaving(false)
+    }
+  }, [currentApp, showNotification])
+
+  const runCurrentApp = useCallback(() => {
     const saved = persistApp(currentApp)
     setCurrentApp(saved)
     setHasUnsavedChanges(false)
     openApp(appWindowId(saved.id), { title: saved.name, builtAppData: saved })
   }, [currentApp, openApp])
 
-  // Save app
-  const saveApp = useCallback(async () => {
-    try {
-      setIsSaving(true)
-
-      const saved = persistApp(currentApp)
-      setCurrentApp(saved)
-      setHasUnsavedChanges(false)
-      showNotification(`"${currentApp.name}" saved successfully`, 'success')
-      
-    } catch (error) {
-      console.error('Failed to save app:', error)
-      showNotification('Failed to save app', 'error')
-    } finally {
-      setIsSaving(false)
-    }
-  }, [currentApp, showNotification])
-
-  // Auto-save
-  const handleAutoSave = useCallback(() => {
-    if (!hasUnsavedChanges) return
-    saveApp()
-  }, [saveApp, hasUnsavedChanges])
-
-  // Auto-save 30s after the last change. handleAutoSave changes identity with
-  // currentApp, so edits restart the timer rather than saving mid-edit.
+  // Auto-save 30s after the last change: the callback identity changes with
+  // currentApp, so each edit restarts the timer instead of saving mid-edit.
   useEffect(() => {
     if (!hasUnsavedChanges) return
+    const timeout = setTimeout(() => { saveApp() }, 30000)
+    return () => clearTimeout(timeout)
+  }, [hasUnsavedChanges, saveApp])
 
-    const autoSaveTimeout = setTimeout(() => {
-      handleAutoSave()
-    }, 30000)
-
-    return () => clearTimeout(autoSaveTimeout)
-  }, [hasUnsavedChanges, handleAutoSave])
-
-  // Load app
   const loadApp = useCallback(() => {
     const savedApps = listApps()
 
     if (savedApps.length === 0) {
-      showNotification('No saved apps found', 'warning')
+      showNotification('No saved apps yet', 'warning')
       return
     }
 
     const open = (app) => {
       setCurrentApp(app)
-      setSelectedComponent(null)
+      setSelectedId(null)
       setHasUnsavedChanges(false)
       showNotification(`Loaded "${app.name}"`, 'success')
       closeModal()
@@ -292,7 +242,7 @@ function EnhancedAppBuilder() {
         <div className={styles.appPicker}>
           {savedApps.map(app => (
             <button key={app.id} className={styles.appPickerItem} onClick={() => open(app)}>
-              <i className={app.icon}></i>
+              <i className={app.icon} aria-hidden="true"></i>
               <span className={styles.appPickerName}>{app.name}</span>
               <small>
                 {app.components.length} components ·{' '}
@@ -302,504 +252,409 @@ function EnhancedAppBuilder() {
           ))}
         </div>
       ),
-      actions: (
-        <button className="btn-secondary" onClick={closeModal}>Cancel</button>
-      )
+      actions: <button className="btn-secondary" onClick={closeModal}>Cancel</button>
     })
   }, [showNotification, showModal, closeModal])
 
-  // New app
   const createNewApp = useCallback(() => {
-    setCurrentApp({
-      id: `app-${Date.now()}`,
-      name: 'Untitled App',
-      description: '',
-      icon: 'fas fa-rocket',
-      version: '1.0.0',
-      components: [],
-      connections: [],
-      metadata: {
-        created: new Date().toISOString(),
-        modified: new Date().toISOString(),
-        author: 'Current User'
-      }
-    })
-    setSelectedComponent(null)
+    setCurrentApp(emptyApp())
+    setSelectedId(null)
     setHasUnsavedChanges(false)
     showNotification('New app created', 'success')
   }, [showNotification])
 
   const newApp = useCallback(() => {
-    if (hasUnsavedChanges) {
-      showModal({
-        title: 'Unsaved Changes',
-        message: 'You have unsaved changes. Do you want to save before creating a new app?',
-        type: 'confirm',
-        onConfirm: async () => {
-          await saveApp()
-          createNewApp()
-        },
-        onCancel: createNewApp
-      })
-    } else {
+    if (!hasUnsavedChanges) {
       createNewApp()
+      return
     }
+
+    showModal({
+      title: 'Unsaved Changes',
+      message: 'Save the current app before starting a new one?',
+      type: 'confirm',
+      onConfirm: async () => {
+        await saveApp()
+        createNewApp()
+      },
+      onCancel: createNewApp
+    })
   }, [hasUnsavedChanges, saveApp, showModal, createNewApp])
 
+  // ---- Panel resizing --------------------------------------------------
 
-  // Handle preview interaction
+  const startPanelResize = useCallback((panel, event) => {
+    event.preventDefault()
+    const startX = event.clientX
+    const startWidth = panelSizes[panel]
+    const [min, max] = panel === 'palette'
+      ? [PALETTE_MIN, PALETTE_MAX]
+      : [PROPERTIES_MIN, PROPERTIES_MAX]
+    // The properties panel is on the right, so it grows as the pointer moves left.
+    const direction = panel === 'palette' ? 1 : -1
 
-  // Keyboard shortcuts
+    const handleMove = (moveEvent) => {
+      const width = startWidth + (moveEvent.clientX - startX) * direction
+      setPanelSizes(prev => ({ ...prev, [panel]: Math.min(max, Math.max(min, width)) }))
+    }
+
+    const handleUp = () => {
+      window.removeEventListener('pointermove', handleMove)
+      window.removeEventListener('pointerup', handleUp)
+    }
+
+    window.addEventListener('pointermove', handleMove)
+    window.addEventListener('pointerup', handleUp)
+  }, [panelSizes])
+
+  // ---- Keyboard --------------------------------------------------------
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 's':
-            e.preventDefault()
-            saveApp()
-            break
-          case 'n':
-            e.preventDefault()
-            newApp()
-            break
-          case 'o':
-            e.preventDefault()
-            loadApp()
-            break
-          case 'z':
-            if (e.shiftKey) {
-              e.preventDefault()
-              // Redo functionality would go here
-            } else {
-              e.preventDefault()
-              // Undo functionality would go here
-            }
-            break
+    const handleKeyDown = (event) => {
+      const typing = isTextEntry(event.target)
+
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key) {
+          case 's': event.preventDefault(); saveApp(); break
+          case 'n': event.preventDefault(); newApp(); break
+          case 'o': event.preventDefault(); loadApp(); break
+          default: break
         }
+        return
       }
-      
-      if (e.key === 'Delete' && selectedComponent) {
-        removeComponent(selectedComponent.id)
+
+      // Delete only removes a node when the user is not typing — otherwise
+      // pressing Delete in the app-name field wiped the selected component.
+      if (!typing && (event.key === 'Delete' || event.key === 'Backspace') && selectedId) {
+        event.preventDefault()
+        removeComponent(selectedId)
       }
+
+      if (!typing && event.key === 'Escape') setSelectedId(null)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [saveApp, newApp, loadApp, selectedComponent, removeComponent])
+  }, [saveApp, newApp, loadApp, selectedId, removeComponent])
+
+  const showDesigner = viewMode === 'designer' || viewMode === 'split'
+  const showPreview = viewMode === 'preview' || viewMode === 'split'
 
   return (
     <div className={styles.enhancedAppBuilder}>
-      {/* Header */}
-      <div className={styles.builderHeader}>
+      <header className={styles.builderHeader}>
         <div className={styles.appInfo}>
-          <div className={styles.appIcon}>
-            <i className={currentApp.icon}></i>
-          </div>
+          <span className={styles.appIcon}>
+            <i className={currentApp.icon} aria-hidden="true"></i>
+          </span>
           <div className={styles.appDetails}>
             <input
               type="text"
               className={styles.appName}
               value={currentApp.name}
-              onChange={(e) => {
-                setCurrentApp(prev => ({ ...prev, name: e.target.value }))
-                setHasUnsavedChanges(true)
-              }}
-              placeholder="App Name"
+              onChange={(event) => touch(prev => ({ ...prev, name: event.target.value }))}
+              placeholder="App name"
+              aria-label="App name"
             />
             <input
               type="text"
               className={styles.appDescription}
               value={currentApp.description}
-              onChange={(e) => {
-                setCurrentApp(prev => ({ ...prev, description: e.target.value }))
-                setHasUnsavedChanges(true)
-              }}
-              placeholder="App description..."
+              onChange={(event) => touch(prev => ({ ...prev, description: event.target.value }))}
+              placeholder="Add a description…"
+              aria-label="App description"
             />
           </div>
         </div>
 
         <div className={styles.headerActions}>
-          <div className={styles.viewModeSelector}>
-            <button
-              className={`${styles.viewModeButton} ${viewMode === 'designer' ? styles.active : ''}`}
-              onClick={() => setViewMode('designer')}
-              title="Designer View"
-            >
-              <i className="fas fa-paint-brush"></i>
-              Designer
-            </button>
-            <button
-              className={`${styles.viewModeButton} ${viewMode === 'preview' ? styles.active : ''}`}
-              onClick={() => setViewMode('preview')}
-              title="Preview Mode"
-            >
-              <i className="fas fa-eye"></i>
-              Preview
-            </button>
-            <button
-              className={`${styles.viewModeButton} ${viewMode === 'split' ? styles.active : ''}`}
-              onClick={() => setViewMode('split')}
-              title="Split View"
-            >
-              <i className="fas fa-columns"></i>
-              Split
-            </button>
+          <div className={styles.viewModeSelector} role="tablist" aria-label="Builder view">
+            {[
+              { id: 'designer', icon: 'fas fa-diagram-project', label: 'Designer' },
+              { id: 'preview', icon: 'fas fa-play', label: 'Preview' },
+              { id: 'split', icon: 'fas fa-table-columns', label: 'Split' }
+            ].map(mode => (
+              <button
+                key={mode.id}
+                role="tab"
+                aria-selected={viewMode === mode.id}
+                className={`${styles.viewModeButton} ${viewMode === mode.id ? styles.active : ''}`}
+                onClick={() => setViewMode(mode.id)}
+                title={`${mode.label} view`}
+              >
+                <i className={mode.icon} aria-hidden="true"></i>
+                <span>{mode.label}</span>
+              </button>
+            ))}
           </div>
 
           <div className={styles.appActions}>
-            <button 
-              className={styles.actionButton}
-              onClick={newApp}
-              title="New App (Ctrl+N)"
-            >
-              <i className="fas fa-file-plus"></i>
-              New
+            <button className={styles.actionButton} onClick={newApp} title="New app (Ctrl+N)">
+              <i className="fas fa-file-circle-plus" aria-hidden="true"></i>
+              <span>New</span>
             </button>
-            <button 
-              className={styles.actionButton}
-              onClick={loadApp}
-              title="Load App (Ctrl+O)"
-            >
-              <i className="fas fa-folder-open"></i>
-              Load
+            <button className={styles.actionButton} onClick={loadApp} title="Open app (Ctrl+O)">
+              <i className="fas fa-folder-open" aria-hidden="true"></i>
+              <span>Open</span>
             </button>
             <button
               className={`${styles.actionButton} ${styles.runButton}`}
               onClick={runCurrentApp}
-              disabled={issues.some(i => i.severity === 'error')}
-              title="Save and run this app"
+              disabled={blockingIssues.length > 0}
+              title={blockingIssues.length > 0
+                ? blockingIssues.map(issue => issue.message).join('\n')
+                : 'Save and run this app'}
             >
-              <i className="fas fa-play"></i>
-              Run
+              <i className="fas fa-play" aria-hidden="true"></i>
+              <span>Run</span>
             </button>
-            <button 
+            <button
               className={`${styles.actionButton} ${styles.saveButton}`}
               onClick={saveApp}
               disabled={isSaving || !hasUnsavedChanges}
-              title="Save App (Ctrl+S)"
+              title="Save app (Ctrl+S)"
             >
-              {isSaving ? (
-                <>
-                  <i className="fas fa-spinner fa-spin"></i>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {hasUnsavedChanges ? 'Save*' : 'Saved'}
-                </>
-              )}
+              <i
+                className={isSaving ? 'fas fa-spinner fa-spin' : 'fas fa-floppy-disk'}
+                aria-hidden="true"
+              ></i>
+              <span>{isSaving ? 'Saving…' : hasUnsavedChanges ? 'Save' : 'Saved'}</span>
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className={styles.builderBody}>
-        {/* Component Palette */}
-        {(viewMode === 'designer' || viewMode === 'split') && (
-          <div 
-            className={styles.componentPalette}
-            style={{ width: panelSizes.components }}
-          >
-            <div className={styles.paletteHeader}>
-              <h3>Components</h3>
-              <button 
-                className={styles.paletteToggle}
-                onClick={() => setIsPropertyPanelOpen(!isPropertyPanelOpen)}
-              >
-                <i className="fas fa-cog"></i>
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className={styles.searchContainer}>
-              <div className={styles.searchInput}>
-                <i className="fas fa-search"></i>
-                <input
-                  type="text"
-                  placeholder="Search components..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button 
-                    className={styles.clearSearch}
-                    onClick={() => setSearchQuery('')}
-                  >
-                    <i className="fas fa-times"></i>
-                  </button>
-                )}
+      <div className={styles.builderBody} ref={bodyRef}>
+        {showDesigner && (
+          <>
+            <aside className={styles.componentPalette} style={{ width: panelSizes.palette }}>
+              <div className={styles.paletteHeader}>
+                <h3>Components</h3>
+                <span className={styles.paletteCount}>{filteredComponents.length}</span>
               </div>
-            </div>
 
-            {/* Category Filter */}
-            <div className={styles.categoryFilter}>
-              <button
-                className={`${styles.categoryButton} ${!selectedCategory ? styles.active : ''}`}
-                onClick={() => setSelectedCategory(null)}
-              >
-                All
-              </button>
-              {Object.entries(componentCategories).map(([key, category]) => (
-                <button
-                  key={key}
-                  className={`${styles.categoryButton} ${selectedCategory === key ? styles.active : ''}`}
-                  onClick={() => setSelectedCategory(key)}
-                  style={{ '--category-color': category.color }}
-                >
-                  <i className={category.icon}></i>
-                  {category.name}
-                </button>
-              ))}
-            </div>
-
-            {/* Recommended Components */}
-            {!searchQuery && !selectedCategory && recommendedComponents.length > 0 && (
-              <div className={styles.componentSection}>
-                <h4>
-                  <i className="fas fa-magic"></i>
-                  Recommended
-                </h4>
-                <div className={styles.componentGrid}>
-                  {recommendedComponents.slice(0, 4).map(component => (
-                    <ComponentPaletteItem
-                      key={component.id}
-                      component={component}
-                      onDragStart={dragDrop.handleDragStart}
-                      onClick={() => addComponentToWorkflow(component)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Component List */}
-            <div className={styles.componentList}>
-              {filteredComponents.length === 0 ? (
-                <div className={styles.noComponents}>
-                  <i className="fas fa-search"></i>
-                  <p>No components found</p>
-                  <small>Try adjusting your search or category filter</small>
-                </div>
-              ) : (
-                <div className={styles.componentGrid}>
-                  {filteredComponents.map(component => (
-                    <ComponentPaletteItem
-                      key={component.id}
-                      component={component}
-                      onDragStart={dragDrop.handleDragStart}
-                      onClick={() => addComponentToWorkflow(component)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Workflow Area */}
-        {(viewMode === 'designer' || viewMode === 'split') && (
-          <div 
-            ref={workflowRef}
-            className={styles.workflowArea}
-            style={{ width: viewMode === 'split' ? panelSizes.workflow / 2 : panelSizes.workflow }}
-          >
-            <div className={styles.workflowHeader}>
-              <h3>Workflow Designer</h3>
-              <div className={styles.workflowStats}>
-                <span>{currentApp.components.length} components</span>
-                <span>{currentApp.connections.length} connections</span>
-                {issues.length > 0 && (
-                  <span
-                    className={issues.some(i => i.severity === 'error')
-                      ? styles.issueCountError
-                      : styles.issueCountWarning}
-                    title={issues.map(i => i.message).join(String.fromCharCode(10))}
-                  >
-                    <i className="fas fa-triangle-exclamation"></i>
-                    {issues.length}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div 
-              className={styles.workflowCanvas}
-              ref={registerWorkflowCanvas}
-            >
-              {currentApp.components.length === 0 ? (
-                <div className={styles.emptyWorkflow}>
-                  <i className="fas fa-plus-circle"></i>
-                  <h4>Start Building</h4>
-                  <p>Drag components from the palette or click to add them to your workflow</p>
-                </div>
-              ) : (
-                <>
-                  {currentApp.components.map(component => (
-                    <WorkflowComponent
-                      key={component.id}
-                      component={component}
-                      isSelected={selectedComponent?.id === component.id}
-                      onSelect={setSelectedComponent}
-                      onRemove={removeComponent}
-                      onMove={handleComponentMove}
-                    />
-                  ))}
-                  <ConnectionSystem
-                    components={currentApp.components}
-                    connections={currentApp.connections}
-                    onConnectionCreate={handleConnectionCreate}
-                    onConnectionDelete={handleConnectionDelete}
-                    workflowRef={workflowRef}
+              <div className={styles.searchContainer}>
+                <div className={styles.searchInput}>
+                  <i className="fas fa-magnifying-glass" aria-hidden="true"></i>
+                  <input
+                    type="search"
+                    placeholder="Search components…"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    aria-label="Search components"
                   />
-                </>
-              )}
-            </div>
-          </div>
-        )}
+                  {searchQuery && (
+                    <button
+                      className={styles.clearSearch}
+                      onClick={() => setSearchQuery('')}
+                      title="Clear search"
+                      aria-label="Clear search"
+                    >
+                      <i className="fas fa-xmark" aria-hidden="true"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
 
-        {/* Live Preview */}
-        {(viewMode === 'preview' || viewMode === 'split') && (
-          <div 
-            className={styles.previewArea}
-            style={{ width: viewMode === 'split' ? panelSizes.preview : '100%' }}
-          >
-            <LivePreview app={currentApp} isVisible={true} />
-          </div>
-        )}
+              <div className={styles.categoryFilter}>
+                <button
+                  className={`${styles.categoryButton} ${!selectedCategory ? styles.active : ''}`}
+                  onClick={() => setSelectedCategory(null)}
+                  title="All components"
+                >
+                  <i className="fas fa-layer-group" aria-hidden="true"></i>
+                  <span>All</span>
+                </button>
+                {Object.entries(componentCategories).map(([key, category]) => (
+                  <button
+                    key={key}
+                    className={`${styles.categoryButton} ${selectedCategory === key ? styles.active : ''}`}
+                    onClick={() => setSelectedCategory(selectedCategory === key ? null : key)}
+                    style={{ '--category-color': category.color }}
+                    title={category.description}
+                  >
+                    <i className={category.icon} aria-hidden="true"></i>
+                    <span>{category.name}</span>
+                  </button>
+                ))}
+              </div>
 
-        {/* Properties Panel */}
-        {isPropertyPanelOpen && (viewMode === 'designer' || viewMode === 'split') && (
-          <div 
-            className={styles.propertiesPanel}
-            style={{ width: panelSizes.properties }}
-          >
-            <SmartPropertyEditor
-              selectedComponent={selectedComponent}
-              onPropertyChange={updateComponentProperty}
-              onValidationChange={() => {
-                // Handle validation state changes
-              }}
-              isLivePreview={viewMode === 'split'}
+              <div className={styles.componentList}>
+                {!searchQuery && !selectedCategory && recommendedComponents.length > 0 && (
+                  <section className={styles.componentSection}>
+                    <h4>
+                      <i className="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                      Suggested next
+                    </h4>
+                    <div className={styles.componentGrid}>
+                      {recommendedComponents.slice(0, 3).map(component => (
+                        <PaletteItem
+                          key={`rec-${component.id}`}
+                          component={component}
+                          onAdd={addComponent}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                <section className={styles.componentSection}>
+                  {!searchQuery && !selectedCategory && recommendedComponents.length > 0 && (
+                    <h4>
+                      <i className="fas fa-cubes" aria-hidden="true"></i>
+                      All components
+                    </h4>
+                  )}
+
+                  {filteredComponents.length === 0 ? (
+                    <div className={styles.noComponents}>
+                      <i className="fas fa-magnifying-glass" aria-hidden="true"></i>
+                      <p>No components found</p>
+                      <small>Try a different search or category</small>
+                    </div>
+                  ) : (
+                    <div className={styles.componentGrid}>
+                      {filteredComponents.map(component => (
+                        <PaletteItem
+                          key={component.id}
+                          component={component}
+                          onAdd={addComponent}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </aside>
+
+            <div
+              className={styles.resizer}
+              onPointerDown={(event) => startPanelResize('palette', event)}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize component palette"
             />
-          </div>
+
+            <section className={styles.workflowArea}>
+              <div className={styles.workflowHeader}>
+                <h3>Workflow</h3>
+                <div className={styles.workflowStats}>
+                  <span title="Components on the canvas">
+                    <i className="fas fa-cube" aria-hidden="true"></i>
+                    {currentApp.components.length}
+                  </span>
+                  <span title="Connections between components">
+                    <i className="fas fa-code-branch" aria-hidden="true"></i>
+                    {currentApp.connections.length}
+                  </span>
+                  {issues.length > 0 && (
+                    <span
+                      className={blockingIssues.length > 0
+                        ? styles.issueCountError
+                        : styles.issueCountWarning}
+                      title={issues.map(issue => issue.message).join('\n')}
+                    >
+                      <i
+                        className={blockingIssues.length > 0
+                          ? 'fas fa-circle-exclamation'
+                          : 'fas fa-triangle-exclamation'}
+                        aria-hidden="true"
+                      ></i>
+                      {issues.length}
+                    </span>
+                  )}
+
+                  <button
+                    className={styles.propertiesToggle}
+                    onClick={() => setIsPropertyPanelOpen(open => !open)}
+                    title={isPropertyPanelOpen ? 'Hide properties panel' : 'Show properties panel'}
+                    aria-pressed={isPropertyPanelOpen}
+                  >
+                    <i className="fas fa-sliders" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+
+              <WorkflowCanvas
+                components={currentApp.components}
+                connections={currentApp.connections}
+                selectedId={selectedId}
+                issuesByComponent={issuesByComponent}
+                onSelect={(component) => setSelectedId(component?.id ?? null)}
+                onMove={handleComponentMove}
+                onRemove={removeComponent}
+                onConnectionCreate={handleConnectionCreate}
+                onConnectionDelete={handleConnectionDelete}
+                onDropComponent={addComponent}
+              />
+            </section>
+          </>
+        )}
+
+        {showPreview && (
+          <section className={styles.previewArea}>
+            <LivePreview app={currentApp} isVisible />
+          </section>
+        )}
+
+        {isPropertyPanelOpen && showDesigner && (
+          <>
+            <div
+              className={styles.resizer}
+              onPointerDown={(event) => startPanelResize('properties', event)}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize properties panel"
+            />
+            <aside className={styles.propertiesPanel} style={{ width: panelSizes.properties }}>
+              <SmartPropertyEditor
+                key={selectedId || 'none'}
+                selectedComponent={selectedComponent}
+                onPropertyChange={(key, value) =>
+                  selectedId && updateComponentProperty(selectedId, key, value)}
+                isLivePreview={viewMode === 'split'}
+              />
+            </aside>
+          </>
         )}
       </div>
     </div>
   )
 }
 
-// Component Palette Item
-function ComponentPaletteItem({ component, onDragStart, onClick }) {
+/**
+ * A component in the palette. Native HTML drag-and-drop carries the type id to
+ * the canvas, which converts the drop point into canvas coordinates itself —
+ * the previous custom ghost-drag handed the canvas raw screen coordinates, so
+ * dropped nodes landed far outside the visible area.
+ */
+function PaletteItem({ component, onAdd }) {
   const category = componentCategories[component.category]
-  const pressOrigin = useRef(null)
-
-  // mousedown starts a drag, but the browser still fires click afterwards.
-  // Only treat it as a click if the pointer barely moved, otherwise a drag
-  // would add the component twice - once on drop and once on click.
-  const handleClick = (e) => {
-    const origin = pressOrigin.current
-    const moved = origin && Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > 5
-    if (!moved) onClick(component)
-  }
 
   return (
-    <div
+    <button
+      type="button"
       className={styles.paletteItem}
-      onMouseDown={(e) => {
-        pressOrigin.current = { x: e.clientX, y: e.clientY }
-        onDragStart(e, component)
-      }}
-      onClick={handleClick}
       style={{ '--category-color': category?.color || 'var(--primary-button-color)' }}
-    >
-      <div className={styles.paletteItemIcon}>
-        <i className={component.icon}></i>
-      </div>
-      <div className={styles.paletteItemContent}>
-        <span className={styles.paletteItemName}>{component.name}</span>
-        <small className={styles.paletteItemDescription}>
-          {component.description}
-        </small>
-        <div className={styles.paletteItemMeta}>
-          <span className={styles.difficulty}>{component.difficulty}</span>
-          <span className={styles.setupTime}>{component.estimatedSetupTime}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Workflow Component
-function WorkflowComponent({ component, isSelected, onSelect, onRemove, onMove }) {
-  const meta = advancedComponents[component.type]
-  if (!meta) return null
-
-  // Drag the node around the canvas by its header.
-  const handleDragStart = (event) => {
-    if (event.button !== 0) return
-    event.stopPropagation()
-
-    const startX = event.clientX
-    const startY = event.clientY
-    const originX = component.position?.x || 0
-    const originY = component.position?.y || 0
-
-    const handleMove = (moveEvent) => {
-      onMove?.(component.id, {
-        x: Math.max(0, originX + moveEvent.clientX - startX),
-        y: Math.max(0, originY + moveEvent.clientY - startY)
-      })
-    }
-
-    const handleUp = () => {
-      window.removeEventListener('mousemove', handleMove)
-      window.removeEventListener('mouseup', handleUp)
-    }
-
-    window.addEventListener('mousemove', handleMove)
-    window.addEventListener('mouseup', handleUp)
-  }
-
-  return (
-    <div
-      className={`${styles.workflowComponent} ${isSelected ? styles.selected : ''}`}
-      style={{
-        left: component.position?.x || 0,
-        top: component.position?.y || 0,
-        width: component.size?.width || 200,
-        height: component.size?.height || 100
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.setData('application/x-limedrop-component', component.id)
+        event.dataTransfer.effectAllowed = 'copy'
       }}
-      onClick={() => onSelect(component)}
+      onClick={() => onAdd(component.id)}
+      title={`${component.description}\n\nClick to add, or drag onto the canvas`}
     >
-      <div className={styles.componentHeader} onMouseDown={handleDragStart}>
-        <div className={styles.componentIcon}>
-          <i className={meta.icon}></i>
-        </div>
-        <span className={styles.componentName}>{component.name}</span>
-        <button
-          className={styles.removeButton}
-          onClick={(e) => {
-            e.stopPropagation()
-            onRemove(component.id)
-          }}
-        >
-          <i className="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div className={styles.componentBody}>
-        <small>{meta.name}</small>
-        {Object.keys(component.config || {}).length > 0 && (
-          <div className={styles.configIndicator}>
-            <i className="fas fa-cog"></i>
-            Configured
-          </div>
-        )}
-      </div>
-    </div>
+      <span className={styles.paletteItemIcon}>
+        <i className={component.icon} aria-hidden="true"></i>
+      </span>
+      <span className={styles.paletteItemContent}>
+        <span className={styles.paletteItemName}>{component.name}</span>
+        <span className={styles.paletteItemDescription}>{component.description}</span>
+      </span>
+      <span className={styles.paletteItemAdd} aria-hidden="true">
+        <i className="fas fa-plus"></i>
+      </span>
+    </button>
   )
 }
 

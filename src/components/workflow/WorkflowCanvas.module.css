@@ -1,0 +1,420 @@
+.canvasShell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Toolbar --------------------------------------------------------- */
+
+.toolbar {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+  z-index: 5;
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-0);
+  padding: var(--sp-0);
+  background: rgba(var(--window-tint-rgb), 0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.toolButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  font-size: var(--fs-small);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.toolButton:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+.toolButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.zoomLevel {
+  min-width: 42px;
+  height: 24px;
+  padding: 0 var(--sp-1);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: var(--fs-tiny);
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.zoomLevel:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+/* ---- Viewport -------------------------------------------------------- */
+
+.viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  /* Dragging a node would otherwise sweep-select the port labels under it. */
+  user-select: none;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--font-color) 16%, transparent) 1px,
+    transparent 1px
+  );
+}
+
+.viewport.panning {
+  cursor: grabbing;
+}
+
+.viewport.dropTarget {
+  box-shadow: inset 0 0 0 2px var(--primary-button-color);
+  background-color: color-mix(in srgb, var(--primary-button-color) 6%, transparent);
+}
+
+/* Zero-footprint layer: it only exists to carry the pan/zoom transform, so
+   it must not swallow pointer events meant for the empty canvas. */
+.world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  color: var(--text-4);
+  text-align: center;
+  pointer-events: none;
+}
+
+.empty i {
+  font-size: 30px;
+  margin-bottom: var(--sp-1);
+}
+
+.empty h4 {
+  margin: 0;
+  font-size: var(--fs-lead);
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.empty p {
+  margin: 0;
+  font-size: var(--fs-small);
+  max-width: 260px;
+}
+
+/* ---- Edges ----------------------------------------------------------- */
+
+.edgeLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.edgeLine {
+  fill: none;
+  stroke: color-mix(in srgb, var(--primary-button-color) 75%, transparent);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+.edgeHitArea {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.edge:hover .edgeLine {
+  stroke: var(--primary-button-color);
+  stroke-width: 2.5;
+}
+
+.edgeSelected .edgeLine {
+  stroke: var(--primary-button-color);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 3;
+}
+
+.arrowHead {
+  fill: color-mix(in srgb, var(--primary-button-color) 85%, transparent);
+}
+
+.wirePreview {
+  fill: none;
+  stroke: var(--primary-button-color);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.edgeDelete {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: var(--status-error);
+  color: #fff;
+  border: 2px solid rgba(var(--window-tint-rgb), 0.9);
+  border-radius: 50%;
+  font-size: 9px;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- Nodes ----------------------------------------------------------- */
+
+.node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: rgba(var(--window-tint-rgb), 0.92);
+  border: 1px solid var(--hairline-strong);
+  border-left: 3px solid var(--node-accent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.06);
+  pointer-events: auto;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.node:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.nodeSelected {
+  border-color: var(--primary-button-color);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary-button-color) 35%, transparent),
+    0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.nodeError {
+  border-color: var(--status-error);
+}
+
+.nodeWarning {
+  border-color: var(--status-warning);
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  border-bottom: 1px solid var(--hairline);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.nodeHeader:active {
+  cursor: grabbing;
+}
+
+.nodeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--node-accent) 14%, transparent);
+  color: var(--node-accent);
+  font-size: var(--fs-micro);
+}
+
+.nodeName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nodeBadgeError,
+.nodeBadgeWarning,
+.nodeConfigured {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-micro);
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.nodeBadgeError { color: var(--status-error); }
+.nodeBadgeWarning { color: var(--status-warning); }
+.nodeConfigured { color: var(--text-4); }
+
+.nodeRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-4);
+  font-size: var(--fs-micro);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.node:hover .nodeRemove,
+.nodeRemove:focus-visible {
+  opacity: 1;
+}
+
+.nodeRemove:hover {
+  background: color-mix(in srgb, var(--status-error) 14%, transparent);
+  color: var(--status-error);
+}
+
+/* ---- Ports ----------------------------------------------------------- */
+
+.nodePorts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.portRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+
+.portSpacer {
+  flex: 1;
+}
+
+.port {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  max-width: 50%;
+  padding: 0 var(--sp-1);
+  cursor: crosshair;
+  transition: opacity 0.15s ease;
+}
+
+.portInput {
+  flex-direction: row;
+  margin-left: -6px;
+}
+
+.portOutput {
+  flex-direction: row-reverse;
+  margin-right: -6px;
+}
+
+.portDot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--window-tint-rgb), 0.95);
+  box-shadow: 0 0 0 1px var(--hairline-strong);
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.portInput .portDot { background: #10b981; }
+.portOutput .portDot { background: #3b82f6; }
+
+.portLabel {
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: lowercase;
+  letter-spacing: 0.2px;
+}
+
+.port:hover .portDot {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-button-color) 30%, transparent);
+}
+
+.port:hover .portLabel {
+  color: var(--text-1);
+}
+
+/* Ports that the in-flight wire cannot legally reach. */
+.portMuted {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.portCandidate .portDot {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-button-color) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node,
+  .portDot,
+  .nodeRemove {
+    transition: none;
+  }
+}

@@ -7,7 +7,7 @@
 
 .fileManagerHeader {
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  border-bottom: 1px solid var(--hairline);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -15,7 +15,7 @@
 
 .fileManagerHeader h2 {
   color: var(--font-color);
-  font-size: 18px;
+  font-size: var(--fs-title);
   font-weight: 600;
   margin: 0;
 }
@@ -30,13 +30,13 @@
   display: grid;
   grid-template-columns: 200px 1fr 1fr;
   gap: 1px;
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
 }
 
 .fileTypesPanel,
 .filesPanel,
 .fileEditor {
-  background: rgba(var(--window-tint-rgb), 0.02);
+  background: var(--surface-1);
   padding: 16px;
   overflow-y: auto;
 }
@@ -45,7 +45,7 @@
 .filesPanel h3,
 .fileEditor h3 {
   color: var(--font-color);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -69,11 +69,11 @@
 }
 
 .fileType:hover {
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
 }
 
 .fileType.selected {
-  background: rgba(var(--primary-button-color), 0.2);
+  background: color-mix(in srgb, var(--primary-button-color) 20%, transparent);
   color: var(--primary-button-color);
 }
 
@@ -85,25 +85,25 @@
 
 .fileItem {
   padding: 12px;
-  border: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .fileItem:hover {
-  background: rgba(var(--window-tint-rgb), 0.05);
+  background: var(--surface-1);
   border-color: rgba(var(--window-tint-rgb), 0.2);
 }
 
 .fileItem.selected {
-  background: rgba(var(--primary-button-color), 0.1);
+  background: color-mix(in srgb, var(--primary-button-color) 10%, transparent);
   border-color: var(--primary-button-color);
 }
 
 .fileName {
   color: var(--font-color);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 500;
   margin-bottom: 4px;
 }
@@ -115,7 +115,7 @@
 }
 
 .fileInfo span {
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
   font-size: 12px;
 }
 
@@ -128,7 +128,7 @@
 .actionBtn {
   background: none;
   border: none;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
   cursor: pointer;
   font-size: 12px;
   padding: 2px 4px;
@@ -142,7 +142,7 @@
 }
 
 .actionBtn:hover {
-  background: rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-2);
   color: var(--font-color);
 }
 
@@ -151,7 +151,7 @@
   border: none;
   color: #dc3545;
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--fs-lead);
   padding: 0;
   width: 20px;
   height: 20px;
@@ -169,8 +169,8 @@
 .fileContent {
   width: 100%;
   min-height: 200px;
-  background: rgba(var(--window-tint-rgb), 0.05);
-  border: 1px solid rgba(var(--window-tint-rgb), 0.1);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   padding: 12px;
   color: var(--font-color);
@@ -196,10 +196,10 @@
   gap: 16px;
   margin-top: 8px;
   padding: 8px 12px;
-  background: rgba(var(--window-tint-rgb), 0.05);
+  background: var(--surface-1);
   border-radius: 4px;
   font-size: 12px;
-  color: rgba(var(--font-color), 0.6);
+  color: color-mix(in srgb, var(--font-color) 60%, transparent);
 }
 
 .noSelection {
@@ -208,12 +208,12 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: rgba(var(--font-color), 0.5);
+  color: color-mix(in srgb, var(--font-color) 50%, transparent);
   text-align: center;
   gap: 8px;
 }
 
 .noSelection i {
-  font-size: 48px;
+  font-size: 26px;
   opacity: 0.3;
 }

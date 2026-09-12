@@ -1,6 +1,29 @@
 import { useState, useCallback, useRef } from 'react'
 import { useMobile } from './useMobile'
 
+/**
+ * Sensible opening size per app. The builder in particular lays out three
+ * panels side by side, so the generic 800x600 default cropped its toolbar and
+ * squeezed the canvas to nothing.
+ */
+const APP_WINDOW_DEFAULTS = {
+  'app-builder': { width: 1180, height: 760 },
+  'app-builder-classic': { width: 900, height: 640 },
+  'app-manager': { width: 880, height: 620 },
+  'file-manager': { width: 820, height: 580 },
+  'settings': { width: 860, height: 660 }
+}
+
+const DEFAULT_WINDOW = { width: 800, height: 600 }
+
+/** Clamp a preferred size to what the viewport can actually show. */
+function fitToViewport({ width, height }) {
+  return {
+    width: Math.min(width, Math.max(320, window.innerWidth - 48)),
+    height: Math.min(height, Math.max(240, window.innerHeight - 96))
+  }
+}
+
 export function useWindowManager() {
   const [windows, setWindows] = useState([])
   const [activeWindowId, setActiveWindowId] = useState(null)
@@ -50,12 +73,16 @@ export function useWindowManager() {
     }
 
     const windowId = generateWindowId()
+    const size = fitToViewport(APP_WINDOW_DEFAULTS[appId] || DEFAULT_WINDOW)
+    // Cascade successive windows slightly instead of scattering them randomly.
+    const offset = (windows.length % 5) * 24
+
     const defaultOptions = {
       title: appId.charAt(0).toUpperCase() + appId.slice(1).replace(/-/g, ' '),
-      width: 800,
-      height: 600,
-      left: Math.max(0, window.innerWidth / 2 - 400 + Math.random() * 100),
-      top: Math.max(0, window.innerHeight / 2 - 300 + Math.random() * 100),
+      width: size.width,
+      height: size.height,
+      left: Math.max(0, Math.round((window.innerWidth - size.width) / 2) + offset),
+      top: Math.max(0, Math.round((window.innerHeight - size.height) / 2 - 20) + offset),
       minimized: false,
       maximized: isMobile, // Default to maximized on mobile
       resizable: true,

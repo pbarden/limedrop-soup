@@ -19,11 +19,12 @@ const defaultSettings = {
   secondaryButtonText: '#1f2937',
   secondaryButtonBorder: '#ffffff',
   secondaryBorderOpacity: '0.2',
+  windowTintColor: '#ffffff',
   glassOpacity: '0.8',
   glassBlur: '10px',
   windowHeaderOpacity: '0.15',
   desktopIconColor: '#ffffff',
-  desktopIconSize: '1.2rem',
+  desktopIconSize: '1.05rem',
   autoSave: true,
   showIcons: true,
   minimizeIcon: 'fas fa-minus',
@@ -113,36 +114,48 @@ export function SettingsProvider({ children }) {
           root.style.setProperty('--desktop-icon-font-size', value)
         }
         
-        // Handle match desktop theme setting
+        // "Match desktop theme" paints buttons with the desktop gradient.
+        // It writes a separate --primary-button-fill rather than overwriting
+        // --primary-button-color: that variable has to stay a real colour,
+        // because borders, focus rings and every color-mix() in the app are
+        // derived from it and a gradient value would invalidate them all.
         if (key === 'matchDesktopTheme' && typeof value === 'boolean') {
-          if (value) {
-            // Use the desktop background as button background
-            root.style.setProperty('--primary-button-color', settings.backgroundStyle || defaultSettings.backgroundStyle)
-          } else {
-            // Use the regular primary button color
-            root.style.setProperty('--primary-button-color', settings.primaryButtonColor)
-          }
+          root.style.setProperty(
+            '--primary-button-fill',
+            value
+              ? (settings.backgroundStyle || defaultSettings.backgroundStyle)
+              : 'var(--primary-button-color)'
+          )
         }
-        
-        // Convert hex colors to RGB for rgba usage
+
+        // Publish an "r, g, b" companion for every themed colour, so rules
+        // that need a translucent version can use rgba(var(--x-rgb), a).
         if (key.includes('Color') && typeof value === 'string' && value.startsWith('#')) {
           const rgb = hexToRgb(value)
           if (rgb) {
+            const triplet = `${rgb.r}, ${rgb.g}, ${rgb.b}`
+
+            // --fontColor -> --font-color-rgb (keeping the full variable name,
+            // so the companion is always the base name plus "-rgb").
+            root.style.setProperty(`${cssKey}-rgb`, triplet)
+
+            // Legacy shorter aliases some modules still reference.
             const rgbKey = key.replace('Color', '') + 'Rgb'
-            const rgbCssKey = `--${rgbKey.replace(/([A-Z])/g, '-$1').toLowerCase()}`
-            root.style.setProperty(rgbCssKey, `${rgb.r}, ${rgb.g}, ${rgb.b}`)
-            
-            // Special handling for specific colors that need exact RGB variable names
+            root.style.setProperty(`--${rgbKey.replace(/([A-Z])/g, '-$1').toLowerCase()}`, triplet)
+
             if (key === 'primaryButtonColor') {
-              root.style.setProperty('--primary-button-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
-            }
-            if (key === 'secondaryButtonBg') {
-              root.style.setProperty('--secondary-button-bg', value)
-              root.style.setProperty('--secondary-button-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
+              root.style.setProperty('--primary-button-rgb', triplet)
             }
           }
         }
-        
+
+        if (key === 'secondaryButtonBg' && typeof value === 'string' && value.startsWith('#')) {
+          const rgb = hexToRgb(value)
+          if (rgb) {
+            root.style.setProperty('--secondary-button-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
+          }
+        }
+
         // Special background handling
         if (key === 'backgroundStyle') {
           root.style.setProperty('--background-style', value)

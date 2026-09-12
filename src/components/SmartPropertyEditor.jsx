@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { getComponentById } from '../data/componentLibrary'
+import { resolveType } from '../runtime/executors'
 import styles from '../styles/SmartPropertyEditor.module.css'
 
 function SmartPropertyEditor({ 
@@ -13,7 +14,11 @@ function SmartPropertyEditor({
   const [isDirty, setIsDirty] = useState(false)
   const [validationState, setValidationState] = useState('valid')
 
-  const componentMeta = selectedComponent ? getComponentById(selectedComponent.type) : null
+  // resolveType first, so components saved by the classic builder under
+  // their short type names still get an editor instead of the empty state.
+  const componentMeta = selectedComponent
+    ? getComponentById(resolveType(selectedComponent.type) || selectedComponent.type)
+    : null
 
   // Initialize values from component
   useEffect(() => {
