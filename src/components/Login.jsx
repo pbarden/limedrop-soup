@@ -102,13 +102,13 @@ function Login() {
     if (userType === 'admin') {
       setFormData(prev => ({
         ...prev,
-        email: 'admin@chaiq.com',
+        email: 'admin@limedrop.com',
         password: 'admin123'
       }))
     } else {
       setFormData(prev => ({
         ...prev,
-        email: 'demo@chaiq.com',
+        email: 'demo@limedrop.com',
         password: 'demo123'
       }))
     }

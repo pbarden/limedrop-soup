@@ -42,7 +42,7 @@ export function SettingsProvider({ children }) {
 
   const loadSettings = useCallback(() => {
     try {
-      const savedSettings = localStorage.getItem('chaiq-settings')
+      const savedSettings = localStorage.getItem('limedrop-settings')
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings)
         setSettings(prev => ({ ...prev, ...parsed }))
@@ -58,7 +58,7 @@ export function SettingsProvider({ children }) {
       setSettings(updatedSettings)
       
       if (updatedSettings.autoSave !== false) {
-        localStorage.setItem('chaiq-settings', JSON.stringify(updatedSettings))
+        localStorage.setItem('limedrop-settings', JSON.stringify(updatedSettings))
       }
       
       return updatedSettings
@@ -175,7 +175,7 @@ export function SettingsProvider({ children }) {
   const resetSettings = useCallback(() => {
     try {
       setSettings(defaultSettings)
-      localStorage.removeItem('chaiq-settings')
+      localStorage.removeItem('limedrop-settings')
       return defaultSettings
     } catch (error) {
       console.warn('❌ Failed to reset settings:', error)

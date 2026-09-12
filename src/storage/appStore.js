@@ -5,9 +5,9 @@ import { resolveType } from '../runtime/executors'
  * Single source of truth for user-built apps.
  *
  * Replaces three keys that never agreed with each other:
- *   chaiq-built-apps     - written by the original basic builder
- *   chaiq-enhanced-apps  - written by the enhanced builder, read by nothing
- *   chaiq-apps           - install flags, read by the app manager
+ *   limedrop-built-apps     - written by the original basic builder
+ *   limedrop-enhanced-apps  - written by the enhanced builder, read by nothing
+ *   limedrop-apps           - install flags, read by the app manager
  *
  * Legacy data is migrated on first load and the old keys are left in place
  * (renamed with a .backup suffix) so nothing is destroyed.
@@ -16,9 +16,9 @@ import { resolveType } from '../runtime/executors'
 const APPS_KEY = 'limedrop-apps'
 const MIGRATION_FLAG = 'limedrop-apps-migrated'
 
-const LEGACY_BUILT = 'chaiq-built-apps'
-const LEGACY_ENHANCED = 'chaiq-enhanced-apps'
-const LEGACY_INSTALLED = 'chaiq-apps'
+const LEGACY_BUILT = 'limedrop-built-apps'
+const LEGACY_ENHANCED = 'limedrop-enhanced-apps'
+const LEGACY_INSTALLED = 'limedrop-apps'
 
 // Subscribers are notified whenever the app list changes, so the desktop and
 // dock update as soon as an app is installed, renamed, or deleted.

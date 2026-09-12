@@ -103,7 +103,7 @@ src/
 - Live theming: primary / secondary button styles, gradients, font colors, glass opacity & blur
 - 50+ gradient background presets plus optional animated background
 - Customizable window-control icons (close / minimize / maximize)
-- Auto-save toggle; all settings persist to `localStorage` under `chaiq-settings`
+- Auto-save toggle; all settings persist to `localStorage` under `limedrop-settings`
 
 ### File Manager
 - CRUD on virtual files (create, rename, delete, edit content)
@@ -165,7 +165,7 @@ npm run preview   # Serve the built bundle
 npm run lint      # ESLint (--max-warnings 0)
 ```
 
-Demo credentials are defined in `src/contexts/AuthContext.jsx` (e.g. `demo@chaiq.com` / `demo123`).
+Demo credentials are defined in `src/contexts/AuthContext.jsx` (e.g. `demo@limedrop.com` / `demo123`).
 
 ---
 

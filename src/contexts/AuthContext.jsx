@@ -13,7 +13,7 @@ export function useAuth() {
 const DEMO_USERS = [
   {
     id: 1,
-    email: 'demo@chaiq.com',
+    email: 'demo@limedrop.com',
     password: 'demo123',
     name: 'Demo User',
     role: 'user',
@@ -21,7 +21,7 @@ const DEMO_USERS = [
   },
   {
     id: 2,
-    email: 'admin@chaiq.com',
+    email: 'admin@limedrop.com',
     password: 'admin123',
     name: 'Admin User',
     role: 'admin',
@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
 
   const checkExistingSession = async () => {
     try {
-      const savedSession = localStorage.getItem('chaiq-session')
+      const savedSession = localStorage.getItem('limedrop-session')
       if (savedSession) {
         const session = JSON.parse(savedSession)
         
@@ -60,12 +60,12 @@ export function AuthProvider({ children }) {
         if (sessionAge < maxAge) {
           setUser(session.user)
         } else {
-          localStorage.removeItem('chaiq-session')
+          localStorage.removeItem('limedrop-session')
         }
       }
     } catch (error) {
       console.warn('Failed to restore session:', error)
-      localStorage.removeItem('chaiq-session')
+      localStorage.removeItem('limedrop-session')
     } finally {
       setLoading(false)
     }
@@ -99,7 +99,7 @@ export function AuthProvider({ children }) {
       }
 
       // Save session
-      localStorage.setItem('chaiq-session', JSON.stringify(session))
+      localStorage.setItem('limedrop-session', JSON.stringify(session))
       setUser(userWithoutPassword)
 
       return { success: true, user: userWithoutPassword }
@@ -161,7 +161,7 @@ export function AuthProvider({ children }) {
       }
 
       // Save session
-      localStorage.setItem('chaiq-session', JSON.stringify(session))
+      localStorage.setItem('limedrop-session', JSON.stringify(session))
       setUser(newUser)
 
       return { success: true, user: newUser }
@@ -175,7 +175,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      localStorage.removeItem('chaiq-session')
+      localStorage.removeItem('limedrop-session')
       setUser(null)
       setError(null)
       return { success: true }
@@ -197,9 +197,9 @@ export function AuthProvider({ children }) {
       const updatedUser = { ...user, ...updates }
 
       // Update session
-      const session = JSON.parse(localStorage.getItem('chaiq-session'))
+      const session = JSON.parse(localStorage.getItem('limedrop-session'))
       session.user = updatedUser
-      localStorage.setItem('chaiq-session', JSON.stringify(session))
+      localStorage.setItem('limedrop-session', JSON.stringify(session))
 
       setUser(updatedUser)
       return { success: true, user: updatedUser }

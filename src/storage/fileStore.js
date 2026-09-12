@@ -7,7 +7,7 @@
  * A file is { id, name, type, content, created, modified }.
  */
 
-const FILES_KEY = 'chaiq-files'
+const FILES_KEY = 'limedrop-files'
 
 // Subscribers are notified whenever files change, so an open File Manager
 // window reflects writes made by a running app.

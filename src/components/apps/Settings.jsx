@@ -312,7 +312,7 @@ function Settings() {
   const clearStorage = () => {
     if (confirm('Are you sure you want to clear all settings? This cannot be undone.')) {
       resetSettings()
-      localStorage.removeItem('chaiq-files')
+      localStorage.removeItem('limedrop-files')
       localStorage.removeItem('limedrop-apps')
       localStorage.removeItem('limedrop-apps-migrated')
       window.location.reload()
