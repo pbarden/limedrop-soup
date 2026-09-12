@@ -629,3 +629,59 @@
   font-weight: 500;
   margin: 0;
 }
+/* --- AI credentials --------------------------------------------------- */
+
+.sectionHelp {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.55;
+  opacity: 0.75;
+  color: var(--window-font-color, #444);
+}
+
+.sectionHelp a {
+  color: var(--primary-button-color, #3b82f6);
+}
+
+.keyRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.keyInput {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--window-font-color, #333);
+}
+
+.keyActions {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 10px;
+}
+
+.testOk,
+.testFailed,
+.testPending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.testOk      { background: rgba(16, 185, 129, 0.12); color: #047857; }
+.testFailed  { background: rgba(239, 68, 68, 0.12);  color: #b91c1c; }
+.testPending { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }

@@ -1,9 +1,9 @@
-import { useNotifications } from '../hooks/useNotifications'
+import { useApp } from '../contexts/AppContext'
 import Notification from './Notification'
 import styles from '../styles/NotificationContainer.module.css'
 
 function NotificationContainer() {
-  const { notifications } = useNotifications()
+  const { notifications } = useApp()
 
   return (
     <div id="notification-container" className={styles.notificationContainer}>

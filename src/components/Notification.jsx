@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import { useNotifications } from '../hooks/useNotifications'
+import { useApp } from '../contexts/AppContext'
 import styles from '../styles/Notification.module.css'
 
 function Notification({ id, title, message, type, duration = 5000 }) {
-  const { removeNotification } = useNotifications()
+  const { removeNotification } = useApp()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,7 +28,7 @@ function Notification({ id, title, message, type, duration = 5000 }) {
         <i className={getIcon()}></i>
       </div>
       <div className={styles.notificationContent}>
-        <div className={styles.notificationTitle}>{title}</div>
+        {title && <div className={styles.notificationTitle}>{title}</div>}
         <div className={styles.notificationMessage}>{message}</div>
       </div>
       <button 

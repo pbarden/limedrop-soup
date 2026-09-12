@@ -847,3 +847,73 @@
     animation: none;
   }
 }
+/* --- Run action, validation badges and the open-app picker ------------- */
+
+.runButton {
+  background: var(--primary-button-color, #3b82f6);
+  color: var(--primary-button-text-color, #fff);
+}
+
+.runButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.issueCountError,
+.issueCountWarning {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
+}
+
+.issueCountError   { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }
+.issueCountWarning { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+
+.appPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.appPickerItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 2px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.appPickerItem:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--primary-button-color, #3b82f6);
+}
+
+.appPickerItem i {
+  grid-row: 1 / 3;
+  font-size: 20px;
+  opacity: 0.75;
+}
+
+.appPickerName {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.appPickerItem small {
+  opacity: 0.65;
+  font-size: 12px;
+}

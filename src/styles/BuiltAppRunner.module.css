@@ -235,3 +235,171 @@
   color: var(--font-color);
   flex: 1;
 }
+/* --- Runtime status, banners and result rendering ---------------------- */
+
+.componentStatus.running { background: rgba(59, 130, 246, 0.18); color: #3b82f6; }
+.componentStatus.done    { background: rgba(16, 185, 129, 0.18); color: #10b981; }
+.componentStatus.failed  { background: rgba(239, 68, 68, 0.18);  color: #ef4444; }
+.componentStatus.skipped { background: rgba(148, 163, 184, 0.18); color: #94a3b8; }
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.bannerWarning {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #b45309;
+}
+
+.bannerError {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #b91c1c;
+}
+
+.nodeError {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  font-size: 12px;
+}
+
+.nodeSkipped {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.12);
+  color: #64748b;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.duration {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  opacity: 0.55;
+  color: var(--window-font-color, #444);
+}
+
+.pre {
+  margin: 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--window-font-color, #333);
+}
+
+.emptyOutput {
+  font-size: 12px;
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.validationErrors {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+.componentTextarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--window-font-color, #333);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.fileList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.fileList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.fileSize {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+.exportBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.gateResult {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.gatePass { background: rgba(16, 185, 129, 0.12); color: #047857; }
+.gateFail { background: rgba(239, 68, 68, 0.12);  color: #b91c1c; }
+
+.logEntry.success .logMessage { color: #10b981; }
+.logEntry.error .logMessage   { color: #ef4444; }
+.logEntry.warning .logMessage { color: #f59e0b; }

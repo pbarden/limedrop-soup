@@ -67,6 +67,7 @@ export const advancedComponents = {
         default: 'none',
         description: 'Auto-formatting style'
       },
+      multiline: { type: 'boolean', default: false, description: 'Allow multi-line input' },
       maxLength: { type: 'number', default: 255, min: 1, max: 10000, description: 'Maximum character length' },
       required: { type: 'boolean', default: false, description: 'Mark as required field' }
     },

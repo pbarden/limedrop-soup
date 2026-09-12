@@ -1,11 +1,50 @@
 import { useState, useEffect } from 'react'
 import { useSettings } from '../../contexts/SettingsContext'
 import { useApp } from '../../contexts/AppContext'
+import {
+  getCredentials,
+  setCredentials,
+  clearCredentials,
+  complete,
+  AVAILABLE_MODELS
+} from '../../runtime/aiClient'
 import styles from '../../styles/Settings.module.css'
 
 function Settings() {
   const { settings, updateSetting, resetSettings } = useSettings()
-  const { showModal, closeModal } = useApp()
+  const { showModal, closeModal, showNotification } = useApp()
+
+  // --- Anthropic credentials -------------------------------------------
+  const [credentials, setLocalCredentials] = useState(() => getCredentials())
+  const [showKey, setShowKey] = useState(false)
+  const [testState, setTestState] = useState({ status: 'idle', message: '' })
+
+  const updateCredential = (field, value) => {
+    const next = setCredentials({ [field]: value })
+    setLocalCredentials(next)
+    setTestState({ status: 'idle', message: '' })
+  }
+
+  const testConnection = async () => {
+    setTestState({ status: 'testing', message: 'Contacting the API…' })
+    try {
+      const { model } = await complete({
+        prompt: 'Reply with the single word: ready',
+        effort: 'low',
+        maxTokens: 16
+      })
+      setTestState({ status: 'ok', message: `Connected to ${model}` })
+    } catch (error) {
+      setTestState({ status: 'failed', message: error.message })
+    }
+  }
+
+  const forgetKey = () => {
+    clearCredentials()
+    setLocalCredentials(getCredentials())
+    setTestState({ status: 'idle', message: '' })
+    showNotification('API key removed', 'info')
+  }
 
   // Find current gradient info
   const getCurrentGradient = () => {
@@ -339,7 +378,8 @@ function Settings() {
     if (confirm('Are you sure you want to clear all settings? This cannot be undone.')) {
       resetSettings()
       localStorage.removeItem('chaiq-files')
-      localStorage.removeItem('chaiq-apps')
+      localStorage.removeItem('limedrop-apps')
+      localStorage.removeItem('limedrop-apps-migrated')
       window.location.reload()
     }
   }
@@ -578,6 +618,98 @@ function Settings() {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className={styles.settingsSection}>
+          <h3>AI</h3>
+
+          <p className={styles.sectionHelp}>
+            AI components call the Anthropic API directly from this browser using your
+            own key. The key is stored in this browser&apos;s local storage and is never
+            sent anywhere except to Anthropic. Anyone with access to this browser
+            profile can read it, so use a key you can rotate.
+          </p>
+
+          <div className={styles.colorControl}>
+            <label htmlFor="anthropic-key">API Key:</label>
+            <div className={styles.keyRow}>
+              <input
+                id="anthropic-key"
+                type={showKey ? 'text' : 'password'}
+                className={styles.keyInput}
+                placeholder="sk-ant-..."
+                autoComplete="off"
+                spellCheck="false"
+                value={credentials.apiKey}
+                onChange={(e) => updateCredential('apiKey', e.target.value.trim())}
+              />
+              <button
+                type="button"
+                className="btn-secondary btn-small"
+                onClick={() => setShowKey(v => !v)}
+              >
+                {showKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.colorControl}>
+            <label htmlFor="anthropic-model">Default Model:</label>
+            <select
+              id="anthropic-model"
+              value={credentials.model}
+              onChange={(e) => updateCredential('model', e.target.value)}
+            >
+              {AVAILABLE_MODELS.map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name} — {model.note}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.keyActions}>
+            <button
+              className="btn-primary"
+              onClick={testConnection}
+              disabled={!credentials.apiKey || testState.status === 'testing'}
+            >
+              {testState.status === 'testing' ? 'Testing…' : 'Test Connection'}
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={forgetKey}
+              disabled={!credentials.apiKey}
+            >
+              Forget Key
+            </button>
+          </div>
+
+          {testState.status !== 'idle' && (
+            <div
+              className={
+                testState.status === 'ok' ? styles.testOk
+                  : testState.status === 'failed' ? styles.testFailed
+                    : styles.testPending
+              }
+            >
+              <i
+                className={
+                  testState.status === 'ok' ? 'fas fa-check-circle'
+                    : testState.status === 'failed' ? 'fas fa-times-circle'
+                      : 'fas fa-spinner fa-spin'
+                }
+              ></i>
+              {testState.message}
+            </div>
+          )}
+
+          <p className={styles.sectionHelp}>
+            Need a key? Create one at{' '}
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">
+              console.anthropic.com
+            </a>. Usage is billed to your own Anthropic account.
+          </p>
         </div>
 
         <div className={styles.settingsSection}>

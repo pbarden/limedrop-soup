@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { getComponentById } from '../data/componentLibrary'
-import { useNotifications } from '../hooks/useNotifications'
+import { useApp } from '../contexts/AppContext'
 import styles from '../styles/LivePreview.module.css'
 
 const DEVICE_PRESETS = {
@@ -34,7 +34,7 @@ function LivePreview({
   const previewRef = useRef(null)
   const hotReloadTimeoutRef = useRef(null)
   const performanceObserverRef = useRef(null)
-  const { showNotification } = useNotifications()
+  const { showNotification } = useApp()
 
   // Performance monitoring
   useEffect(() => {

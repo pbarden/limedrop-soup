@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { getComponentById } from '../data/componentLibrary'
+import { resolveType } from '../runtime/executors'
 import styles from '../styles/ConnectionSystem.module.css'
 
 function ConnectionSystem({ 
@@ -40,10 +42,12 @@ function ConnectionSystem({
     }
   }, [workflowRef])
 
-  // Handle connection drag start
+  // Handle connection drag start. Listeners are attached by the effect below
+  // rather than here, so they always see the current drag state.
   const handleConnectionStart = useCallback((componentId, portId, portType, event) => {
     event.stopPropagation()
-    
+    event.preventDefault()
+
     setDragState({
       isDragging: true,
       fromComponent: componentId,
@@ -51,9 +55,6 @@ function ConnectionSystem({
       fromPortType: portType,
       mousePosition: { x: event.clientX, y: event.clientY }
     })
-
-    document.addEventListener('mousemove', handleConnectionDrag)
-    document.addEventListener('mouseup', handleConnectionEnd)
   }, [])
 
   // Handle connection drag
@@ -88,12 +89,14 @@ function ConnectionSystem({
         toPort, 
         toPortType
       )) {
+        const startedAtOutput = dragState.fromPortType === 'output'
+
         onConnectionCreate?.({
-          id: `conn-${Date.now()}`,
-          from: dragState.fromComponent,
-          fromPort: dragState.fromPort,
-          to: toComponent,
-          toPort: toPort,
+          id: `conn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          from: startedAtOutput ? dragState.fromComponent : toComponent,
+          fromPort: startedAtOutput ? dragState.fromPort : toPort,
+          to: startedAtOutput ? toComponent : dragState.fromComponent,
+          toPort: startedAtOutput ? toPort : dragState.fromPort,
           type: 'data'
         })
       }
@@ -105,10 +108,21 @@ function ConnectionSystem({
       fromPort: null,
       mousePosition: { x: 0, y: 0 }
     })
+  }, [dragState, onConnectionCreate, connections])
 
-    document.removeEventListener('mousemove', handleConnectionDrag)
-    document.removeEventListener('mouseup', handleConnectionEnd)
-  }, [dragState, onConnectionCreate])
+  // Attach drag listeners only while a drag is active, so the handlers always
+  // close over the current drag state.
+  useEffect(() => {
+    if (!dragState.isDragging) return
+
+    document.addEventListener('mousemove', handleConnectionDrag)
+    document.addEventListener('mouseup', handleConnectionEnd)
+
+    return () => {
+      document.removeEventListener('mousemove', handleConnectionDrag)
+      document.removeEventListener('mouseup', handleConnectionEnd)
+    }
+  }, [dragState.isDragging, handleConnectionDrag, handleConnectionEnd])
 
   // Validate if connection can be created
   const canCreateConnection = (fromComp, fromPort, fromType, toComp, toPort, toType) => {
@@ -163,10 +177,12 @@ function ConnectionSystem({
 
   // Render connection ports for a component
   const renderConnectionPorts = (component) => {
-    // This would be enhanced to read from component metadata
-    const inputPorts = ['input', 'trigger']
-    const outputPorts = ['output', 'result', 'error']
-    
+    // Port names come from the component library so the names stored on a
+    // connection match the ports the runtime engine reads.
+    const definition = getComponentById(resolveType(component.type) || component.type)
+    const inputPorts = definition?.inputs || []
+    const outputPorts = definition?.outputs || ['output']
+
     return (
       <>
         {/* Input ports (left side) */}

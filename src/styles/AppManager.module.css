@@ -188,3 +188,23 @@
 .infoGrid strong {
   color: var(--font-color);
 }
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--window-font-color, #444);
+  opacity: 0.8;
+}
+
+.emptyState i {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 14px;
+}

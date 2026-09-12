@@ -11,3 +11,13 @@
 .windowsContainer > * {
   pointer-events: auto;
 }
+.missingApp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  font-size: 14px;
+  opacity: 0.65;
+  color: var(--window-font-color, #444);
+}

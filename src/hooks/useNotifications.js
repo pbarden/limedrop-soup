@@ -61,11 +61,18 @@ export function useNotifications() {
     })
   }, [addNotification])
 
+  // Message-first form used across the app builder and runtime:
+  //   showNotification('Saved', 'success')
+  const showNotification = useCallback((message, type = 'info', options = {}) => {
+    return addNotification({ type, message, ...options })
+  }, [addNotification])
+
   return {
     notifications,
     addNotification,
     removeNotification,
     clearAllNotifications,
+    showNotification,
     showSuccess,
     showError,
     showWarning,

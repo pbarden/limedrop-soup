@@ -234,8 +234,13 @@ export function useAdvancedDragDrop({
   const registerDropZone = useCallback((element, id, metadata = {}) => {
     if (!element) return
 
+    // Re-registering the same element must not touch state: callers often pass
+    // an inline ref callback, which React re-invokes on every render, and an
+    // unconditional setState there loops until React bails out.
+    if (dropZoneRefs.current.get(id)?.element === element) return
+
     dropZoneRefs.current.set(id, { element, metadata })
-    
+
     setDragState(prev => ({
       ...prev,
       dropZones: Array.from(dropZoneRefs.current.values())

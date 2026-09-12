@@ -1,9 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useAdvancedDragDrop } from '../../hooks/useAdvancedDragDrop'
-import { useNotifications } from '../../hooks/useNotifications'
-import { useModal } from '../../hooks/useModal.jsx'
+import { useApp } from '../../contexts/AppContext'
 import SmartPropertyEditor from '../SmartPropertyEditor'
 import LivePreview from '../LivePreview'
+import ConnectionSystem from '../ConnectionSystem'
+import { listApps, saveApp as persistApp, appWindowId } from '../../storage/appStore'
+import { validateApp } from '../../runtime/engine'
 import { 
   advancedComponents, 
   componentCategories, 
@@ -46,8 +48,7 @@ function EnhancedAppBuilder() {
   })
 
   // Hooks
-  const { showNotification } = useNotifications()
-  const { showModal } = useModal()
+  const { showNotification, showModal, closeModal, openApp } = useApp()
   const workflowRef = useRef(null)
 
   // Advanced drag and drop
@@ -190,32 +191,66 @@ function EnhancedAppBuilder() {
     }
   }, [selectedComponent])
 
+  // Stable ref callback: an inline arrow here would re-register the drop
+  // zone on every render, which loops through setState.
+  const registerWorkflowCanvas = useCallback((el) => {
+    if (el) dragDrop.registerDropZone(el, 'workflow', { accepts: 'component' })
+  }, [dragDrop])
+
+  // Connections between components
+  const handleConnectionCreate = useCallback((connection) => {
+    setCurrentApp(prev => {
+      // One value per input port: replace any existing wire into that port.
+      const filtered = prev.connections.filter(
+        existing => !(existing.to === connection.to && existing.toPort === connection.toPort)
+      )
+      return {
+        ...prev,
+        connections: [...filtered, connection],
+        metadata: { ...prev.metadata, modified: new Date().toISOString() }
+      }
+    })
+    setHasUnsavedChanges(true)
+  }, [])
+
+  const handleConnectionDelete = useCallback((connectionId) => {
+    setCurrentApp(prev => ({
+      ...prev,
+      connections: prev.connections.filter(conn => conn.id !== connectionId),
+      metadata: { ...prev.metadata, modified: new Date().toISOString() }
+    }))
+    setHasUnsavedChanges(true)
+  }, [])
+
+  // Move a component around the canvas
+  const handleComponentMove = useCallback((componentId, position) => {
+    setCurrentApp(prev => ({
+      ...prev,
+      components: prev.components.map(comp =>
+        comp.id === componentId ? { ...comp, position } : comp
+      )
+    }))
+    setHasUnsavedChanges(true)
+  }, [])
+
+  // Problems that would stop the app running
+  const issues = React.useMemo(() => validateApp(currentApp), [currentApp])
+
+  // Save, then open the app in its own window
+  const runCurrentApp = useCallback(async () => {
+    const saved = persistApp(currentApp)
+    setCurrentApp(saved)
+    setHasUnsavedChanges(false)
+    openApp(appWindowId(saved.id), { title: saved.name, builtAppData: saved })
+  }, [currentApp, openApp])
+
   // Save app
   const saveApp = useCallback(async () => {
     try {
       setIsSaving(true)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const savedApps = JSON.parse(localStorage.getItem('chaiq-enhanced-apps') || '[]')
-      const appIndex = savedApps.findIndex(app => app.id === currentApp.id)
-      
-      const appToSave = {
-        ...currentApp,
-        metadata: {
-          ...currentApp.metadata,
-          modified: new Date().toISOString()
-        }
-      }
-      
-      if (appIndex >= 0) {
-        savedApps[appIndex] = appToSave
-      } else {
-        savedApps.push(appToSave)
-      }
-      
-      localStorage.setItem('chaiq-enhanced-apps', JSON.stringify(savedApps))
+
+      const saved = persistApp(currentApp)
+      setCurrentApp(saved)
       setHasUnsavedChanges(false)
       showNotification(`"${currentApp.name}" saved successfully`, 'success')
       
@@ -235,23 +270,42 @@ function EnhancedAppBuilder() {
 
   // Load app
   const loadApp = useCallback(() => {
-    const savedApps = JSON.parse(localStorage.getItem('chaiq-enhanced-apps') || '[]')
-    
+    const savedApps = listApps()
+
     if (savedApps.length === 0) {
       showNotification('No saved apps found', 'warning')
       return
     }
-    
-    // For now, load the most recently modified app
-    const latestApp = savedApps.reduce((latest, app) => 
-      new Date(app.metadata.modified) > new Date(latest.metadata.modified) ? app : latest
-    )
-    
-    setCurrentApp(latestApp)
-    setSelectedComponent(null)
-    setHasUnsavedChanges(false)
-    showNotification(`Loaded "${latestApp.name}"`, 'success')
-  }, [showNotification])
+
+    const open = (app) => {
+      setCurrentApp(app)
+      setSelectedComponent(null)
+      setHasUnsavedChanges(false)
+      showNotification(`Loaded "${app.name}"`, 'success')
+      closeModal()
+    }
+
+    showModal({
+      title: 'Open App',
+      content: (
+        <div className={styles.appPicker}>
+          {savedApps.map(app => (
+            <button key={app.id} className={styles.appPickerItem} onClick={() => open(app)}>
+              <i className={app.icon}></i>
+              <span className={styles.appPickerName}>{app.name}</span>
+              <small>
+                {app.components.length} components ·{' '}
+                {new Date(app.metadata.modified).toLocaleDateString()}
+              </small>
+            </button>
+          ))}
+        </div>
+      ),
+      actions: (
+        <button className="btn-secondary" onClick={closeModal}>Cancel</button>
+      )
+    })
+  }, [showNotification, showModal, closeModal])
 
   // New app
   const newApp = useCallback(() => {
@@ -417,6 +471,15 @@ function EnhancedAppBuilder() {
               <i className="fas fa-folder-open"></i>
               Load
             </button>
+            <button
+              className={`${styles.actionButton} ${styles.runButton}`}
+              onClick={runCurrentApp}
+              disabled={issues.some(i => i.severity === 'error')}
+              title="Save and run this app"
+            >
+              <i className="fas fa-play"></i>
+              Run
+            </button>
             <button 
               className={`${styles.actionButton} ${styles.saveButton}`}
               onClick={saveApp}
@@ -555,16 +618,23 @@ function EnhancedAppBuilder() {
               <div className={styles.workflowStats}>
                 <span>{currentApp.components.length} components</span>
                 <span>{currentApp.connections.length} connections</span>
+                {issues.length > 0 && (
+                  <span
+                    className={issues.some(i => i.severity === 'error')
+                      ? styles.issueCountError
+                      : styles.issueCountWarning}
+                    title={issues.map(i => i.message).join(String.fromCharCode(10))}
+                  >
+                    <i className="fas fa-triangle-exclamation"></i>
+                    {issues.length}
+                  </span>
+                )}
               </div>
             </div>
 
             <div 
               className={styles.workflowCanvas}
-              ref={(el) => {
-                if (el) {
-                  dragDrop.registerDropZone(el, 'workflow', { accepts: 'component' })
-                }
-              }}
+              ref={registerWorkflowCanvas}
             >
               {currentApp.components.length === 0 ? (
                 <div className={styles.emptyWorkflow}>
@@ -573,16 +643,25 @@ function EnhancedAppBuilder() {
                   <p>Drag components from the palette or click to add them to your workflow</p>
                 </div>
               ) : (
-                currentApp.components.map(component => (
-                  <WorkflowComponent
-                    key={component.id}
-                    component={component}
-                    isSelected={selectedComponent?.id === component.id}
-                    onSelect={setSelectedComponent}
-                    onRemove={removeComponent}
-                    onPropertyChange={updateComponentProperty}
+                <>
+                  {currentApp.components.map(component => (
+                    <WorkflowComponent
+                      key={component.id}
+                      component={component}
+                      isSelected={selectedComponent?.id === component.id}
+                      onSelect={setSelectedComponent}
+                      onRemove={removeComponent}
+                      onMove={handleComponentMove}
+                    />
+                  ))}
+                  <ConnectionSystem
+                    components={currentApp.components}
+                    connections={currentApp.connections}
+                    onConnectionCreate={handleConnectionCreate}
+                    onConnectionDelete={handleConnectionDelete}
+                    workflowRef={workflowRef}
                   />
-                ))
+                </>
               )}
             </div>
           </div>
@@ -654,9 +733,35 @@ function ComponentPaletteItem({ component, onDragStart, onClick }) {
 }
 
 // Workflow Component
-function WorkflowComponent({ component, isSelected, onSelect, onRemove, onPropertyChange }) {
+function WorkflowComponent({ component, isSelected, onSelect, onRemove, onMove }) {
   const meta = advancedComponents[component.type]
   if (!meta) return null
+
+  // Drag the node around the canvas by its header.
+  const handleDragStart = (event) => {
+    if (event.button !== 0) return
+    event.stopPropagation()
+
+    const startX = event.clientX
+    const startY = event.clientY
+    const originX = component.position?.x || 0
+    const originY = component.position?.y || 0
+
+    const handleMove = (moveEvent) => {
+      onMove?.(component.id, {
+        x: Math.max(0, originX + moveEvent.clientX - startX),
+        y: Math.max(0, originY + moveEvent.clientY - startY)
+      })
+    }
+
+    const handleUp = () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
+    }
+
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
+  }
 
   return (
     <div
@@ -669,7 +774,7 @@ function WorkflowComponent({ component, isSelected, onSelect, onRemove, onProper
       }}
       onClick={() => onSelect(component)}
     >
-      <div className={styles.componentHeader}>
+      <div className={styles.componentHeader} onMouseDown={handleDragStart}>
         <div className={styles.componentIcon}>
           <i className={meta.icon}></i>
         </div>
